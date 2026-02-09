@@ -6,20 +6,20 @@ To restore your original secret, you must bring a specific number of these Qards
 
 > **Version 0.9.0 "Pyre"** — Available as a web app (Next.js) and native desktop app (Tauri + Vite).
 
-## Warning
+## ⚠️ Warning
 
 **Your security is your responsibility.** seQRets gives you full control over your digital assets. Misplacing your password or the required number of Qards can result in the **permanent loss** of your secret. The developers have no access to your data, cannot recover your password, and cannot restore your secrets. Manage your Qards and password with extreme care.
 
-## Features
+## ✨ Features
 
-### Secure Your Secret
+### 🔒 Secure Your Secret
 - Enter any text-based secret (seed phrases, private keys, passwords, etc.)
 - Encrypt with a strong password (24+ characters required)
 - Optionally add a **keyfile** as a second factor — both password AND keyfile are required for recovery
 - Split into configurable Qards (e.g., 2-of-3, 3-of-5 threshold)
 - Download Qards as QR code images or export as a `.seqrets` vault file
 
-### Restore Your Secret
+### 🔓 Restore Your Secret
 - **Drag & drop** QR code images from your file system
 - **Upload** Qard image files (PNG, JPG)
 - **Scan** QR codes with your camera (desktop and web)
@@ -27,16 +27,16 @@ To restore your original secret, you must bring a specific number of these Qards
 - **Import vault file** — load all shares at once from a `.seqrets` file
 - Success sound plays on each accepted share
 
-### Helper Tools
+### 🛠️ Helper Tools
 - **Password Generator** — cryptographically secure 32-character passwords (88-character charset)
 - **Seed Phrase Generator** — generate valid BIP-39 mnemonic phrases
 - **Bitcoin Ticker** — live BTC/USD price display
 - **Bob AI Assistant** — Google Gemini-powered AI for setup guidance and questions (optional, user-provided API key)
 
-### BIP-39 Optimization
+### 🧬 BIP-39 Optimization
 Seed phrases are automatically detected and converted to compact binary entropy before encryption. A 24-word phrase (~150 characters) becomes just 32 bytes, dramatically reducing QR code size.
 
-## Security Architecture
+## 🔐 Security Architecture
 
 All cryptographic operations run **entirely on your device**. Your secrets never leave your machine.
 
@@ -50,7 +50,7 @@ All cryptographic operations run **entirely on your device**. Your secrets never
 
 **What gets split:** Only the fully encrypted data blob is split into shares — the raw secret is never split directly.
 
-### Quantum Resistance
+### ⚛️ Quantum Resistance
 
 The built-in password generator produces passwords with ~10^62 possible combinations. Even with Grover's algorithm (optimal quantum speedup), brute-forcing would take:
 
@@ -59,7 +59,7 @@ The built-in password generator produces passwords with ~10^62 possible combinat
 
 Argon2id's memory-hardness provides additional quantum resistance, and XChaCha20-Poly1305 maintains 128-bit effective quantum security as a defense-in-depth layer.
 
-## Project Structure
+## 📁 Project Structure
 
 seQRets is a monorepo with npm workspaces:
 
@@ -76,7 +76,7 @@ seQRets/
 └── README.md
 ```
 
-### Tech Stack
+### 🧰 Tech Stack
 
 | Component | Technology |
 |-----------|------------|
@@ -86,14 +86,14 @@ seQRets/
 | **AI Assistant** | Google Gemini (via @google/generative-ai) |
 | **QR Codes** | qrcode (generate), jsQR (decode) |
 
-## Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 
 - **Node.js 18+** — [nodejs.org](https://nodejs.org/)
 - **Rust** (for desktop app only) — `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 
-### Setup
+### ⚙️ Setup
 
 ```bash
 git clone https://github.com/jalapeno4332/seQRets.git
@@ -101,7 +101,7 @@ cd seQRets
 npm install
 ```
 
-### Run the Web App
+### 🌐 Run the Web App
 
 ```bash
 npm run dev
@@ -109,14 +109,14 @@ npm run dev
 
 Opens at [http://localhost:9002](http://localhost:9002). All core features work offline — no API keys needed.
 
-### Run the Desktop App
+### 🖥️ Run the Desktop App
 
 ```bash
 source ~/.cargo/env    # if Rust was just installed
 npm run desktop:dev
 ```
 
-### Build the Desktop Installer (.dmg)
+### 📦 Build the Desktop Installer (.dmg)
 
 ```bash
 npm run desktop:build
@@ -124,7 +124,7 @@ npm run desktop:build
 
 Produces `seQRets_0.9.0_aarch64.dmg` in `packages/desktop/src-tauri/target/release/bundle/dmg/`.
 
-### Optional: Bob AI Assistant
+### 🤖 Optional: Bob AI Assistant
 
 Bob is an AI assistant that can answer questions about seQRets, Bitcoin security, and inheritance planning. It's entirely optional.
 
@@ -133,7 +133,7 @@ Bob is an AI assistant that can answer questions about seQRets, Bitcoin security
 
 Your API key is stored locally and never sent to any server other than Google's Gemini API.
 
-## Available Scripts
+## 📜 Available Scripts
 
 | Command | Description |
 |---------|-------------|
@@ -145,25 +145,25 @@ Your API key is stored locally and never sent to any server other than Google's 
 | `npm run lint` | Run linter |
 | `npm run type-check` | TypeScript type checking |
 
-## How It Works
+## 💡 How It Works
 
-### Encrypting a Secret
+### 🔏 Encrypting a Secret
 
 1. **Enter** your secret (seed phrase, private key, password, or any text)
 2. **Secure** it with a strong password (and optional keyfile)
 3. **Split** into your chosen Qard configuration (e.g., 2-of-3)
 4. **Download** your Qards as QR images, a ZIP, or a `.seqrets` vault file
 
-### Restoring a Secret
+### 🔑 Restoring a Secret
 
 1. **Add** the required number of Qards (drag-drop, upload, camera scan, or manual entry)
 2. **Enter** your password (and keyfile if used during encryption)
 3. **Restore** — your original secret is revealed
 
-## Contributing
+## 🤝 Contributing
 
 This project is open source. Contributions, bug reports, and feature requests are welcome. Please open an issue or submit a pull request.
 
-## License
+## 📄 License
 
 MIT
