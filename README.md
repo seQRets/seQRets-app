@@ -50,7 +50,20 @@ All cryptographic operations run **entirely on your device**. Your secrets never
 | **Compression** | Gzip | Reduce payload size before encryption |
 | **Memory** | Secure wipe | Overwrite sensitive data with random bytes after use |
 
-**What gets split:** Only the fully encrypted data blob is split into shares — the raw secret is never split directly.
+### 🔗 Encrypt-First Architecture (Security by Design)
+
+seQRets deliberately **encrypts first, then splits** — this ordering is a critical security choice:
+
+```
+Secret → Compress (gzip) → Encrypt (XChaCha20-Poly1305) → Split (Shamir's) → Distribute
+```
+
+Each Qard contains a fragment of the **encrypted** ciphertext — never raw plaintext. To recover the secret, an attacker must:
+
+1. **Obtain** the required threshold of Qards (e.g., 2-of-3), AND
+2. **Know** the password (+ keyfile, if used)
+
+These are **layered defenses** — both must be defeated. The alternative design (split first, then encrypt each share individually) is weaker: each share becomes an independent encryption target, and cracking the password on a single share could reveal partial plaintext. With Encrypt→Split, a stolen Qard is computationally indistinguishable from random noise.
 
 ### ⚛️ Quantum Resistance
 
