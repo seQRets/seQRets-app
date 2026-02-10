@@ -18,6 +18,7 @@ To restore your original secret, you must bring a specific number of these Qards
 - Optionally add a **keyfile** as a second factor — both password AND keyfile are required for recovery
 - Split into configurable Qards (e.g., 2-of-3, 3-of-5 threshold)
 - Download Qards as QR code images or export as a `.seqrets` vault file
+- **Write to JavaCard smartcard** — store individual shares or full vaults on JCOP3 hardware (desktop only)
 
 ### 🔓 Restore Your Secret
 - **Drag & drop** QR code images from your file system
@@ -25,6 +26,7 @@ To restore your original secret, you must bring a specific number of these Qards
 - **Scan** QR codes with your camera (desktop and web)
 - **Manual text entry** — paste raw share data
 - **Import vault file** — load all shares at once from a `.seqrets` file
+- **Read from smartcard** — load shares or vaults directly from a JavaCard (desktop only)
 - Success sound plays on each accepted share
 
 ### 🛠️ Helper Tools
@@ -59,6 +61,46 @@ The built-in password generator produces passwords with ~10^62 possible combinat
 
 Argon2id's memory-hardness provides additional quantum resistance, and XChaCha20-Poly1305 maintains 128-bit effective quantum security as a defense-in-depth layer.
 
+## 💳 JavaCard Smartcard Support
+
+The desktop app supports storing Shamir shares and encrypted vaults on **JCOP3 JavaCard smartcards** (e.g., J3H145), providing tamper-resistant physical backups that survive fire, water, and digital threats.
+
+### Hardware Requirements
+- **Card:** JCOP3 J3H145 or compatible JavaCard 3.0.4+ smartcard (~110 KB usable EEPROM)
+- **Reader:** Any PC/SC-compatible USB smart card reader
+
+### Features
+- **Write individual shares** or **full vaults** to a card via APDU over PC/SC
+- **Read back** shares or vaults directly from a card into the restore workflow
+- **Optional PIN protection** (8-16 characters) — card locks after 3 wrong attempts
+- **Data chunking** — automatically handles payloads larger than the 240-byte APDU limit
+- **Overwrite & erase** confirmations to prevent accidental data loss
+
+### Applet Installation
+
+The SeQRets JavaCard applet must be installed on each card before use. Requires JDK 11, Apache Ant, and [GlobalPlatformPro](https://github.com/martinpaljak/GlobalPlatformPro):
+
+```bash
+cd packages/javacard
+
+# Install build tools (macOS)
+brew install openjdk@11 ant
+
+# Download ant-javacard.jar and gp.jar into lib/
+# Clone oracle_javacard_sdks into sdks/
+
+# Build the applet
+export JAVA_HOME=/opt/homebrew/opt/openjdk@11
+export PATH="$JAVA_HOME/bin:$PATH"
+ant build
+
+# Install on card (card must be in reader)
+java -jar lib/gp.jar --install build/SeQRetsApplet.cap
+```
+
+### Applet AID
+`F0 53 51 52 54 53 01 00 00` — selected automatically by the desktop app.
+
 ## 📁 Project Structure
 
 seQRets is a monorepo with npm workspaces:
@@ -69,9 +111,12 @@ seQRets/
 ├── packages/
 │   ├── crypto/              # @seqrets/crypto — shared cryptography library
 │   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39
-│   └── desktop/             # @seqrets/desktop — Tauri v2 desktop app
-│       ├── src/             #   React + Vite frontend
-│       └── src-tauri/       #   Rust backend + macOS config
+│   ├── desktop/             # @seqrets/desktop — Tauri v2 desktop app
+│   │   ├── src/             #   React + Vite frontend
+│   │   └── src-tauri/       #   Rust backend (PC/SC smartcard + macOS config)
+│   └── javacard/            # JavaCard applet for smartcard storage
+│       ├── src/             #   SeQRetsApplet.java (APDU command handler)
+│       └── build.xml        #   Ant build file (produces .cap)
 ├── package.json             # Root workspace config
 └── README.md
 ```
@@ -85,6 +130,7 @@ seQRets/
 | **Crypto Library** | @noble/ciphers, @noble/hashes, @scure/bip39, shamirs-secret-sharing-ts |
 | **AI Assistant** | Google Gemini (via @google/generative-ai) |
 | **QR Codes** | qrcode (generate), jsQR (decode) |
+| **Smartcard** | JavaCard 3.0.4 applet, Rust pcsc crate, GlobalPlatformPro |
 
 ## 🚀 Getting Started
 
@@ -152,11 +198,11 @@ Your API key is stored locally and never sent to any server other than Google's 
 1. **Enter** your secret (seed phrase, private key, password, or any text)
 2. **Secure** it with a strong password (and optional keyfile)
 3. **Split** into your chosen Qard configuration (e.g., 2-of-3)
-4. **Download** your Qards as QR images, a ZIP, or a `.seqrets` vault file
+4. **Download** your Qards as QR images, a ZIP, a `.seqrets` vault file, or **write to a smartcard**
 
 ### 🔑 Restoring a Secret
 
-1. **Add** the required number of Qards (drag-drop, upload, camera scan, or manual entry)
+1. **Add** the required number of Qards (drag-drop, upload, camera scan, smartcard, or manual entry)
 2. **Enter** your password (and keyfile if used during encryption)
 3. **Restore** — your original secret is revealed
 
