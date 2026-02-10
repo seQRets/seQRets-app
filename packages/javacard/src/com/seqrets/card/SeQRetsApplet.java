@@ -290,14 +290,23 @@ public class SeQRetsApplet extends Applet {
     // ── ERASE_DATA (INS 0x04) ──────────────────────────────────────────
 
     /**
-     * Clear all stored data and metadata. Overwrites with zeros.
+     * Factory reset — clear all stored data, metadata, AND PIN.
+     * After erase, the card is fully clean with no PIN protection.
      */
     private void processEraseData(APDU apdu) {
+        // Clear stored data
         Util.arrayFillNonAtomic(storedData, (short) 0, MAX_DATA_SIZE, (byte) 0x00);
         dataLength = (short) 0;
         dataType = TYPE_EMPTY;
+        // Clear label
         Util.arrayFillNonAtomic(label, (short) 0, MAX_LABEL_SIZE, (byte) 0x00);
         labelLength = (byte) 0;
+        // Clear PIN (full factory reset)
+        Util.arrayFillNonAtomic(pin, (short) 0, MAX_PIN_SIZE, (byte) 0x00);
+        pinLength = (byte) 0;
+        pinSet = false;
+        pinRetries = MAX_PIN_RETRIES;
+        pinVerified[0] = false;
     }
 
     // ── SET_TYPE (INS 0x10) ────────────────────────────────────────────

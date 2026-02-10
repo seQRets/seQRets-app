@@ -247,7 +247,7 @@ export function SmartCardDialog({
 
     try {
       await eraseCard(selectedReader, verifiedPin);
-      toast({ title: 'Card Erased', description: 'All data has been removed from the card.' });
+      toast({ title: 'Card Erased', description: 'All data and PIN have been removed from the card.' });
       setVerifiedPin(null);
       await loadCardStatus();
     } catch (e: any) {
@@ -455,7 +455,7 @@ export function SmartCardDialog({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                This will permanently erase all data on this card. Are you sure?
+                This will permanently erase all data AND remove the PIN from this card. Are you sure?
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" variant="destructive" onClick={handleErase}>
                     Yes, Erase
