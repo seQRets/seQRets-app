@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
+import SmartCardPage from '@/pages/SmartCardPage';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/support" element={<SupportPage />} />
+        <Route path="/smartcard" element={<SmartCardPage />} />
       </Routes>
       <Toaster />
     </ThemeProvider>

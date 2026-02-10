@@ -8,6 +8,7 @@ import {
   Bot,
   Info,
   Home,
+  CreditCard,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
@@ -94,6 +95,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                 <Link to="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
                     <span>About</span>
+                </Link>
+                <Link to="/smartcard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <CreditCard className="h-5 w-5" />
+                    <span>Smart Card</span>
                 </Link>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
@@ -190,6 +195,12 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             <Link to="/about">
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/smartcard">
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Smart Card</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSub>
