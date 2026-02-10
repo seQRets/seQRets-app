@@ -227,6 +227,27 @@ export function RestoreSecretForm() {
     }
   }
 
+  // Try decoding a QR code from an image at a given scale factor.
+  // Upscaling dense QR codes gives jsQR more pixel data per module.
+  const tryDecodeQR = (image: HTMLImageElement, scale: number): string | null => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+
+    canvas.width = image.naturalWidth * scale;
+    canvas.height = image.naturalHeight * scale;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'attemptBoth',
+    });
+    return code?.data ?? null;
+  };
+
   const handleFilesAdded = (files: File[]) => {
     if (files.length === 0) return;
     setError(null);
@@ -237,28 +258,14 @@ export function RestoreSecretForm() {
         reader.onload = (e) => {
             const image = new Image();
             image.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                if (!ctx) {
-                    addShare('', file.name, false);
-                    resolve();
-                    return;
-                }
+                // Try native resolution, then 2x upscale, then 3x upscale
+                // Upscaling helps jsQR decode dense QR codes with small modules
+                const result = tryDecodeQR(image, 1)
+                            ?? tryDecodeQR(image, 2)
+                            ?? tryDecodeQR(image, 3);
 
-                canvas.width = image.naturalWidth;
-                canvas.height = image.naturalHeight;
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(image, 0, 0);
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: 'attemptBoth',
-                });
-
-                if (code) {
-                    addShare(code.data, file.name, true);
+                if (result) {
+                    addShare(result, file.name, true);
                 } else {
                     addShare('', file.name, false);
                 }

@@ -373,7 +373,8 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
                 const errorCorrectionLevel = share.length > 200 ? 'L' : 'M';
                 return QRCode.toDataURL(share, {
                     errorCorrectionLevel,
-                    margin: 1,
+                    margin: 2,
+                    width: 800,
                 }).catch(err => {
                     console.error("QR generation failed for a share:", err);
                     return null;
