@@ -101,15 +101,15 @@ export default function AboutPage() {
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm text-muted-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                            <div className="p-4 rounded-lg border bg-muted/50 text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary">1.</span> <span className="text-foreground">Secure</span></p>
                                 <p>Your secret is encrypted with a strong password (and optional keyfile) using military-grade cryptography.</p>
                             </div>
-                            <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                            <div className="p-4 rounded-lg border bg-muted/50 text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary">2.</span> <span className="text-foreground">Split</span></p>
                                 <p>The encrypted data is split into multiple Qard backups using Shamir's Secret Sharing. No single Qard reveals anything.</p>
                             </div>
-                            <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                            <div className="p-4 rounded-lg border bg-muted/50 text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary">3.</span> <span className="text-foreground">Share</span></p>
                                 <p>Print, download, or export your Qards. Give them to trusted family members, lawyers, or store in secure locations.</p>
                             </div>

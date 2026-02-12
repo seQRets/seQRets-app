@@ -319,7 +319,7 @@ export async function decryptVault(salt: string, data: string, password: string)
     return textDecoder.decode(decompressed);
 }
 
-export async function encryptInstructions(instructions: RawInstruction, password: string, firstShare: string): Promise<EncryptedInstruction> {
+export async function encryptInstructions(instructions: RawInstruction, password: string, firstShare: string, keyfile?: string): Promise<EncryptedInstruction> {
     const parts = firstShare.split('|');
     if (parts.length !== 3 || parts[0] !== 'seQRets') {
          throw new Error('Invalid or corrupted share format provided for salt extraction.');
@@ -327,9 +327,8 @@ export async function encryptInstructions(instructions: RawInstruction, password
     const saltBase64 = parts[1];
     const salt = Buffer.from(saltBase64, 'base64');
 
-    // We don't use a keyfile when encrypting instructions this way for simplicity.
-    // The main security comes from the password.
-    const passwordDerivedKey = await deriveKey(password, salt);
+    const keyfileBytes = keyfile ? Buffer.from(keyfile, 'base64') : undefined;
+    const passwordDerivedKey = await deriveKey(password, salt, keyfileBytes);
 
     const instructionsPayload = JSON.stringify(instructions);
     const instructionsBytes = textEncoder.encode(instructionsPayload);

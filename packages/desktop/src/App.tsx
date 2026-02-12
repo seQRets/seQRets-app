@@ -5,6 +5,7 @@ import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
 import SmartCardPage from '@/pages/SmartCardPage';
+import InstructionsPage from '@/pages/InstructionsPage';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/smartcard" element={<SmartCardPage />} />
+        <Route path="/instructions" element={<InstructionsPage />} />
       </Routes>
       <Toaster />
     </ThemeProvider>

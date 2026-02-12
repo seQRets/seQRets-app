@@ -7,7 +7,7 @@ import './buffer-setup';
 
 async function initWorker() {
     // Step 2: Now that Buffer is globally available, import crypto functions.
-    const { createShares, restoreSecret, decryptInstructions, encryptVault, decryptVault } = await import('./crypto');
+    const { createShares, restoreSecret, decryptInstructions, encryptInstructions, encryptVault, decryptVault } = await import('./crypto');
 
     self.addEventListener('message', async (event: MessageEvent<{ type: string, payload: any }>) => {
         const { type, payload } = event.data;
@@ -22,6 +22,9 @@ async function initWorker() {
             } else if (type === 'decryptInstructions') {
                 const result = await decryptInstructions(payload);
                 self.postMessage({ type: 'decryptInstructionsSuccess', payload: result });
+            } else if (type === 'encryptInstructions') {
+                const result = await encryptInstructions(payload.instructions, payload.password, payload.firstShare, payload.keyfile);
+                self.postMessage({ type: 'encryptInstructionsSuccess', payload: result });
             } else if (type === 'encryptVault') {
                 const result = await encryptVault(payload.jsonString, payload.password);
                 self.postMessage({ type: 'encryptVaultSuccess', payload: result });
@@ -37,6 +40,8 @@ async function initWorker() {
                 self.postMessage({ type: 'restoreSecretError', payload: error });
             } else if (type === 'decryptInstructions') {
                 self.postMessage({ type: 'decryptInstructionsError', payload: error });
+            } else if (type === 'encryptInstructions') {
+                self.postMessage({ type: 'encryptInstructionsError', payload: error });
             } else if (type === 'encryptVault') {
                 self.postMessage({ type: 'encryptVaultError', payload: error });
             } else if (type === 'decryptVault') {

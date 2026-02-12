@@ -9,6 +9,7 @@ import {
   Info,
   Home,
   CreditCard,
+  FileText,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
@@ -91,6 +92,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                  <Link to="/support" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Bot className="h-5 w-5" />
                     <span>Ask Bob AI</span>
+                </Link>
+                <Link to="/instructions" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <FileText className="h-5 w-5" />
+                    <span>Inheritance Plan</span>
                 </Link>
                 <Link to="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
@@ -189,6 +194,12 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             <Link to="/support">
               <Bot className="mr-2 h-4 w-4" />
               <span>Ask Bob AI</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/instructions">
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Inheritance Plan</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

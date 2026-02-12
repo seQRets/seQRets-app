@@ -49,7 +49,7 @@
     --primary-foreground: 0 7% 3%;      /* #080707 — dark text on light buttons */
     --secondary: 340 4% 16%;           /* darker charcoal */
     --secondary-foreground: 37 10% 89%;
-    --muted: 340 4% 18%;               /* dark warm gray */
+    --muted: 340 4% 25%;               /* dark warm gray — lightened for contrast */
     --muted-foreground: 40 8% 55%;     /* warm medium gray */
     --accent: 40 14% 79%;              /* #d3cdc1 warm tan accent */
     --accent-foreground: 0 7% 3%;      /* #080707 */

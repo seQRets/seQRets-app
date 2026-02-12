@@ -11,6 +11,7 @@ import {
   Bot,
   Info,
   Home,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -94,6 +95,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                  <Link href="/support" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Bot className="h-5 w-5" />
                     <span>Ask Bob AI</span>
+                </Link>
+                <Link href="/instructions" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <FileText className="h-5 w-5" />
+                    <span>Inheritance Plan</span>
                 </Link>
                 <Link href="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
@@ -188,6 +193,12 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             <Link href="/support">
               <Bot className="mr-2 h-4 w-4" />
               <span>Ask Bob AI</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/instructions">
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Inheritance Plan</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

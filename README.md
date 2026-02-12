@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="public/icons/logo-dark.png" alt="seQRets Logo" width="200" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/icons/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="public/icons/logo-light.png" />
+    <img src="public/icons/logo-dark.png" alt="seQRets Logo" width="200" />
+  </picture>
 </p>
 
 <h1 align="center">seQRets</h1>
