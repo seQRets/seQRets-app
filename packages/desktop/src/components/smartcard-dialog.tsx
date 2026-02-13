@@ -170,6 +170,12 @@ export function SmartCardDialog({
       setPinInput('');
     } catch (e: any) {
       setActionError(e?.toString() || 'PIN verification failed');
+      // Reload card status to get updated pin_retries_remaining from the card
+      try {
+        await loadCardStatus(selectedReader, null);
+      } catch {
+        // Ignore — status reload is best-effort
+      }
     } finally {
       setIsPinVerifying(false);
     }
@@ -445,6 +451,14 @@ export function SmartCardDialog({
                   {isPinVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
                 </Button>
               </div>
+              {cardStatus && cardStatus.pin_set && cardStatus.pin_retries_remaining < 5 && (
+                <p className={cn(
+                  'text-xs font-medium',
+                  cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                )}>
+                  ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before card locks permanently.
+                </p>
+              )}
             </div>
           )}
 

@@ -256,8 +256,9 @@ public class SeQRetsApplet extends Applet {
      *   [2]    data type (0x00=empty, 0x01=share, 0x02=vault)
      *   [3]    pin set flag (0x00=no, 0x01=yes)
      *   [4]    pin verified flag (0x00=no, 0x01=yes)
-     *   [5]    label length (1 byte)
-     *   [6..]  label bytes (up to 64)
+     *   [5]    pin retries remaining (0-5)
+     *   [6]    label length (1 byte)
+     *   [7..]  label bytes (up to 64)
      */
     private void processGetStatus(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
@@ -276,6 +277,9 @@ public class SeQRetsApplet extends Applet {
 
         // PIN verified flag
         buffer[offset++] = pinVerified[0] ? (byte) 0x01 : (byte) 0x00;
+
+        // PIN retries remaining
+        buffer[offset++] = pinRetries;
 
         // Label length
         buffer[offset++] = labelLength;

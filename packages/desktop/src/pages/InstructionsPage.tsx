@@ -468,8 +468,8 @@ export default function InstructionsPage() {
                       <div className="space-y-3">
                         <div
                           className={cn(
-                            'relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                            isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted'
+                            'relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+                            isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 bg-muted/60 hover:border-primary/50 hover:bg-muted'
                           )}
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
@@ -477,9 +477,9 @@ export default function InstructionsPage() {
                           onDrop={handleDecryptFileDrop}
                           onClick={() => document.getElementById('decrypt-instructions-input')?.click()}
                         >
-                          <FileDown className="w-12 h-12 text-muted-foreground mb-4" />
-                          <p className="text-lg font-medium">Drag & drop your encrypted instructions file here</p>
-                          <p className="text-muted-foreground">or click to browse</p>
+                          <FileDown className="w-10 h-10 text-muted-foreground mb-3" />
+                          <p className="text-base font-medium">Drag & drop your encrypted instructions file here</p>
+                          <p className="text-sm text-muted-foreground">or click to browse</p>
                           <input
                             id="decrypt-instructions-input"
                             type="file"

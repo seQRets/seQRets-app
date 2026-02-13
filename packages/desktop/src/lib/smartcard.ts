@@ -32,6 +32,7 @@ export interface CardStatus {
   items: CardItemSummary[];
   pin_set: boolean;
   pin_verified: boolean;
+  pin_retries_remaining: number;
   free_bytes_estimate: number;
 }
 

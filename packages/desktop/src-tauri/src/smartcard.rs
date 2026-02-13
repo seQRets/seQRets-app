@@ -66,6 +66,7 @@ pub struct CardStatus {
     pub items: Vec<CardItemSummary>,
     pub pin_set: bool,
     pub pin_verified: bool,
+    pub pin_retries_remaining: u8,
     pub free_bytes_estimate: i32,
 }
 
@@ -341,7 +342,7 @@ pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus
 
     let resp = send_apdu(&card, CLA, INS_GET_STATUS, 0x00, 0x00, &[])?;
 
-    if resp.len() < 6 {
+    if resp.len() < 7 {
         disconnect_with_reset(card);
         return Err("Invalid status response from card".to_string());
     }
@@ -350,10 +351,11 @@ pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus
     let data_type_byte = resp[2];
     let pin_set = resp[3] == 0x01;
     let pin_verified = resp[4] == 0x01;
-    let label_length = resp[5] as usize;
+    let pin_retries_remaining = resp[5];
+    let label_length = resp[6] as usize;
 
-    let label = if label_length > 0 && resp.len() >= 6 + label_length {
-        String::from_utf8_lossy(&resp[6..6 + label_length]).to_string()
+    let label = if label_length > 0 && resp.len() >= 7 + label_length {
+        String::from_utf8_lossy(&resp[7..7 + label_length]).to_string()
     } else {
         String::new()
     };
@@ -428,6 +430,7 @@ pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus
         items,
         pin_set,
         pin_verified,
+        pin_retries_remaining,
         free_bytes_estimate,
     })
 }

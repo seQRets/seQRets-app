@@ -125,6 +125,8 @@ The desktop app supports storing Shamir shares, encrypted vaults, and encrypted 
 - **Multi-item storage** — store multiple items (shares, vaults, instructions) on a single card up to ~8 KB; new writes append to existing data
 - **Per-item management** — view, select, and delete individual items from the Smart Card Manager page
 - **Optional PIN protection** (8-16 characters) — card locks after 5 wrong attempts
+- **PIN retry countdown** — real-time display of remaining PIN attempts (color-coded: gray → amber → red) across both the Smart Card Manager page and the smart card dialog
+- **Generate PIN** — CSPRNG-powered 16-character PIN generator (upper/lowercase, numbers, symbols) with copy-to-clipboard and reveal/hide toggle
 - **Data chunking** — automatically handles payloads larger than the 240-byte APDU limit
 - **Erase** confirmation to prevent accidental data loss
 

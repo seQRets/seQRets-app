@@ -37,6 +37,10 @@ import {
   Lock,
   LockOpen,
   CheckCircle2,
+  Dices,
+  Eye,
+  EyeOff,
+  Copy,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/header';
@@ -81,12 +85,14 @@ export default function SmartCardPage() {
   const [newPinInput, setNewPinInput] = useState('');
   const [confirmPinInput, setConfirmPinInput] = useState('');
   const [isSettingPin, setIsSettingPin] = useState(false);
+  const [newPinVisible, setNewPinVisible] = useState(false);
 
   // ── Change PIN state ─────────────────────────────────────────────
   const [oldPinInput, setOldPinInput] = useState('');
   const [changePinInput, setChangePinInput] = useState('');
   const [confirmChangePinInput, setConfirmChangePinInput] = useState('');
   const [isChangingPin, setIsChangingPin] = useState(false);
+  const [changePinVisible, setChangePinVisible] = useState(false);
 
   // ── Erase state ──────────────────────────────────────────────────
   const [isErasing, setIsErasing] = useState(false);
@@ -150,9 +156,11 @@ export default function SmartCardPage() {
       setUnlockPinInput('');
       setNewPinInput('');
       setConfirmPinInput('');
+      setNewPinVisible(false);
       setOldPinInput('');
       setChangePinInput('');
       setConfirmChangePinInput('');
+      setChangePinVisible(false);
       setActionError(null);
       loadCardStatus(selectedReader, null);
     }
@@ -172,6 +180,12 @@ export default function SmartCardPage() {
       setUnlockPinInput('');
     } catch (e: any) {
       setActionError(e?.toString() || 'PIN verification failed');
+      // Reload card status to get updated pin_retries_remaining from the card
+      try {
+        await loadCardStatus(selectedReader, null);
+      } catch {
+        // Ignore — status reload is best-effort
+      }
     } finally {
       setIsUnlocking(false);
     }
@@ -292,6 +306,19 @@ export default function SmartCardPage() {
     changePinInput.length >= 8 &&
     changePinInput.length <= 16 &&
     changePinInput === confirmChangePinInput;
+
+  // ── Generate cryptographically secure PIN ──────────────────────────
+  const generatePin = () => {
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const length = 16;
+    const randomValues = new Uint32Array(length);
+    window.crypto.getRandomValues(randomValues);
+    let pin = '';
+    for (let i = 0; i < length; i++) {
+      pin += charset[randomValues[i] % charset.length];
+    }
+    return pin;
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12">
@@ -429,6 +456,11 @@ export default function SmartCardPage() {
                           <>
                             <Lock className="h-4 w-4 text-primary" />
                             <span className="text-sm font-medium text-primary">PIN Protected — Locked</span>
+                            {cardStatus.pin_retries_remaining < 5 && (
+                              <span className={`text-xs font-medium ${cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                                ({cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} left)
+                              </span>
+                            )}
                           </>
                         )
                       ) : (
@@ -559,6 +591,11 @@ export default function SmartCardPage() {
                     {isUnlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
                   </Button>
                 </div>
+                {cardStatus.pin_retries_remaining < 5 && (
+                  <p className={`text-sm font-medium mt-2 ${cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                    ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before the card locks permanently.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
@@ -607,81 +644,155 @@ export default function SmartCardPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="new-pin-change">New PIN (8-16 characters)</Label>
-                      <Input
-                        id="new-pin-change"
-                        type="password"
-                        placeholder="Enter new PIN"
-                        maxLength={16}
-                        value={changePinInput}
-                        onChange={(e) => setChangePinInput(e.target.value)}
-                        disabled={isChangingPin}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="new-pin-change"
+                          type={changePinVisible ? 'text' : 'password'}
+                          placeholder="Enter new PIN"
+                          maxLength={16}
+                          value={changePinInput}
+                          onChange={(e) => setChangePinInput(e.target.value)}
+                          disabled={isChangingPin}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setChangePinVisible(!changePinVisible)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+                          aria-label={changePinVisible ? 'Hide PIN' : 'Show PIN'}
+                        >
+                          {changePinVisible ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="confirm-pin-change">Confirm New PIN</Label>
-                      <Input
-                        id="confirm-pin-change"
-                        type="password"
-                        placeholder="Re-enter new PIN"
-                        maxLength={16}
-                        value={confirmChangePinInput}
-                        onChange={(e) => setConfirmChangePinInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && changePinValid) handleChangePin();
-                        }}
-                        disabled={isChangingPin}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="confirm-pin-change"
+                          type={changePinVisible ? 'text' : 'password'}
+                          placeholder="Re-enter new PIN"
+                          maxLength={16}
+                          value={confirmChangePinInput}
+                          onChange={(e) => setConfirmChangePinInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && changePinValid) handleChangePin();
+                          }}
+                          disabled={isChangingPin}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setChangePinVisible(!changePinVisible)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+                          aria-label={changePinVisible ? 'Hide PIN' : 'Show PIN'}
+                        >
+                          {changePinVisible ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                       {confirmChangePinInput && changePinInput !== confirmChangePinInput && (
                         <p className="text-xs text-destructive">PINs do not match.</p>
                       )}
                     </div>
-                    <Button
-                      onClick={handleChangePin}
-                      disabled={!changePinValid || isChangingPin}
-                      className="w-full sm:w-auto"
-                    >
-                      {isChangingPin ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Changing PIN...
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          Change PIN
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (changePinInput) {
+                            navigator.clipboard.writeText(changePinInput);
+                            toast({ title: 'Copied to clipboard!', description: 'Your PIN has been copied.' });
+                          }
+                        }}
+                        disabled={!changePinInput}
+                        aria-label="Copy PIN"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const pin = generatePin();
+                          setChangePinInput(pin);
+                          setConfirmChangePinInput(pin);
+                          navigator.clipboard.writeText(pin);
+                          toast({ title: 'PIN Generated & Copied', description: 'A secure 16-character PIN has been generated and copied to your clipboard. Save it somewhere safe!' });
+                        }}
+                        disabled={isChangingPin}
+                      >
+                        <Dices className="mr-2 h-4 w-4" />
+                        Generate PIN
+                      </Button>
+                      <Button
+                        onClick={handleChangePin}
+                        disabled={!changePinValid || isChangingPin}
+                        className="ml-auto"
+                      >
+                        {isChangingPin ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Changing PIN...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Change PIN
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   /* ── Set PIN Form ── */
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="new-pin">New PIN (8-16 characters)</Label>
-                      <Input
-                        id="new-pin"
-                        type="password"
-                        placeholder="Enter PIN"
-                        maxLength={16}
-                        value={newPinInput}
-                        onChange={(e) => setNewPinInput(e.target.value)}
-                        disabled={isSettingPin}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="new-pin"
+                          type={newPinVisible ? 'text' : 'password'}
+                          placeholder="Enter PIN"
+                          maxLength={16}
+                          value={newPinInput}
+                          onChange={(e) => setNewPinInput(e.target.value)}
+                          disabled={isSettingPin}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewPinVisible(!newPinVisible)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+                          aria-label={newPinVisible ? 'Hide PIN' : 'Show PIN'}
+                        >
+                          {newPinVisible ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="confirm-pin">Confirm PIN</Label>
-                      <Input
-                        id="confirm-pin"
-                        type="password"
-                        placeholder="Re-enter PIN"
-                        maxLength={16}
-                        value={confirmPinInput}
-                        onChange={(e) => setConfirmPinInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && setPinValid) handleSetPin();
-                        }}
-                        disabled={isSettingPin}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="confirm-pin"
+                          type={newPinVisible ? 'text' : 'password'}
+                          placeholder="Re-enter PIN"
+                          maxLength={16}
+                          value={confirmPinInput}
+                          onChange={(e) => setConfirmPinInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && setPinValid) handleSetPin();
+                          }}
+                          disabled={isSettingPin}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewPinVisible(!newPinVisible)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+                          aria-label={newPinVisible ? 'Hide PIN' : 'Show PIN'}
+                        >
+                          {newPinVisible ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                       {confirmPinInput && newPinInput !== confirmPinInput && (
                         <p className="text-xs text-destructive">PINs do not match.</p>
                       )}
@@ -689,23 +800,53 @@ export default function SmartCardPage() {
                     <p className="text-xs text-muted-foreground">
                       Use a mix of upper/lowercase letters, numbers, and symbols for a strong PIN.
                     </p>
-                    <Button
-                      onClick={handleSetPin}
-                      disabled={!setPinValid || isSettingPin}
-                      className="w-full sm:w-auto"
-                    >
-                      {isSettingPin ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Setting PIN...
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          Set PIN
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (newPinInput) {
+                            navigator.clipboard.writeText(newPinInput);
+                            toast({ title: 'Copied to clipboard!', description: 'Your PIN has been copied.' });
+                          }
+                        }}
+                        disabled={!newPinInput}
+                        aria-label="Copy PIN"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const pin = generatePin();
+                          setNewPinInput(pin);
+                          setConfirmPinInput(pin);
+                          navigator.clipboard.writeText(pin);
+                          toast({ title: 'PIN Generated & Copied', description: 'A secure 16-character PIN has been generated and copied to your clipboard. Save it somewhere safe!' });
+                        }}
+                        disabled={isSettingPin}
+                      >
+                        <Dices className="mr-2 h-4 w-4" />
+                        Generate PIN
+                      </Button>
+                      <Button
+                        onClick={handleSetPin}
+                        disabled={!setPinValid || isSettingPin}
+                        className="ml-auto"
+                      >
+                        {isSettingPin ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Setting PIN...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Set PIN
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
