@@ -45,7 +45,7 @@ To restore your original secret, you must bring a specific number of these Qards
 - Password generator with the same 24-character multi-character-class requirement
 - Optional keyfile support for additional security
 - **Save to File** (as `seqrets-instructions.json`) and/or **Write to Smart Card** (desktop only, if encrypted size ≤ 8 KB)
-- Decrypt tab to restore the original document from the encrypted `.json` file
+- Decrypt tab to restore the original document from the encrypted `.json` file or **load from Smart Card** (desktop only)
 - Available on both web and desktop
 
 ### 🛠️ Helper Tools
@@ -69,6 +69,7 @@ All cryptographic operations run **entirely on your device**. Your secrets never
 | **Nonce** | 24 random bytes | Per-encryption nonce for XChaCha20 |
 | **Splitting** | Shamir's Secret Sharing | Threshold-based secret splitting into Qards |
 | **Compression** | Gzip (level 9) | Reduce payload size before encryption |
+| **RNG** | Web Crypto API CSPRNG (`crypto.getRandomValues()`) | All random bytes — salts, nonces, passwords, seed entropy, keyfiles |
 | **Memory** | Secure wipe | Overwrite sensitive data with random bytes after use |
 
 ### 🔗 Encrypt-First Architecture (Security by Design)
@@ -94,6 +95,21 @@ The built-in password generator produces passwords with ~10^62 possible combinat
 - **Realistic estimate:** ~2 × 10^23 years (148 trillion × the age of the universe)
 
 Argon2id's memory-hardness provides additional quantum resistance, and XChaCha20-Poly1305 maintains 128-bit effective quantum security as a defense-in-depth layer.
+
+### 🎲 Random Number Generation (CSPRNG)
+
+All randomness in seQRets is sourced from a **Cryptographically Secure Pseudo-Random Number Generator (CSPRNG)** — the Web Crypto API's `crypto.getRandomValues()`, which draws from the operating system's entropy pool (`/dev/urandom` on Linux/macOS, `BCryptGenRandom` on Windows).
+
+| Operation | Entropy | Method |
+|-----------|---------|--------|
+| **Seed phrase (12 words)** | 128 bits | `@scure/bip39` → `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Seed phrase (24 words)** | 256 bits | `@scure/bip39` → `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Password generation** | 32 × 32-bit values | `window.crypto.getRandomValues(new Uint32Array(32))` mapped to 88-char charset |
+| **Keyfile generation** | 256 bits | `window.crypto.getRandomValues(new Uint8Array(32))` |
+| **Encryption salt** | 128 bits (16 bytes) | `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Encryption nonce** | 192 bits (24 bytes) | `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+
+No `Math.random()` or any other weak PRNG is used for any security-critical operation.
 
 ## 💳 JavaCard Smartcard Support
 
@@ -258,7 +274,7 @@ Your API key is stored locally and never sent to any server other than Google's 
 3. **Encrypt** — the file is encrypted with XChaCha20-Poly1305
 4. **Save** — choose **Save to File** (downloads `seqrets-instructions.json`) and/or **Write to Smart Card** (desktop only, for files under 8 KB)
 
-To decrypt, upload the encrypted `.json` file with the same password (and keyfile if used).
+To decrypt, upload the encrypted `.json` file or **load from a smart card** (desktop only), then provide the same password (and keyfile if used).
 
 ## 🤝 Contributing
 

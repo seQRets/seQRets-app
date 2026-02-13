@@ -24,6 +24,7 @@ pub fn run() {
       smartcard::read_card_item,
       smartcard::delete_card_item,
       smartcard::erase_card,
+      smartcard::force_erase_card,
       smartcard::verify_pin,
       smartcard::set_pin,
       smartcard::change_pin,

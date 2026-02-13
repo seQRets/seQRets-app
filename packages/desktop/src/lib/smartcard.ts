@@ -77,6 +77,10 @@ export const deleteCardItem = (reader: string, index: number, pin?: string | nul
 export const eraseCard = (reader: string, pin?: string | null) =>
   invoke<void>('erase_card', { reader, pin: pin || null });
 
+/** Force-erase a card without PIN verification (for locked card recovery). */
+export const forceEraseCard = (reader: string) =>
+  invoke<void>('force_erase_card', { reader });
+
 // ── PIN operations ──────────────────────────────────────────────────────
 
 /** Verify the PIN on the card. */

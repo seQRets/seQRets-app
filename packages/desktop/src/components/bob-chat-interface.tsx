@@ -1,20 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Loader2, Send, User, ExternalLink, KeyRound } from "lucide-react";
+import { Bot, Loader2, Send, User, ExternalLink, KeyRound, Eraser } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { askBob, getApiKey, removeApiKey } from '@/lib/bob-api';
+import { askBob, getApiKey, removeApiKey, getChatHistory, saveChatHistory, clearChatHistory } from '@/lib/bob-api';
+import type { ChatMessage } from '@/lib/bob-api';
 import { BobSetupGuide } from '@/components/bob-setup-guide';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-
-type ChatMessage = {
-    role: 'user' | 'model';
-    content: string;
-};
 
 interface BobChatInterfaceProps {
   initialMessage?: string;
@@ -23,18 +19,38 @@ interface BobChatInterfaceProps {
 
 export function BobChatInterface({ initialMessage, showLinkToFullPage = false }: BobChatInterfaceProps) {
     const { toast } = useToast();
-    const [conversation, setConversation] = useState<ChatMessage[]>([]);
+    const [conversation, setConversation] = useState<ChatMessage[]>(() => {
+        // Load persisted history on mount, or fall back to initial greeting
+        const saved = getChatHistory();
+        if (saved.length > 0) return saved;
+        if (initialMessage) return [{ role: 'model' as const, content: initialMessage }];
+        return [];
+    });
     const [message, setMessage] = useState('');
     const [isPending, setIsPending] = useState(false);
     const viewportRef = useRef<HTMLDivElement>(null);
     const [hasApiKey, setHasApiKey] = useState(() => !!getApiKey());
 
-    // Hooks must always be called in the same order — never after a conditional return
+    // Persist conversation to localStorage whenever it changes
     useEffect(() => {
-        if (hasApiKey && initialMessage && conversation.length === 0) {
-            setConversation([{ role: 'model', content: initialMessage }]);
+        if (conversation.length > 0) {
+            saveChatHistory(conversation);
         }
-    }, [hasApiKey, initialMessage, conversation.length]);
+    }, [conversation]);
+
+    // Listen for storage events so the popover and full page stay in sync
+    useEffect(() => {
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === 'bob-chat-history' && e.newValue) {
+                try {
+                    const updated = JSON.parse(e.newValue) as ChatMessage[];
+                    setConversation(updated);
+                } catch { /* ignore parse errors */ }
+            }
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
 
     if (!hasApiKey) {
         return <BobSetupGuide onKeyConfigured={() => setHasApiKey(true)} />;
@@ -44,6 +60,15 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         removeApiKey();
         setConversation([]);
         setHasApiKey(false);
+    };
+
+    const handleClearChat = () => {
+        clearChatHistory();
+        const fresh: ChatMessage[] = initialMessage
+            ? [{ role: 'model', content: initialMessage }]
+            : [];
+        setConversation(fresh);
+        saveChatHistory(fresh);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -146,6 +171,18 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
                            Open in full page
                            <ExternalLink className="ml-2 h-4 w-4"/>
                         </Link>
+                    </Button>
+                )}
+                {!showLinkToFullPage && (
+                    <Button
+                        variant="link"
+                        size="sm"
+                        onClick={handleClearChat}
+                        disabled={conversation.length <= 1}
+                        className="text-muted-foreground hover:text-foreground"
+                    >
+                        <Eraser className="mr-1 h-3 w-3" />
+                        Clear Chat
                     </Button>
                 )}
                 <Button

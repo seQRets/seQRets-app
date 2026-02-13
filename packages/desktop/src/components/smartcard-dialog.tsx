@@ -25,6 +25,7 @@ import {
   writeItemToCard,
   readCardItem,
   eraseCard,
+  forceEraseCard,
   verifyPin,
   setPin,
   CardStatus,
@@ -252,7 +253,12 @@ export function SmartCardDialog({
     setShowEraseConfirm(false);
 
     try {
-      await eraseCard(selectedReader, verifiedPin);
+      // Use force erase when PIN is locked/unverified
+      if (needsPinVerification) {
+        await forceEraseCard(selectedReader);
+      } else {
+        await eraseCard(selectedReader, verifiedPin);
+      }
       toast({ title: 'Card Erased', description: 'All data and PIN have been removed from the card.' });
       setVerifiedPin(null);
       await loadCardStatus();
@@ -567,17 +573,17 @@ export function SmartCardDialog({
             </Button>
           )}
 
-          {/* Erase button (always available when card has data) */}
-          {cardStatus?.has_data && !actionComplete && !showEraseConfirm && (
+          {/* Erase button (always available when card has data or is locked) */}
+          {(cardStatus?.has_data || (cardStatus?.pin_set && needsPinVerification)) && !actionComplete && !showEraseConfirm && (
             <Button
               variant="outline"
               size="sm"
               onClick={handleErase}
-              disabled={isErasing || !!needsPinVerification}
-              className="text-red-600 border-red-300 hover:bg-red-50"
+              disabled={isErasing}
+              className="text-red-600 border-red-300 hover:bg-red-50 dark:border-red-500/40 dark:hover:bg-red-500/10"
             >
               <Trash2 className="mr-1 h-3 w-3" />
-              Erase Card
+              {needsPinVerification ? 'Factory Reset' : 'Erase Card'}
             </Button>
           )}
 

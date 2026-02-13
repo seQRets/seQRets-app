@@ -142,7 +142,9 @@ public class SeQRetsApplet extends Applet {
                 processGetStatus(apdu);
                 break;
             case INS_ERASE_DATA:
-                checkPinIfRequired();
+                // Factory reset always allowed — even on locked cards.
+                // This is the recovery mechanism when the PIN is lost or
+                // the card is locked after too many wrong PIN attempts.
                 processEraseData(apdu);
                 break;
             case INS_SET_TYPE:

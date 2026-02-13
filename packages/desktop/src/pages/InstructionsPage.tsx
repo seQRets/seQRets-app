@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type { RawInstruction, DecryptInstructionRequest, EncryptedInstruction } from '@/lib/types';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
+import type { CardItem } from '@/lib/smartcard';
 import { saveFileNative, saveTextFileNative, base64ToUint8Array } from '@/lib/native-save';
 import logoLight from '@/assets/icons/logo-light.png';
 import logoDark from '@/assets/icons/logo-dark.png';
@@ -59,6 +60,7 @@ export default function InstructionsPage() {
   const [decryptFile, setDecryptFile] = useState<File | null>(null);
   const [decryptFileName, setDecryptFileName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showDecryptSmartCardDialog, setShowDecryptSmartCardDialog] = useState(false);
   const [decryptPassword, setDecryptPassword] = useState('');
   const [decryptPasswordVisible, setDecryptPasswordVisible] = useState(false);
   const [decryptUseKeyfile, setDecryptUseKeyfile] = useState(false);
@@ -175,6 +177,20 @@ export default function InstructionsPage() {
     }
   };
 
+  const handleDecryptSmartCardRead = (cardItem: CardItem) => {
+    if (cardItem.item_type !== 'instructions') {
+      toast({ variant: 'destructive', title: 'Wrong Item Type', description: `Expected an instructions item but got "${cardItem.item_type}". Please select the correct item.` });
+      return;
+    }
+    // Convert the card data string into a File so the existing decrypt flow works unchanged
+    const blob = new Blob([cardItem.data], { type: 'application/json' });
+    const file = new File([blob], 'seqrets-instructions.json', { type: 'application/json' });
+    setDecryptFile(file);
+    setDecryptFileName(`Smart Card: ${cardItem.label || 'Inheritance Plan'}`);
+    setShowDecryptSmartCardDialog(false);
+    toast({ title: 'Loaded from Smart Card', description: 'Encrypted instructions loaded successfully.' });
+  };
+
   const handleDecrypt = () => {
     if (!decryptFile || !decryptPassword) return;
     if (decryptUseKeyfile && !decryptKeyfile) {
@@ -205,6 +221,7 @@ export default function InstructionsPage() {
     setDecryptUseKeyfile(false);
     setDecryptKeyfile(null);
     setDecryptKeyfileName(null);
+    setShowDecryptSmartCardDialog(false);
     setDecryptStep(1);
   };
 
@@ -448,27 +465,42 @@ export default function InstructionsPage() {
                         </Button>
                       </div>
                     ) : (
-                      <div
-                        className={cn(
-                          'relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                          isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted'
-                        )}
-                        onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
-                        onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
-                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                        onDrop={handleDecryptFileDrop}
-                        onClick={() => document.getElementById('decrypt-instructions-input')?.click()}
-                      >
-                        <FileDown className="w-12 h-12 text-muted-foreground mb-4" />
-                        <p className="text-lg font-medium">Drag & drop your encrypted instructions file here</p>
-                        <p className="text-muted-foreground">or click to browse</p>
-                        <input
-                          id="decrypt-instructions-input"
-                          type="file"
-                          accept=".json"
-                          className="hidden"
-                          onChange={(e) => e.target.files && handleDecryptFileSelect(e.target.files[0])}
-                        />
+                      <div className="space-y-3">
+                        <div
+                          className={cn(
+                            'relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+                            isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted'
+                          )}
+                          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDrop={handleDecryptFileDrop}
+                          onClick={() => document.getElementById('decrypt-instructions-input')?.click()}
+                        >
+                          <FileDown className="w-12 h-12 text-muted-foreground mb-4" />
+                          <p className="text-lg font-medium">Drag & drop your encrypted instructions file here</p>
+                          <p className="text-muted-foreground">or click to browse</p>
+                          <input
+                            id="decrypt-instructions-input"
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            onChange={(e) => e.target.files && handleDecryptFileSelect(e.target.files[0])}
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Separator className="flex-1" />
+                          <span className="text-sm text-muted-foreground">or</span>
+                          <Separator className="flex-1" />
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShowDecryptSmartCardDialog(true)}
+                        >
+                          <CreditCard className="mr-2 h-5 w-5" />
+                          Load from Smart Card
+                        </Button>
                       </div>
                     )}
                     {decryptStep === 1 && (
@@ -609,6 +641,14 @@ export default function InstructionsPage() {
         writeData={encryptedResult ? JSON.stringify(encryptedResult) : undefined}
         writeLabel="Inheritance Plan"
         writeItemType="instructions"
+      />
+
+      {/* Smart Card Dialog for reading encrypted instructions */}
+      <SmartCardDialog
+        open={showDecryptSmartCardDialog}
+        onOpenChange={setShowDecryptSmartCardDialog}
+        mode="read"
+        onDataRead={handleDecryptSmartCardRead}
       />
     </main>
   );

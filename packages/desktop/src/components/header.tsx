@@ -97,13 +97,13 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                     <FileText className="h-5 w-5" />
                     <span>Inheritance Plan</span>
                 </Link>
-                <Link to="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                    <Info className="h-5 w-5" />
-                    <span>About</span>
-                </Link>
                 <Link to="/smartcard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <CreditCard className="h-5 w-5" />
                     <span>Smart Card</span>
+                </Link>
+                <Link to="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <Info className="h-5 w-5" />
+                    <span>About</span>
                 </Link>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
@@ -203,15 +203,15 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/about">
-              <Info className="mr-2 h-4 w-4" />
-              <span>About</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link to="/smartcard">
               <CreditCard className="mr-2 h-4 w-4" />
               <span>Smart Card</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/about">
+              <Info className="mr-2 h-4 w-4" />
+              <span>About</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSub>

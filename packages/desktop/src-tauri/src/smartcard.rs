@@ -566,6 +566,19 @@ pub fn erase_card(reader: String, pin: Option<String>) -> Result<(), String> {
     result.map(|_| ())
 }
 
+/// Force-erase a card without PIN verification.
+/// Used to recover locked cards (PIN retries exhausted).
+/// The applet allows ERASE_DATA without prior PIN verification.
+#[tauri::command]
+pub fn force_erase_card(reader: String) -> Result<(), String> {
+    let (_ctx, card) = connect_reader(&reader)?;
+    select_applet(&card)?;
+    // No PIN verification — send erase directly
+    let result = send_apdu(&card, CLA, INS_ERASE_DATA, 0x00, 0x00, &[]);
+    disconnect_with_reset(card);
+    result.map(|_| ())
+}
+
 /// Verify the PIN on the card.
 #[tauri::command]
 pub fn verify_pin(reader: String, pin: String) -> Result<(), String> {

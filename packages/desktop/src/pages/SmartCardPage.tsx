@@ -51,6 +51,7 @@ import {
   setPin,
   changePin,
   eraseCard,
+  forceEraseCard,
   deleteCardItem,
   CardStatus,
 } from '@/lib/smartcard';
@@ -240,7 +241,12 @@ export default function SmartCardPage() {
     setIsErasing(true);
     setActionError(null);
     try {
-      await eraseCard(selectedReader, verifiedPin);
+      // Use force erase when PIN is locked (retries exhausted) or unverified
+      if (needsPinUnlock) {
+        await forceEraseCard(selectedReader);
+      } else {
+        await eraseCard(selectedReader, verifiedPin);
+      }
       toast({
         title: 'Card Erased',
         description: 'All data and PIN have been removed from the card.',
@@ -709,7 +715,7 @@ export default function SmartCardPage() {
           {/* ═══════════════════════════════════════════════════════════════
               D. Erase / Factory Reset
               ═══════════════════════════════════════════════════════════ */}
-          {cardStatus && !needsPinUnlock && (
+          {cardStatus && (
             <Card className="border-destructive/30 dark:border-destructive/40">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-destructive">
@@ -717,8 +723,9 @@ export default function SmartCardPage() {
                   Factory Reset
                 </CardTitle>
                 <CardDescription>
-                  Completely erase this card — removes all stored data AND the PIN.
-                  The card will be returned to a blank, unprotected state.
+                  {needsPinUnlock
+                    ? 'This card is locked. Factory reset will erase all data and remove the PIN, returning the card to a usable state.'
+                    : 'Completely erase this card — removes all stored data AND the PIN. The card will be returned to a blank, unprotected state.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -772,8 +779,9 @@ export default function SmartCardPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Factory Reset Card?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will permanently erase ALL data and remove the PIN from this card.
-                        The card will be returned to a blank, unprotected state.
+                        {needsPinUnlock
+                          ? 'This card is locked due to too many incorrect PIN attempts. Factory reset will erase ALL data and remove the PIN, making the card usable again.'
+                          : 'This will permanently erase ALL data and remove the PIN from this card. The card will be returned to a blank, unprotected state.'}
                         <br />
                         <br />
                         <strong>This action cannot be undone.</strong>

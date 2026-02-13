@@ -31,7 +31,7 @@ Version 0.9.0 "Pyre" — Available as a web app (Next.js) and native desktop app
 - Password generator with the same 24-character multi-character-class requirement.
 - Optional keyfile support for additional security.
 - After encrypting, users can **Save to File** (as seqrets-instructions.json) and/or **Write to Smart Card** (desktop only, if encrypted size fits within 8KB).
-- Decrypt tab to restore the original document from the encrypted .json file.
+- Decrypt tab to restore the original document from the encrypted .json file or **load from Smart Card** (desktop only).
 - Available on both web and desktop.
 
 ### Restore Your Secret
@@ -82,7 +82,7 @@ The app guides you through a simple, step-by-step process.
 3. **Step 3: Encrypt.** Click Encrypt to secure the file.
 4. **Step 4: Save.** Choose to Save to File (downloads as seqrets-instructions.json) and/or Write to Smart Card (desktop only, for files under 8KB).
 
-To decrypt, go to the Decrypt tab, upload the encrypted .json file, and provide the same password (and keyfile if used).
+To decrypt, go to the Decrypt tab, upload the encrypted .json file or load from a smart card (desktop only), and provide the same password (and keyfile if used).
 `;
 
 const cryptoDetails = `
@@ -112,6 +112,15 @@ const cryptoDetails = `
     *   **Algorithm:** Shamir's Secret Sharing
     *   The splitting happens *after* encryption. The raw, unencrypted secret is never split directly.
     *   This is a critical security design choice — a stolen Qard is computationally indistinguishable from random noise.
+
+*   **Random Number Generation (CSPRNG):**
+    *   All randomness is sourced from the Web Crypto API's crypto.getRandomValues(), a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG) backed by the OS entropy pool (/dev/urandom on Linux/macOS, BCryptGenRandom on Windows).
+    *   The @noble/hashes library's randomBytes() function wraps crypto.getRandomValues() and is used for salts, nonces, and BIP-39 entropy.
+    *   Password generation: window.crypto.getRandomValues(new Uint32Array(32)) mapped to an 88-character charset.
+    *   Keyfile generation: window.crypto.getRandomValues(new Uint8Array(32)) — 256 bits of raw random data.
+    *   Seed phrase entropy: 128 bits (12 words) or 256 bits (24 words) via @scure/bip39's generateMnemonic().
+    *   Encryption salt: 16 random bytes per operation. Encryption nonce: 24 random bytes per operation.
+    *   No Math.random() or any weak PRNG is used for any security-critical operation.
 
 *   **Seed Phrase Generator & Validation:**
     *   **Library:** @scure/bip39
@@ -167,6 +176,38 @@ export function setApiKey(key: string) {
 
 export function removeApiKey() {
   localStorage.removeItem('gemini-api-key');
+  clearChatHistory();
+}
+
+// ── Chat history persistence ──────────────────────────────────────────
+
+const CHAT_HISTORY_KEY = 'bob-chat-history';
+
+export type ChatMessage = {
+  role: 'user' | 'model';
+  content: string;
+};
+
+export function getChatHistory(): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (!stored) return [];
+    return JSON.parse(stored) as ChatMessage[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveChatHistory(messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
+}
+
+export function clearChatHistory() {
+  localStorage.removeItem(CHAT_HISTORY_KEY);
 }
 
 export async function askBob(
