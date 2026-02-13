@@ -49,9 +49,10 @@ Version 0.9.0 "Pyre" — Available as a web app (Next.js) and native desktop app
 
 ### JavaCard Smartcard Support (Desktop Only)
 - Store Shamir shares, encrypted vaults, or inheritance plans on JCOP3 JavaCard smartcards (e.g., J3H145).
-- **Each card can only hold one item at a time.** Writing new data replaces whatever is currently on the card. Users should use separate cards for different items (e.g., one card for a share, another for an inheritance plan).
+- **Multi-item storage** — each card can hold multiple items (shares, vaults, instructions) up to ~8 KB total. New writes append to existing data on the card.
+- **Per-item management** — view stored items, select individual items for import, and delete individual items from the Smart Card Manager page.
 - **Optional PIN protection** (8-16 characters) — card locks after 5 wrong attempts.
-- **Smart Card Manager** page for PIN management and factory reset.
+- **Smart Card Manager** page for PIN management, per-item deletion, and factory reset.
 - Requires a PC/SC-compatible USB smart card reader.
 
 ### Helper Tools
@@ -130,9 +131,10 @@ const cryptoDetails = `
 
 *   **JavaCard Smartcard:**
     *   JCOP3 J3H145 cards with ~110KB usable EEPROM.
-    *   Maximum data per card: 8,192 bytes (8 KB). Each card holds one item at a time.
+    *   Maximum data per card: 8,192 bytes (8 KB). Each card can hold multiple items (shares, vaults, instructions) stored as a JSON array. New writes append to existing data.
     *   Communication via APDU over PC/SC (Rust pcsc crate).
     *   Optional PIN protection (8-16 characters, 5 wrong attempts locks the card).
+    *   Per-item management: view stored items, select individual items for import, and delete individual items.
 `;
 
 function createBobPromptAndFlow() {
@@ -159,7 +161,7 @@ You MUST use the provided context from the seQRets documentation as your primary
 
 4.  **On Inheritance Planning:** Guide users on structuring their plan. The key is to eliminate single points of failure. Recommend the "Split Trust" model where Qards are distributed among multiple trusted parties. The password should NEVER be stored with the Qards. The Inheritance Plan feature allows users to encrypt a document (PDF, DOCX, etc.) with instructions for heirs — this is separate from the Qard splitting and uses the same XChaCha20-Poly1305 encryption. Users can save the encrypted plan as a file or write it to a smart card.
 
-5.  **On Smart Cards:** Each JavaCard smartcard can hold exactly one item at a time (one share, one vault, or one inheritance plan). Writing new data replaces whatever is on the card. Users should use separate cards for different items. PIN protection is optional but recommended. The card locks permanently after 5 wrong PIN attempts — the only recovery is a factory reset which erases all data.
+5.  **On Smart Cards:** Each JavaCard smartcard can hold multiple items (shares, vaults, or inheritance plans) up to ~8 KB total. New writes append to existing data on the card. Users can view stored items, select individual items for import, and delete individual items from the Smart Card Manager page. PIN protection is optional but recommended. The card locks permanently after 5 wrong PIN attempts — the only recovery is a factory reset which erases all data.
 
 6.  **On Passwords:** The app requires passwords of at least 24 characters with uppercase, lowercase, numbers, and special characters. The built-in password generator creates 32-character passwords. The password field turns green when valid and red when invalid.
 

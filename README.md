@@ -106,10 +106,11 @@ The desktop app supports storing Shamir shares, encrypted vaults, and encrypted 
 ### Features
 - **Write individual shares**, **full vaults**, or **encrypted inheritance plans** to a card via APDU over PC/SC
 - **Read back** shares or vaults directly from a card into the restore workflow
-- **One item per card** — each card holds a single item; writing replaces existing data
+- **Multi-item storage** — store multiple items (shares, vaults, instructions) on a single card up to ~8 KB; new writes append to existing data
+- **Per-item management** — view, select, and delete individual items from the Smart Card Manager page
 - **Optional PIN protection** (8-16 characters) — card locks after 5 wrong attempts
 - **Data chunking** — automatically handles payloads larger than the 240-byte APDU limit
-- **Overwrite & erase** confirmations to prevent accidental data loss
+- **Erase** confirmation to prevent accidental data loss
 
 ### Applet Installation
 
