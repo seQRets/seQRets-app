@@ -4,4 +4,3 @@ config();
 
 import './genkit';
 import './flows/ask-bob-flow';
-import './flows/deadman-flow';

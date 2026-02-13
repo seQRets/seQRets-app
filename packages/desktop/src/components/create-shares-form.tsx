@@ -6,12 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { PasswordGenerator } from './password-generator';
 import { QrCodeDisplay } from './qr-code-display';
-import { Spline, Loader2, RefreshCcw, Eye, EyeOff, Paperclip, Wand, CheckCircle, AlertCircle, FileText, HelpCircle, TriangleAlert, Lock, Hash, Share2, UploadCloud, ArrowDown, ArrowRight } from 'lucide-react';
+import { Spline, Loader2, RefreshCcw, Eye, EyeOff, Paperclip, Wand, CheckCircle, AlertCircle, FileText, HelpCircle, TriangleAlert, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { QrCodeData, CreateSharesRequest, CreateSharesResult } from '@/lib/types';
+import { CreateSharesRequest, CreateSharesResult } from '@/lib/types';
 import { SeedPhraseGenerator } from './seed-phrase-generator';
 import { gzip } from 'pako';
 import { tryGetEntropy } from '@/lib/crypto';
@@ -21,7 +21,6 @@ import { KeyfileGenerator } from './keyfile-generator';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KeyfileUpload } from './keyfile-upload';
-import { InstructionsFileUpload } from './instructions-file-upload';
 
 
 const QR_CAPACITY_WARNING = 900;
