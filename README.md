@@ -39,6 +39,14 @@ To restore your original secret, you must bring a specific number of these Qards
 - **Read from smartcard** — load shares or vaults directly from a JavaCard (desktop only)
 - Success sound plays on each accepted share
 
+### 📜 Inheritance Plan
+- **Standalone encryption** for heir instruction documents — no Qard shares required
+- Encrypt any file (PDF, DOCX, ODT, TXT) with the same XChaCha20-Poly1305 + Argon2id security
+- Password generator with the same 24-character multi-character-class requirement
+- Optional keyfile support for additional security
+- Decrypt tab to restore the original document from the encrypted `.json` file
+- Available on both web and desktop
+
 ### 🛠️ Helper Tools
 - **Password Generator** — cryptographically secure 32-character passwords (88-character charset)
 - **Seed Phrase Generator** — generate valid BIP-39 mnemonic phrases
@@ -54,10 +62,12 @@ All cryptographic operations run **entirely on your device**. Your secrets never
 
 | Layer | Algorithm | Purpose |
 |-------|-----------|---------|
-| **Key Derivation** | Argon2id (64MB memory, 3 iterations) | Derive encryption key from password + optional keyfile |
+| **Key Derivation** | Argon2id (64MB memory, 3 iterations, 32-byte key output) | Derive encryption key from password + optional keyfile |
 | **Encryption** | XChaCha20-Poly1305 (AEAD) | Authenticated encryption with integrity verification |
+| **Salt** | 16 random bytes (per operation) | Unique salt for each encryption — ensures distinct keys even with the same password |
+| **Nonce** | 24 random bytes | Per-encryption nonce for XChaCha20 |
 | **Splitting** | Shamir's Secret Sharing | Threshold-based secret splitting into Qards |
-| **Compression** | Gzip | Reduce payload size before encryption |
+| **Compression** | Gzip (level 9) | Reduce payload size before encryption |
 | **Memory** | Secure wipe | Overwrite sensitive data with random bytes after use |
 
 ### 🔗 Encrypt-First Architecture (Security by Design)
@@ -135,11 +145,14 @@ seQRets is a monorepo with npm workspaces:
 ```
 seQRets/
 ├── src/                     # Web app (Next.js 16 + React 19)
+│   └── app/
+│       ├── page.tsx         #   Home (Secure Secret / Restore Secret)
+│       └── instructions/    #   Inheritance Plan (Encrypt / Decrypt)
 ├── packages/
 │   ├── crypto/              # @seqrets/crypto — shared cryptography library
 │   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39
 │   ├── desktop/             # @seqrets/desktop — Tauri v2 desktop app
-│   │   ├── src/             #   React + Vite frontend
+│   │   ├── src/             #   React + Vite frontend (pages + components)
 │   │   └── src-tauri/       #   Rust backend (PC/SC smartcard + macOS config)
 │   └── javacard/            # JavaCard applet for smartcard storage
 │       ├── src/             #   SeQRetsApplet.java (APDU command handler)
@@ -233,6 +246,14 @@ Your API key is stored locally and never sent to any server other than Google's 
 1. **Add** the required number of Qards (drag-drop, upload, camera scan, smartcard, or manual entry)
 2. **Enter** your password (and keyfile if used during encryption)
 3. **Restore** — your original secret is revealed
+
+### 📜 Encrypting an Inheritance Plan
+
+1. **Upload** a document with instructions for your heirs (PDF, DOCX, ODT, TXT — up to 5MB)
+2. **Set** a strong password (use the same password as your Qards, or generate a new one)
+3. **Encrypt & Download** — the file is encrypted and saved as `seqrets-instructions.json`
+
+To decrypt, upload the encrypted `.json` file with the same password (and keyfile if used).
 
 ## 🤝 Contributing
 

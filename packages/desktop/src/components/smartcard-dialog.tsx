@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CreditCard, ShieldCheck, AlertTriangle, Trash2, CheckCircle2, Lock } from 'lucide-react';
+import { Loader2, CreditCard, ShieldCheck, AlertTriangle, Trash2, CheckCircle2, Lock, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   listReaders,
@@ -199,9 +199,10 @@ export function SmartCardDialog({
         await writeVaultToCard(selectedReader, writeData, writeLabel, verifiedPin);
       }
       setActionComplete(true);
+      const dataLabel = writeLabel || (mode === 'write-share' ? 'Share' : 'Vault');
       toast({
         title: 'Written to Smart Card!',
-        description: `${mode === 'write-share' ? 'Share' : 'Vault'} saved to card successfully.`,
+        description: `${dataLabel} saved to card successfully.`,
       });
     } catch (e: any) {
       setActionError(e?.toString() || 'Write failed');
@@ -263,12 +264,14 @@ export function SmartCardDialog({
   const isWriteMode = mode === 'write-share' || mode === 'write-vault';
   const isReadMode = mode === 'read';
 
+  const writeTypeLabel = writeLabel || (mode === 'write-share' ? 'Share' : 'Vault');
+
   const title = isWriteMode
-    ? `Write ${mode === 'write-share' ? 'Share' : 'Vault'} to Smart Card`
+    ? `Write ${writeTypeLabel} to Smart Card`
     : 'Read from Smart Card';
 
   const description = isWriteMode
-    ? `Save your ${mode === 'write-share' ? 'Shamir share' : 'encrypted vault'} to a JavaCard smartcard for secure physical backup.`
+    ? `Save your ${writeLabel ? writeLabel.toLowerCase() : (mode === 'write-share' ? 'Shamir share' : 'encrypted vault')} to a JavaCard smartcard for secure physical backup.`
     : 'Load a share or vault from a JavaCard smartcard.';
 
   return (
@@ -355,6 +358,26 @@ export function SmartCardDialog({
             </div>
           )}
 
+          {/* ── Different-data-type warning ── */}
+          {isWriteMode && cardStatus && cardStatus.has_data && !actionComplete && (() => {
+            const currentType = cardStatus.data_type; // "share" or "vault"
+            const incomingType = mode === 'write-share' ? 'share' : 'vault';
+            if (currentType !== incomingType) {
+              return (
+                <div className="flex items-start gap-2 rounded-lg border border-accent bg-accent/10 dark:bg-accent/5 p-3">
+                  <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    This card currently stores <span className="font-medium capitalize">{currentType}</span> data
+                    {cardStatus.label && <> (<span className="font-medium">{cardStatus.label}</span>)</>}.
+                    Writing a <span className="font-medium">{writeTypeLabel.toLowerCase()}</span> will replace it.
+                    Each card can hold one item — use a separate card to keep both.
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* ── PIN Verification (if needed) ── */}
           {needsPinVerification && (
             <div className="rounded-lg border border-accent bg-accent/10 dark:bg-accent/5 p-3 space-y-2">
@@ -434,10 +457,11 @@ export function SmartCardDialog({
             <Alert className="border-accent bg-accent/10 dark:bg-accent/5">
               <AlertTriangle className="h-4 w-4 text-primary" />
               <AlertDescription>
-                This card already contains{' '}
+                <span className="font-medium">Each card can only hold one item at a time.</span>
+                {' '}This card already contains{' '}
                 <span className="font-medium">{cardStatus?.data_type}</span> data
                 {cardStatus?.label && <> (<span className="font-medium">{cardStatus.label}</span>)</>}.
-                Writing will overwrite it. Continue?
+                Writing your {writeTypeLabel.toLowerCase()} will replace it.
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" variant="destructive" onClick={handleWrite}>
                     Yes, Overwrite

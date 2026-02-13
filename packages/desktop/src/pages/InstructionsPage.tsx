@@ -3,20 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download } from 'lucide-react';
+import { ArrowLeft, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download, CreditCard, RefreshCcw, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import { Header } from '@/components/header';
 import { InstructionsFileUpload } from '@/components/instructions-file-upload';
 import { KeyfileUpload } from '@/components/keyfile-upload';
+import { PasswordGenerator } from '@/components/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { RawInstruction, DecryptInstructionRequest } from '@/lib/types';
+import type { RawInstruction, DecryptInstructionRequest, EncryptedInstruction } from '@/lib/types';
+import { SmartCardDialog } from '@/components/smartcard-dialog';
 import { saveFileNative, saveTextFileNative, base64ToUint8Array } from '@/lib/native-save';
 import logoLight from '@/assets/icons/logo-light.png';
 import logoDark from '@/assets/icons/logo-dark.png';
@@ -45,12 +46,13 @@ export default function InstructionsPage() {
   const [encryptStep, setEncryptStep] = useState(1);
   const [instructionsFile, setInstructionsFile] = useState<File | null>(null);
   const [encryptPassword, setEncryptPassword] = useState('');
-  const [encryptPasswordVisible, setEncryptPasswordVisible] = useState(false);
   const [encryptUseKeyfile, setEncryptUseKeyfile] = useState(false);
   const [encryptKeyfile, setEncryptKeyfile] = useState<string | null>(null);
   const [encryptKeyfileName, setEncryptKeyfileName] = useState<string | null>(null);
-  const [shareString, setShareString] = useState('');
+  const [isEncryptPasswordValid, setIsEncryptPasswordValid] = useState(false);
   const [isEncrypting, startEncryptTransition] = useTransition();
+  const [encryptedResult, setEncryptedResult] = useState<EncryptedInstruction | null>(null);
+  const [showSmartCardDialog, setShowSmartCardDialog] = useState(false);
 
   // ── Decrypt state ──
   const [decryptStep, setDecryptStep] = useState(1);
@@ -73,19 +75,10 @@ export default function InstructionsPage() {
       const { type, payload } = event.data;
 
       if (type === 'encryptInstructionsSuccess') {
-        const handleSave = async () => {
-          const jsonStr = JSON.stringify(payload, null, 2);
-          const savedPath = await saveTextFileNative(
-            'seqrets-instructions.json',
-            [{ name: 'JSON Files', extensions: ['json'] }],
-            jsonStr,
-          );
-          if (savedPath) {
-            toast({ title: 'Instructions Encrypted!', description: 'Saved "seqrets-instructions.json" successfully.' });
-          }
-          startEncryptTransition(() => {});
-        };
-        handleSave();
+        setEncryptedResult(payload as EncryptedInstruction);
+        setEncryptStep(4);
+        toast({ title: 'Instructions Encrypted!', description: 'Choose how to save your encrypted instructions below.' });
+        startEncryptTransition(() => {});
       } else if (type === 'encryptInstructionsError') {
         toast({ variant: 'destructive', title: 'Encryption Failed', description: payload.message || 'Could not encrypt the instructions file.' });
         startEncryptTransition(() => {});
@@ -114,10 +107,8 @@ export default function InstructionsPage() {
   }, []);
 
   // ── Encrypt handlers ──
-  const isShareValid = shareString.trim().startsWith('seQRets|') && shareString.trim().split('|').length >= 3;
-
   const handleEncrypt = async () => {
-    if (!instructionsFile || !encryptPassword || !isShareValid) return;
+    if (!instructionsFile || !encryptPassword || !isEncryptPasswordValid) return;
     if (encryptUseKeyfile && !encryptKeyfile) {
       toast({ variant: 'destructive', title: 'Missing Keyfile', description: 'Please select a keyfile or disable the keyfile option.' });
       return;
@@ -135,21 +126,34 @@ export default function InstructionsPage() {
         payload: {
           instructions: instruction,
           password: encryptPassword,
-          firstShare: shareString.trim(),
           keyfile: encryptUseKeyfile ? encryptKeyfile : undefined,
         },
       });
     });
   };
 
+  const handleSaveToFile = async () => {
+    if (!encryptedResult) return;
+    const jsonStr = JSON.stringify(encryptedResult, null, 2);
+    const savedPath = await saveTextFileNative(
+      'seqrets-instructions.json',
+      [{ name: 'JSON Files', extensions: ['json'] }],
+      jsonStr,
+    );
+    if (savedPath) {
+      toast({ title: 'File Saved!', description: 'Saved "seqrets-instructions.json" successfully.' });
+    }
+  };
+
   const handleEncryptReset = () => {
     setInstructionsFile(null);
     setEncryptPassword('');
-    setEncryptPasswordVisible(false);
     setEncryptUseKeyfile(false);
     setEncryptKeyfile(null);
     setEncryptKeyfileName(null);
-    setShareString('');
+    setIsEncryptPasswordValid(false);
+    setEncryptedResult(null);
+    setShowSmartCardDialog(false);
     setEncryptStep(1);
   };
 
@@ -277,37 +281,7 @@ export default function InstructionsPage() {
                       </div>
                       <div className="pl-11 space-y-6">
                         {/* Password */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="encrypt-password">Password</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Enter the same password you used when creating your Qards. The instructions file will be encrypted with the same key.
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          <div className="relative">
-                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input
-                              id="encrypt-password"
-                              type={encryptPasswordVisible ? 'text' : 'password'}
-                              placeholder="Enter the password used for your Qards"
-                              value={encryptPassword}
-                              onChange={(e) => setEncryptPassword(e.target.value)}
-                              className="pl-10 pr-10"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setEncryptPasswordVisible(!encryptPasswordVisible)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                            >
-                              {encryptPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
-                          </div>
-                        </div>
+                        <PasswordGenerator value={encryptPassword} onValueChange={setEncryptPassword} onValidationChange={setIsEncryptPasswordValid} placeholder="Enter the password used for your Qards or generate a new one" />
 
                         {/* Keyfile */}
                         <div className="space-y-4 rounded-md border p-4">
@@ -320,7 +294,7 @@ export default function InstructionsPage() {
                                   <button><HelpCircle className="h-4 w-4 text-primary" /></button>
                                 </PopoverTrigger>
                                 <PopoverContent className="text-sm">
-                                  If you used a keyfile when creating your Qards, enable this and upload the same keyfile.
+                                  Optional: add a keyfile for additional security. You will need this same keyfile to decrypt.
                                 </PopoverContent>
                               </Popover>
                             </div>
@@ -333,36 +307,11 @@ export default function InstructionsPage() {
                           )}
                         </div>
 
-                        {/* Share String */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="share-string">One Share String</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Paste any one of your existing share strings here. It is needed to derive the same encryption salt. The share starts with "seQRets|".
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          <Textarea
-                            id="share-string"
-                            placeholder="seQRets|MHoDJz8J69YRmeX993O4PQ==|CAFQ..."
-                            value={shareString}
-                            onChange={(e) => setShareString(e.target.value)}
-                            rows={3}
-                          />
-                          {shareString && !isShareValid && (
-                            <p className="text-xs text-destructive">Share must start with "seQRets|" and contain at least 3 pipe-separated segments.</p>
-                          )}
-                        </div>
-
                         {encryptStep === 2 && (
                           <div className="flex justify-end pt-2">
                             <Button
                               onClick={() => setEncryptStep(3)}
-                              disabled={!encryptPassword || !isShareValid || (encryptUseKeyfile && !encryptKeyfile)}
+                              disabled={!isEncryptPasswordValid || (encryptUseKeyfile && !encryptKeyfile)}
                               className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
                             >
                               Next Step <ArrowDown className="ml-2 h-4 w-4" />
@@ -374,34 +323,102 @@ export default function InstructionsPage() {
                   </div>
                 )}
 
-                {/* Step 3: Encrypt & Download */}
-                {encryptStep >= 3 && (
+                {/* Step 3: Encrypt */}
+                {encryptStep === 3 && (
                   <div className="animate-in fade-in duration-500 space-y-8">
                     <Separator />
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">3</div>
-                        <h3 className="text-xl font-semibold">Encrypt & Save</h3>
+                        <h3 className="text-xl font-semibold">Encrypt</h3>
                       </div>
                       <div className="pl-11 space-y-4">
                         <p className="text-sm text-muted-foreground">
-                          Click the button below to encrypt your instructions file. You will be prompted to save the encrypted file.
+                          Click the button below to encrypt your instructions file.
                         </p>
                         <div className="flex justify-end">
                           <Button
                             size="lg"
                             onClick={handleEncrypt}
-                            disabled={isEncrypting || !instructionsFile || !encryptPassword || !isShareValid || (encryptUseKeyfile && !encryptKeyfile)}
+                            disabled={isEncrypting || !instructionsFile || !isEncryptPasswordValid || (encryptUseKeyfile && !encryptKeyfile)}
                             className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
                           >
                             {isEncrypting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
-                            {isEncrypting ? 'Encrypting...' : 'Encrypt & Save'}
+                            {isEncrypting ? 'Encrypting...' : 'Encrypt'}
                           </Button>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
+
+                {/* Step 4: Save / Write to Card */}
+                {encryptStep >= 4 && encryptedResult && (() => {
+                  const encryptedJson = JSON.stringify(encryptedResult);
+                  const encryptedSizeBytes = new TextEncoder().encode(encryptedJson).length;
+                  const fitsOnCard = encryptedSizeBytes <= 8192;
+                  const sizeDisplay = encryptedSizeBytes < 1024
+                    ? `${encryptedSizeBytes} bytes`
+                    : `${(encryptedSizeBytes / 1024).toFixed(1)} KB`;
+
+                  return (
+                    <div className="animate-in fade-in duration-500 space-y-8">
+                      <Separator />
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-green-600 text-white font-bold text-lg">
+                            <CheckCircle2 className="h-5 w-5" />
+                          </div>
+                          <h3 className="text-xl font-semibold">Encryption Complete</h3>
+                        </div>
+                        <div className="pl-11 space-y-4">
+                          <div className="rounded-lg border bg-muted/30 p-4 space-y-1">
+                            <p className="text-sm font-medium text-green-500">Your instructions have been encrypted successfully.</p>
+                            <p className="text-xs text-muted-foreground">Encrypted size: {sizeDisplay}</p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button
+                              size="lg"
+                              onClick={handleSaveToFile}
+                              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
+                            >
+                              <Save className="mr-2 h-5 w-5" />
+                              Save to File
+                            </Button>
+                            <Button
+                              size="lg"
+                              onClick={() => setShowSmartCardDialog(true)}
+                              disabled={!fitsOnCard}
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              <CreditCard className="mr-2 h-5 w-5" />
+                              Write to Smart Card
+                            </Button>
+                          </div>
+
+                          {!fitsOnCard ? (
+                            <p className="text-xs text-muted-foreground">
+                              Encrypted file ({sizeDisplay}) exceeds the 8 KB smart card limit. Use Save to File instead.
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              One item per card — writing will replace any existing data on the card.
+                            </p>
+                          )}
+
+                          <div className="flex justify-end pt-2">
+                            <Button variant="ghost" size="sm" onClick={handleEncryptReset}>
+                              <RefreshCcw className="mr-2 h-4 w-4" />
+                              Start Over
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </TabsContent>
 
               {/* ════════ Decrypt Tab ════════ */}
@@ -583,6 +600,15 @@ export default function InstructionsPage() {
           <p className="mt-1">Your security is your responsibility. Use with caution.</p>
         </footer>
       </div>
+
+      {/* Smart Card Dialog for writing encrypted instructions */}
+      <SmartCardDialog
+        open={showSmartCardDialog}
+        onOpenChange={setShowSmartCardDialog}
+        mode="write-vault"
+        writeData={encryptedResult ? JSON.stringify(encryptedResult) : undefined}
+        writeLabel="Inheritance Plan"
+      />
     </main>
   );
 }

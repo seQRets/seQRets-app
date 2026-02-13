@@ -23,7 +23,7 @@ async function initWorker() {
                 const result = await decryptInstructions(payload);
                 self.postMessage({ type: 'decryptInstructionsSuccess', payload: result });
             } else if (type === 'encryptInstructions') {
-                const result = await encryptInstructions(payload.instructions, payload.password, payload.firstShare, payload.keyfile);
+                const result = await encryptInstructions(payload.instructions, payload.password, payload.keyfile);
                 self.postMessage({ type: 'encryptInstructionsSuccess', payload: result });
             } else if (type === 'encryptVault') {
                 const result = await encryptVault(payload.jsonString, payload.password);

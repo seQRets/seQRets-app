@@ -108,7 +108,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
     <div
       className={cn(
         'relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-        isDragging ? 'border-primary bg-primary/10' : 'border-border bg-muted/40 hover:border-primary/50 hover:bg-muted'
+        isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 bg-muted/60 hover:border-primary/50 hover:bg-muted'
       )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}

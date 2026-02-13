@@ -37,6 +37,7 @@ import {
   Lock,
   LockOpen,
   CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/header';
@@ -423,6 +424,14 @@ export default function SmartCardPage() {
                         'Card is empty — no data stored.'
                       )}
                     </div>
+
+                    {/* One-item-per-card hint */}
+                    {cardStatus.has_data && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Info className="h-3.5 w-3.5 shrink-0" />
+                        Each card stores one item at a time. Use a separate card for additional data.
+                      </div>
+                    )}
 
                     <Button
                       variant="outline"

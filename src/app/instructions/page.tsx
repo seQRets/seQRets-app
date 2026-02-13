@@ -2,17 +2,17 @@
 
 import React, { useState, useRef, useEffect, useTransition, DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, FileText, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download } from 'lucide-react';
+import { ArrowLeft, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { Header } from '../components/header';
 import { InstructionsFileUpload } from '../components/instructions-file-upload';
 import { KeyfileUpload } from '../components/keyfile-upload';
+import { PasswordGenerator } from '../components/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,11 +44,10 @@ export default function InstructionsPage() {
   const [encryptStep, setEncryptStep] = useState(1);
   const [instructionsFile, setInstructionsFile] = useState<File | null>(null);
   const [encryptPassword, setEncryptPassword] = useState('');
-  const [encryptPasswordVisible, setEncryptPasswordVisible] = useState(false);
   const [encryptUseKeyfile, setEncryptUseKeyfile] = useState(false);
   const [encryptKeyfile, setEncryptKeyfile] = useState<string | null>(null);
   const [encryptKeyfileName, setEncryptKeyfileName] = useState<string | null>(null);
-  const [shareString, setShareString] = useState('');
+  const [isEncryptPasswordValid, setIsEncryptPasswordValid] = useState(false);
   const [isEncrypting, startEncryptTransition] = useTransition();
 
   // ── Decrypt state ──
@@ -120,10 +119,8 @@ export default function InstructionsPage() {
   }, []);
 
   // ── Encrypt handlers ──
-  const isShareValid = shareString.trim().startsWith('seQRets|') && shareString.trim().split('|').length >= 3;
-
   const handleEncrypt = async () => {
-    if (!instructionsFile || !encryptPassword || !isShareValid) return;
+    if (!instructionsFile || !encryptPassword || !isEncryptPasswordValid) return;
     if (encryptUseKeyfile && !encryptKeyfile) {
       toast({ variant: 'destructive', title: 'Missing Keyfile', description: 'Please select a keyfile or disable the keyfile option.' });
       return;
@@ -141,7 +138,6 @@ export default function InstructionsPage() {
         payload: {
           instructions: instruction,
           password: encryptPassword,
-          firstShare: shareString.trim(),
           keyfile: encryptUseKeyfile ? encryptKeyfile : undefined,
         },
       });
@@ -151,11 +147,10 @@ export default function InstructionsPage() {
   const handleEncryptReset = () => {
     setInstructionsFile(null);
     setEncryptPassword('');
-    setEncryptPasswordVisible(false);
     setEncryptUseKeyfile(false);
     setEncryptKeyfile(null);
     setEncryptKeyfileName(null);
-    setShareString('');
+    setIsEncryptPasswordValid(false);
     setEncryptStep(1);
   };
 
@@ -283,37 +278,7 @@ export default function InstructionsPage() {
                       </div>
                       <div className="pl-11 space-y-6">
                         {/* Password */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="encrypt-password">Password</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Enter the same password you used when creating your Qards. The instructions file will be encrypted with the same key.
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          <div className="relative">
-                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input
-                              id="encrypt-password"
-                              type={encryptPasswordVisible ? 'text' : 'password'}
-                              placeholder="Enter the password used for your Qards"
-                              value={encryptPassword}
-                              onChange={(e) => setEncryptPassword(e.target.value)}
-                              className="pl-10 pr-10"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setEncryptPasswordVisible(!encryptPasswordVisible)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                            >
-                              {encryptPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
-                          </div>
-                        </div>
+                        <PasswordGenerator value={encryptPassword} onValueChange={setEncryptPassword} onValidationChange={setIsEncryptPasswordValid} placeholder="Enter the password used for your Qards or generate a new one" />
 
                         {/* Keyfile */}
                         <div className="space-y-4 rounded-md border p-4">
@@ -326,7 +291,7 @@ export default function InstructionsPage() {
                                   <button><HelpCircle className="h-4 w-4 text-primary" /></button>
                                 </PopoverTrigger>
                                 <PopoverContent className="text-sm">
-                                  If you used a keyfile when creating your Qards, enable this and upload the same keyfile.
+                                  Optional: add a keyfile for additional security. You will need this same keyfile to decrypt.
                                 </PopoverContent>
                               </Popover>
                             </div>
@@ -339,36 +304,11 @@ export default function InstructionsPage() {
                           )}
                         </div>
 
-                        {/* Share String */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="share-string">One Share String</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Paste any one of your existing share strings here. It is needed to derive the same encryption salt. The share starts with "seQRets|".
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          <Textarea
-                            id="share-string"
-                            placeholder="seQRets|MHoDJz8J69YRmeX993O4PQ==|CAFQ..."
-                            value={shareString}
-                            onChange={(e) => setShareString(e.target.value)}
-                            rows={3}
-                          />
-                          {shareString && !isShareValid && (
-                            <p className="text-xs text-destructive">Share must start with "seQRets|" and contain at least 3 pipe-separated segments.</p>
-                          )}
-                        </div>
-
                         {encryptStep === 2 && (
                           <div className="flex justify-end pt-2">
                             <Button
                               onClick={() => setEncryptStep(3)}
-                              disabled={!encryptPassword || !isShareValid || (encryptUseKeyfile && !encryptKeyfile)}
+                              disabled={!isEncryptPasswordValid || (encryptUseKeyfile && !encryptKeyfile)}
                               className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
                             >
                               Next Step <ArrowDown className="ml-2 h-4 w-4" />
@@ -397,7 +337,7 @@ export default function InstructionsPage() {
                           <Button
                             size="lg"
                             onClick={handleEncrypt}
-                            disabled={isEncrypting || !instructionsFile || !encryptPassword || !isShareValid || (encryptUseKeyfile && !encryptKeyfile)}
+                            disabled={isEncrypting || !instructionsFile || !isEncryptPasswordValid || (encryptUseKeyfile && !encryptKeyfile)}
                             className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
                           >
                             {isEncrypting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}

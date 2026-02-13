@@ -319,13 +319,8 @@ export async function decryptVault(salt: string, data: string, password: string)
     return textDecoder.decode(decompressed);
 }
 
-export async function encryptInstructions(instructions: RawInstruction, password: string, firstShare: string, keyfile?: string): Promise<EncryptedInstruction> {
-    const parts = firstShare.split('|');
-    if (parts.length !== 3 || parts[0] !== 'seQRets') {
-         throw new Error('Invalid or corrupted share format provided for salt extraction.');
-    }
-    const saltBase64 = parts[1];
-    const salt = Buffer.from(saltBase64, 'base64');
+export async function encryptInstructions(instructions: RawInstruction, password: string, keyfile?: string): Promise<EncryptedInstruction> {
+    const salt = randomBytes(SALT_LENGTH);
 
     const keyfileBytes = keyfile ? Buffer.from(keyfile, 'base64') : undefined;
     const passwordDerivedKey = await deriveKey(password, salt, keyfileBytes);
@@ -340,7 +335,7 @@ export async function encryptInstructions(instructions: RawInstruction, password
     const combined = concatBytes(instructionsNonce, encryptedData);
 
     return {
-        salt: saltBase64,
+        salt: Buffer.from(salt).toString('base64'),
         data: Buffer.from(combined).toString('base64'),
     };
 }

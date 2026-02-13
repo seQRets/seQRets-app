@@ -14,6 +14,7 @@ interface PasswordGeneratorProps {
   value: string;
   onValueChange: (value: string) => void;
   onValidationChange: (isValid: boolean) => void;
+  placeholder?: string;
 }
 
 const validatePassword = (password: string): boolean => {
@@ -26,7 +27,7 @@ const validatePassword = (password: string): boolean => {
 };
 
 
-export function PasswordGenerator({ value, onValueChange, onValidationChange }: PasswordGeneratorProps) {
+export function PasswordGenerator({ value, onValueChange, onValidationChange, placeholder = 'Generate or enter a password' }: PasswordGeneratorProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isValid, setIsValid] = useState(false);
@@ -104,7 +105,7 @@ export function PasswordGenerator({ value, onValueChange, onValidationChange }: 
       <div className="flex items-center gap-2">
         <div className="relative flex-grow">
           <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input id="password" type={isPasswordVisible ? 'text' : 'password'} placeholder="Generate or enter a password" value={value} onChange={(e) => onValueChange(e.target.value)} className={cn("pl-10 pr-10", getBorderColor())} />
+          <Input id="password" type={isPasswordVisible ? 'text' : 'password'} placeholder={placeholder} value={value} onChange={(e) => onValueChange(e.target.value)} className={cn("pl-10 pr-10", getBorderColor())} />
            <button
             type="button"
             onClick={togglePasswordVisibility}

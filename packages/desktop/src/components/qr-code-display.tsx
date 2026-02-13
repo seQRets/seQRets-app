@@ -607,6 +607,9 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
                 <p className="text-xs text-muted-foreground">
                     Store it on iCloud, Google Drive, a USB drive, or a smart card. To restore later, go to <strong>Restore Secret</strong> and click <strong>Import Vault File</strong>.
                 </p>
+                <p className="text-xs text-muted-foreground">
+                    One item per card — writing will replace any existing data on the card.
+                </p>
             </div>
         </div>
 
