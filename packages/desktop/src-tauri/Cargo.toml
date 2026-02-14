@@ -3,7 +3,7 @@ name = "seqrets-desktop"
 version = "0.9.0"
 description = "seQRets — Secure. Split. Share."
 authors = ["seQRets"]
-license = "MIT"
+license = "AGPL-3.0-or-later"
 edition = "2021"
 rust-version = "1.77.2"
 

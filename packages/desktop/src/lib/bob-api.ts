@@ -85,6 +85,10 @@ The app guides you through a simple, step-by-step process.
 4. **Step 4: Save.** Choose to Save to File (downloads as seqrets-instructions.json) and/or Write to Smart Card (desktop only, for files under 8KB).
 
 To decrypt, go to the Decrypt tab, upload the encrypted .json file or load from a smart card (desktop only), and provide the same password (and keyfile if used).
+
+## License
+
+seQRets is licensed under the GNU Affero General Public License v3.0 (AGPLv3). Commercial licenses are available for organizations wanting to use seQRets in proprietary products — contact licensing@seqrets.app.
 `;
 
 const cryptoDetails = `

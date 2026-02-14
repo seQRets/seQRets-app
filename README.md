@@ -281,8 +281,14 @@ To decrypt, upload the encrypted `.json` file or **load from a smart card** (des
 
 ## 🤝 Contributing
 
-This project is open source. Contributions, bug reports, and feature requests are welcome. Please open an issue or submit a pull request.
+This project is open source. Contributions, bug reports, and feature requests are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+
+By contributing, you agree to our [Contributor License Agreement (CLA)](CONTRIBUTING.md#contributor-license-agreement-cla).
 
 ## 📄 License
 
-MIT
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)** — see the [LICENSE](LICENSE) file for details.
+
+### Commercial Licensing
+
+We also offer commercial licenses for companies wanting to use seQRets in proprietary products or avoid copyleft — email **licensing@seqrets.app**.
