@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download, CreditCard, RefreshCcw, Save } from 'lucide-react';
+import { ArrowLeft, Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download, CreditCard, RefreshCcw, Save, TriangleAlert } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import { Header } from '@/components/header';
 import { InstructionsFileUpload } from '@/components/instructions-file-upload';
 import { KeyfileUpload } from '@/components/keyfile-upload';
+import { KeyfileGenerator } from '@/components/keyfile-generator';
 import { PasswordGenerator } from '@/components/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +57,8 @@ export default function InstructionsPage() {
   const [encryptedResult, setEncryptedResult] = useState<EncryptedInstruction | null>(null);
   const [showSmartCardDialog, setShowSmartCardDialog] = useState(false);
   const [showEncryptKeyfileSmartCard, setShowEncryptKeyfileSmartCard] = useState(false);
+  const [showEncryptKeyfileWriteSmartCard, setShowEncryptKeyfileWriteSmartCard] = useState(false);
+  const [encryptKeyfileWriteLabel, setEncryptKeyfileWriteLabel] = useState('Keyfile');
 
   // ── Decrypt state ──
   const [decryptStep, setDecryptStep] = useState(1);
@@ -158,6 +162,7 @@ export default function InstructionsPage() {
     setIsEncryptPasswordValid(false);
     setEncryptedResult(null);
     setShowSmartCardDialog(false);
+    setShowEncryptKeyfileWriteSmartCard(false);
     setEncryptStep(1);
   };
 
@@ -329,13 +334,19 @@ export default function InstructionsPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
-                              <Label htmlFor="use-keyfile-encrypt" className="text-base font-medium">Keyfile</Label>
+                              <Label htmlFor="use-keyfile-encrypt" className="text-base font-medium">Use a Keyfile</Label>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <button><HelpCircle className="h-4 w-4 text-primary" /></button>
                                 </PopoverTrigger>
                                 <PopoverContent className="text-sm">
-                                  Optional: add a keyfile for additional security. You will need this same keyfile to decrypt.
+                                  <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
+                                    <TriangleAlert className="h-4 w-4" />
+                                    <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
+                                    <AlertDescription>
+                                      You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
+                                    </AlertDescription>
+                                  </Alert>
                                 </PopoverContent>
                               </Popover>
                             </div>
@@ -343,7 +354,19 @@ export default function InstructionsPage() {
                           </div>
                           {encryptUseKeyfile && (
                             <div className="pt-2">
-                              <KeyfileUpload onFileRead={setEncryptKeyfile} onFileNameChange={setEncryptKeyfileName} fileName={encryptKeyfileName} onSmartCardLoad={() => setShowEncryptKeyfileSmartCard(true)} />
+                              <Tabs className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 gap-2 bg-transparent p-0 h-auto">
+                                  <TabsTrigger value="generate" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Generate Keyfile</TabsTrigger>
+                                  <TabsTrigger value="upload" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Upload Keyfile</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="generate" className="pt-4">
+                                  <KeyfileGenerator onKeyfileGenerated={setEncryptKeyfile} onSmartCardSave={(label) => { setEncryptKeyfileWriteLabel(label); setShowEncryptKeyfileWriteSmartCard(true); }} />
+                                </TabsContent>
+                                <TabsContent value="upload" className="pt-4">
+                                  <p className="text-sm text-muted-foreground mb-2">Select a file from your device to use as a keyfile. Any file will work, but larger, more random files are more secure.</p>
+                                  <KeyfileUpload onFileRead={setEncryptKeyfile} onFileNameChange={setEncryptKeyfileName} fileName={encryptKeyfileName} onSmartCardLoad={() => setShowEncryptKeyfileSmartCard(true)} />
+                                </TabsContent>
+                              </Tabs>
                             </div>
                           )}
                         </div>
@@ -689,6 +712,16 @@ export default function InstructionsPage() {
         onOpenChange={setShowDecryptKeyfileSmartCard}
         mode="read"
         onDataRead={handleDecryptKeyfileSCRead}
+      />
+
+      {/* Smart Card Dialog for writing generated keyfile (encrypt tab) */}
+      <SmartCardDialog
+        open={showEncryptKeyfileWriteSmartCard}
+        onOpenChange={setShowEncryptKeyfileWriteSmartCard}
+        mode="write-vault"
+        writeData={encryptKeyfile || undefined}
+        writeLabel={encryptKeyfileWriteLabel || 'Keyfile'}
+        writeItemType="keyfile"
       />
     </main>
   );

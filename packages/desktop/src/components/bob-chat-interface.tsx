@@ -31,6 +31,24 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
     const viewportRef = useRef<HTMLDivElement>(null);
     const [hasApiKey, setHasApiKey] = useState(() => !!getApiKey());
 
+    // Scroll the chat viewport to the bottom
+    const scrollToBottom = () => {
+        requestAnimationFrame(() => {
+            const vp = viewportRef.current;
+            if (vp) vp.scrollTop = vp.scrollHeight;
+        });
+    };
+
+    // Scroll to bottom on mount (so the user sees the most recent messages)
+    useEffect(() => {
+        scrollToBottom();
+    }, []);
+
+    // Scroll to bottom whenever conversation changes or loading state changes
+    useEffect(() => {
+        scrollToBottom();
+    }, [conversation, isPending]);
+
     // Persist conversation to localStorage whenever it changes
     useEffect(() => {
         if (conversation.length > 0) {

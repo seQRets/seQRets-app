@@ -34,7 +34,7 @@ Version 0.9.0 "Pyre" — Available as a web app (Next.js) and native desktop app
 - **Standalone encryption** for heir instruction documents — no Qard shares required.
 - Encrypt any file (PDF, DOCX, ODT, TXT — up to 5MB) with the same XChaCha20-Poly1305 + Argon2id security.
 - Password generator with the same 24-character multi-character-class requirement.
-- Optional keyfile support for additional security.
+- Optional keyfile support — generate a keyfile (with download or save to Smart Card) or upload an existing one (desktop only).
 - After encrypting, users can **Save to File** (as seqrets-instructions.json) and/or **Write to Smart Card** (desktop only, if encrypted size fits within 8KB).
 - Decrypt tab to restore the original document from the encrypted .json file or **load from Smart Card** (desktop only).
 - Available on both web and desktop.

@@ -45,6 +45,7 @@ export function CreateSharesForm() {
   const [keyfileName, setKeyfileName] = useState<string | null>(null);
   const [isKeyfileSmartCardOpen, setIsKeyfileSmartCardOpen] = useState(false);
   const [showKeyfileWriteSmartCard, setShowKeyfileWriteSmartCard] = useState(false);
+  const [keyfileWriteLabel, setKeyfileWriteLabel] = useState('Keyfile');
   const [showSeedGenerator, setShowSeedGenerator] = useState(false);
   const [seedValidationStatus, setSeedValidationStatus] = useState<'valid' | 'invalid' | 'unchecked'>('unchecked');
   const [estimatedShareSize, setEstimatedShareSize] = useState(0);
@@ -418,11 +419,11 @@ export function CreateSharesForm() {
                         <div className="pt-2">
                           <Tabs className="w-full">
                             <TabsList className="grid w-full grid-cols-2 gap-2 bg-transparent p-0 h-auto">
-                              <TabsTrigger value="generate" className="bg-white text-foreground border border-border rounded-md py-2 shadow-sm hover:bg-primary/80 hover:text-primary-foreground hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Generate Keyfile</TabsTrigger>
-                              <TabsTrigger value="upload" className="bg-white text-foreground border border-border rounded-md py-2 shadow-sm hover:bg-primary/80 hover:text-primary-foreground hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Upload Keyfile</TabsTrigger>
+                              <TabsTrigger value="generate" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Generate Keyfile</TabsTrigger>
+                              <TabsTrigger value="upload" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Upload Keyfile</TabsTrigger>
                             </TabsList>
                             <TabsContent value="generate" className="pt-4">
-                              <KeyfileGenerator onKeyfileGenerated={setKeyfile} onSmartCardSave={() => setShowKeyfileWriteSmartCard(true)} />
+                              <KeyfileGenerator onKeyfileGenerated={setKeyfile} onSmartCardSave={(label) => { setKeyfileWriteLabel(label); setShowKeyfileWriteSmartCard(true); }} />
                             </TabsContent>
                             <TabsContent value="upload" className="pt-4">
                               <p className="text-sm text-muted-foreground mb-2">Select a file from your device to use as a keyfile. Any file will work, but larger, more random files are more secure.</p>
@@ -575,7 +576,7 @@ export function CreateSharesForm() {
       onOpenChange={setShowKeyfileWriteSmartCard}
       mode="write-vault"
       writeData={keyfile || undefined}
-      writeLabel="Keyfile"
+      writeLabel={keyfileWriteLabel || 'Keyfile'}
       writeItemType="keyfile"
     />
     </>
