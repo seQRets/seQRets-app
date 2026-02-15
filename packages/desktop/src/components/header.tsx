@@ -10,7 +10,9 @@ import {
   Home,
   CreditCard,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
+import { UpdateChecker } from '@/components/update-checker';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import {
@@ -36,6 +38,7 @@ interface HeaderProps {
 function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
   const { setTheme } = useTheme();
   const [open, setOpen] = React.useState(false);
+  const [checkingUpdate, setCheckingUpdate] = React.useState(false);
   const { pathname } = useLocation();
   const isHomePage = pathname === '/';
 
@@ -107,6 +110,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                 </Link>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
+                <Button variant="outline" className="w-full justify-start gap-3" onClick={() => { setOpen(false); setCheckingUpdate(true); }}>
+                    <RefreshCw className="h-5 w-5" />
+                    <span>Check for Updates</span>
+                </Button>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="w-full justify-start gap-3">
@@ -130,12 +137,16 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
             </div>
         </div>
       </SheetContent>
+      {checkingUpdate && (
+        <UpdateChecker manualCheck onClose={() => setCheckingUpdate(false)} />
+      )}
     </Sheet>
   );
 }
 
 function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
   const { setTheme } = useTheme();
+  const [checkingUpdate, setCheckingUpdate] = React.useState(false);
   const { pathname } = useLocation();
   const isHomePage = pathname === '/';
 
@@ -214,6 +225,11 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
               <span>About</span>
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setCheckingUpdate(true)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            <span>Check for Updates</span>
+          </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Sun className="h-4 w-4 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -230,6 +246,9 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
           </DropdownMenuSub>
         </DropdownMenuContent>
       </DropdownMenu>
+      {checkingUpdate && (
+        <UpdateChecker manualCheck onClose={() => setCheckingUpdate(false)} />
+      )}
     </div>
   );
 }

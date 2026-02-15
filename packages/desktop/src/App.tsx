@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { UpdateChecker } from '@/components/update-checker';
 import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/smartcard" element={<SmartCardPage />} />
         <Route path="/instructions" element={<InstructionsPage />} />
       </Routes>
+      <UpdateChecker checkOnMount />
       <Toaster />
     </ThemeProvider>
   );
