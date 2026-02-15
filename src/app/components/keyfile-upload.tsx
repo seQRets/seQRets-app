@@ -136,8 +136,8 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName }: Keyfil
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-        isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted'
+        'group relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+        isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
       )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -147,7 +147,7 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName }: Keyfil
     >
       <FileUp className="w-10 h-10 text-muted-foreground mb-3" />
       <p className="text-base font-medium">Drag & drop your keyfile here</p>
-      <p className="text-sm text-muted-foreground">or click to select a file (2MB limit)</p>
+      <p className="text-sm text-muted-foreground ">or click to select a file (2MB limit)</p>
       <input
         ref={fileInputRef}
         type="file"

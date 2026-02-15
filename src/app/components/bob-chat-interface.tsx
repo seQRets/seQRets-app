@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useTransition } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Loader2, Send, User, ExternalLink } from "lucide-react";
+import { Bot, Loader2, Send, User, ExternalLink, Eraser } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { askBob } from '@/ai/flows/ask-bob-flow';
 import { AskBobInput } from '@/lib/types';
@@ -19,6 +19,30 @@ type ChatMessage = {
     content: string;
 };
 
+const CHAT_HISTORY_KEY = 'bob-chat-history';
+
+function getChatHistory(): ChatMessage[] {
+    try {
+        const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+        if (!stored) return [];
+        return JSON.parse(stored) as ChatMessage[];
+    } catch {
+        return [];
+    }
+}
+
+function saveChatHistory(messages: ChatMessage[]) {
+    try {
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+    } catch {
+        // Storage full or unavailable — silently ignore
+    }
+}
+
+function clearChatHistory() {
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+}
+
 interface BobChatInterfaceProps {
   initialMessage?: string;
   showLinkToFullPage?: boolean;
@@ -26,16 +50,65 @@ interface BobChatInterfaceProps {
 
 export function BobChatInterface({ initialMessage, showLinkToFullPage = false }: BobChatInterfaceProps) {
     const { toast } = useToast();
-    const [conversation, setConversation] = useState<ChatMessage[]>([]);
+    const [conversation, setConversation] = useState<ChatMessage[]>(() => {
+        // Load persisted history on mount, or fall back to initial greeting
+        if (typeof window === 'undefined') return [];
+        const saved = getChatHistory();
+        if (saved.length > 0) return saved;
+        if (initialMessage) return [{ role: 'model' as const, content: initialMessage }];
+        return [];
+    });
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
     const viewportRef = useRef<HTMLDivElement>(null);
 
+    // Scroll the chat viewport to the bottom
+    const scrollToBottom = () => {
+        requestAnimationFrame(() => {
+            const vp = viewportRef.current;
+            if (vp) vp.scrollTop = vp.scrollHeight;
+        });
+    };
+
+    // Scroll to bottom on mount (so the user sees the most recent messages)
     useEffect(() => {
-        if (initialMessage && conversation.length === 0) {
-            setConversation([{ role: 'model', content: initialMessage }]);
+        scrollToBottom();
+    }, []);
+
+    // Scroll to bottom whenever conversation changes or loading state changes
+    useEffect(() => {
+        scrollToBottom();
+    }, [conversation, isPending]);
+
+    // Persist conversation to localStorage whenever it changes
+    useEffect(() => {
+        if (conversation.length > 0) {
+            saveChatHistory(conversation);
         }
-    }, [initialMessage, conversation.length]);
+    }, [conversation]);
+
+    // Listen for storage events so the popover and full page stay in sync
+    useEffect(() => {
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === CHAT_HISTORY_KEY && e.newValue) {
+                try {
+                    const updated = JSON.parse(e.newValue) as ChatMessage[];
+                    setConversation(updated);
+                } catch { /* ignore parse errors */ }
+            }
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
+
+    const handleClearChat = () => {
+        clearChatHistory();
+        const fresh: ChatMessage[] = initialMessage
+            ? [{ role: 'model', content: initialMessage }]
+            : [];
+        setConversation(fresh);
+        saveChatHistory(fresh);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,16 +201,26 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
                     <Send className="h-5 w-5" />
                 </Button>
             </form>
-            {showLinkToFullPage && (
-                 <div className="text-center mt-2">
+            <div className="flex items-center justify-center gap-3 mt-2">
+                {showLinkToFullPage && (
                     <Button variant="link" asChild size="sm">
                         <Link href="/support">
                            Open in full page
                            <ExternalLink className="ml-2 h-4 w-4"/>
                         </Link>
                     </Button>
-                </div>
-            )}
+                )}
+                <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleClearChat}
+                    disabled={conversation.length <= 1}
+                    className="text-muted-foreground hover:text-foreground"
+                >
+                    <Eraser className="mr-1 h-3 w-3" />
+                    Clear Chat
+                </Button>
+            </div>
         </div>
     );
 }

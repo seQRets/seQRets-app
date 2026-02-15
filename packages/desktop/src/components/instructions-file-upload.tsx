@@ -104,8 +104,8 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-        isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 bg-muted/60 dark:border-[#827b6f] dark:bg-muted hover:border-primary/50 hover:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
+        'group relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+        isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
       )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -115,7 +115,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
     >
       <FileUp className="w-10 h-10 text-muted-foreground mb-3" />
       <p className="text-base font-medium">Drag & drop your instructions file here</p>
-      <p className="text-sm text-muted-foreground">or click to select a file (5MB limit)</p>
+      <p className="text-sm text-muted-foreground ">or click to select a file (5MB limit)</p>
       <input
         ref={fileInputRef}
         type="file"

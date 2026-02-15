@@ -379,8 +379,8 @@ export default function InstructionsPage() {
                     ) : (
                       <div
                         className={cn(
-                          'relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                          isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted'
+                          'group relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+                          isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
                         )}
                         onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                         onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
@@ -390,7 +390,7 @@ export default function InstructionsPage() {
                       >
                         <FileDown className="w-12 h-12 text-muted-foreground mb-4" />
                         <p className="text-lg font-medium">Drag & drop your encrypted instructions file here</p>
-                        <p className="text-muted-foreground">or click to browse</p>
+                        <p className="text-muted-foreground ">or click to browse</p>
                         <input
                           id="decrypt-instructions-input"
                           type="file"

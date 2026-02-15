@@ -64,8 +64,8 @@ export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen }: FileUpl
     <div className="space-y-4">
         <div
             className={cn(
-                'relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/40 hover:border-primary/50 hover:bg-muted'
+                'group relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+                isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
             )}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
@@ -75,7 +75,7 @@ export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen }: FileUpl
         >
             <FileUp className="w-12 h-12 text-muted-foreground mb-4" />
             <p className="text-lg font-medium">Drag & drop QR code images here</p>
-            <p className="text-muted-foreground">or click to browse files</p>
+            <p className="text-muted-foreground ">or click to browse files</p>
             <input
                 ref={fileInputRef}
                 type="file"
