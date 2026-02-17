@@ -272,7 +272,7 @@ export function CreateSharesForm() {
                 <div className={cn("flex items-center justify-center h-8 w-8 rounded-full font-bold text-lg", step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>1</div>
                 <h3 className="text-xl font-semibold">Enter Your Secret</h3>
               </div>
-              <div className="pl-11 space-y-4">
+              <div className="sm:pl-11 space-y-4">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="secret">Your Secret Text</Label>
@@ -372,7 +372,7 @@ export function CreateSharesForm() {
                     <div className={cn("flex items-center justify-center h-8 w-8 rounded-full font-bold text-lg", step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>2</div>
                     <h3 className="text-xl font-semibold">Secure Your Secret</h3>
                   </div>
-                  <div className="pl-11 space-y-6">
+                  <div className="sm:pl-11 space-y-6">
                     <PasswordGenerator value={password} onValueChange={setPassword} onValidationChange={setIsPasswordValid} />
 
                     <div className="space-y-4 rounded-md border p-4">
@@ -440,7 +440,7 @@ export function CreateSharesForm() {
                         <div className={cn("flex items-center justify-center h-8 w-8 rounded-full font-bold text-lg", step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>3</div>
                         <h3 className="text-xl font-semibold">Split into Qards</h3>
                       </div>
-                      <div className="pl-11 space-y-6">
+                      <div className="sm:pl-11 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex flex-col justify-end space-y-3">
                                 <div className="flex items-center gap-2">

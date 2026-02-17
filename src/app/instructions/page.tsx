@@ -252,7 +252,7 @@ export default function InstructionsPage() {
                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">1</div>
                     <h3 className="text-xl font-semibold">Upload Instructions File</h3>
                   </div>
-                  <div className="pl-11 space-y-4">
+                  <div className="sm:pl-11 space-y-4">
                     <p className="text-sm text-muted-foreground">
                       Select the file you want to encrypt (e.g. a pdf, docx, odt or txt file with instructions for your heirs). Max 5MB.
                     </p>
@@ -276,7 +276,7 @@ export default function InstructionsPage() {
                         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">2</div>
                         <h3 className="text-xl font-semibold">Provide Credentials</h3>
                       </div>
-                      <div className="pl-11 space-y-6">
+                      <div className="sm:pl-11 space-y-6">
                         {/* Password */}
                         <PasswordGenerator value={encryptPassword} onValueChange={setEncryptPassword} onValidationChange={setIsEncryptPasswordValid} placeholder="Enter the password used for your Qards or generate a new one" />
 
@@ -329,7 +329,7 @@ export default function InstructionsPage() {
                         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">3</div>
                         <h3 className="text-xl font-semibold">Encrypt & Download</h3>
                       </div>
-                      <div className="pl-11 space-y-4">
+                      <div className="sm:pl-11 space-y-4">
                         <p className="text-sm text-muted-foreground">
                           Click the button below to encrypt your instructions file. The encrypted file will be downloaded as <code className="bg-muted px-1 py-0.5 rounded">seqrets-instructions.json</code>.
                         </p>
@@ -358,7 +358,7 @@ export default function InstructionsPage() {
                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">1</div>
                     <h3 className="text-xl font-semibold">Upload Instructions File</h3>
                   </div>
-                  <div className="pl-11 space-y-4">
+                  <div className="sm:pl-11 space-y-4">
                     <p className="text-sm text-muted-foreground">
                       Upload the encrypted <code className="bg-muted px-1 py-0.5 rounded">seqrets-instructions.json</code> file.
                     </p>
@@ -419,7 +419,7 @@ export default function InstructionsPage() {
                         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">2</div>
                         <h3 className="text-xl font-semibold">Provide Your Credentials</h3>
                       </div>
-                      <div className="pl-11 space-y-6">
+                      <div className="sm:pl-11 space-y-6">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Label htmlFor="decrypt-password">Password</Label>
@@ -500,7 +500,7 @@ export default function InstructionsPage() {
                         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">3</div>
                         <h3 className="text-xl font-semibold">Decrypt & Download</h3>
                       </div>
-                      <div className="pl-11 space-y-4">
+                      <div className="sm:pl-11 space-y-4">
                         <p className="text-sm text-muted-foreground">
                           Click the button below to decrypt the instructions file. The original file will be downloaded.
                         </p>

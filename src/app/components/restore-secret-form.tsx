@@ -474,7 +474,7 @@ export function RestoreSecretForm() {
                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">1</div>
                 <h3 className="text-xl font-semibold">Add Your Qards</h3>
               </div>
-              <div className="pl-11 space-y-4">
+              <div className="sm:pl-11 space-y-4">
                 <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                   <FileUpload
                         onFilesAdded={handleFilesAdded}
@@ -575,7 +575,7 @@ export function RestoreSecretForm() {
                     <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">2</div>
                     <h3 className="text-xl font-semibold">Provide Your Credentials</h3>
                   </div>
-                  <div className="pl-11 space-y-6">
+                  <div className="sm:pl-11 space-y-6">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Label htmlFor="password-restore">Your Password</Label>
@@ -645,7 +645,7 @@ export function RestoreSecretForm() {
                             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">3</div>
                             <h3 className="text-xl font-semibold">Restore Your Secret</h3>
                         </div>
-                        <div className="pl-11 space-y-4">
+                        <div className="sm:pl-11 space-y-4">
                             <p className="text-sm text-muted-foreground">
                                 Once you have added enough shares and entered your credentials, click the button below to decrypt and reveal your secret.
                             </p>
