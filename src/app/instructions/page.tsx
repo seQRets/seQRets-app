@@ -524,7 +524,7 @@ export default function InstructionsPage() {
           </CardContent>
         </Card>
 
-        <footer className="text-center text-sm text-muted-foreground pb-8">
+        <footer className="text-center text-sm text-muted-foreground mt-8 mb-16">
           <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
           <p className="mt-1">Your security is your responsibility. Use with caution.</p>
         </footer>
