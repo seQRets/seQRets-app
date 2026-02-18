@@ -1,6 +1,6 @@
 [package]
 name = "seqrets-desktop"
-version = "0.9.0"
+version = "0.9.9"
 description = "seQRets — Secure. Split. Share."
 authors = ["seQRets"]
 license = "AGPL-3.0-or-later"

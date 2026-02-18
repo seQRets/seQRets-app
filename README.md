@@ -14,7 +14,7 @@ seQRets is a hyper-secure, open-source application designed to protect your most
 
 To restore your original secret, you must bring a specific number of these Qards back together. This eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning.
 
-> **Version 0.9.0 "Pyre"** — Available as a web app (Next.js) and native desktop app (Tauri + Vite).
+> **Version 0.9.9 "Pyre"** — Available as a web app (Next.js) and native desktop app (Tauri + Vite).
 
 ## ⚠️ Warning
 
@@ -275,7 +275,7 @@ npm run desktop:dev
 npm run desktop:build
 ```
 
-Produces `seQRets_0.9.0_aarch64.dmg` in `packages/desktop/src-tauri/target/release/bundle/dmg/`.
+Produces `seQRets_0.9.9_aarch64.dmg` in `packages/desktop/src-tauri/target/release/bundle/dmg/`.
 
 ### 🤖 Optional: Bob AI Assistant
 
