@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface BobChatInterfaceProps {
   initialMessage?: string;
@@ -140,6 +141,7 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
                               : "bg-muted dark:bg-[#4a4446]"
                         )}>
                             <ReactMarkdown
+                              rehypePlugins={[rehypeSanitize]}
                               components={{
                                   p: ({node, ...props}) => <p className="text-sm" {...props} />,
                                   ol: ({node, ...props}) => <ol className="list-decimal space-y-1 pl-4" {...props} />,

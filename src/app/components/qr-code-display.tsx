@@ -86,6 +86,9 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     }
   `;
 
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   const getPrintableHtmlForShare = (index: number, forPrintAll: boolean = false) => {
     const qrUri = qrCodeUris[index];
     if (!qrUri && !isTextOnly) return '';
@@ -105,10 +108,10 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
 
             <div>
                 <h2 style="font-size: 20px; font-weight: 700; margin: 20px 0 5px 0; color: #231f20;">Qard #${index + 1}</h2>
-                <p style="font-size: 14px; color: #6b6567; margin: 0 0 10px 0;">Set: <b style="font-weight: 500;">${setId}</b></p>
+                <p style="font-size: 14px; color: #6b6567; margin: 0 0 10px 0;">Set: <b style="font-weight: 500;">${escapeHtml(setId)}</b></p>
 
                 <div style="font-size: 14px; color: #3e3739; line-height: 1.6; margin-bottom: 20px;">
-                    ${label ? `Label: <b style="font-weight: 500;">${label}</b><br/>` : ''}
+                    ${label ? `Label: <b style="font-weight: 500;">${escapeHtml(label)}</b><br/>` : ''}
                     Created: <b style="font-weight: 500;">${createdDate}</b>
                 </div>
 
