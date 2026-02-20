@@ -12,6 +12,7 @@ import {
   Info,
   Home,
   FileText,
+  Github,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -104,6 +105,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                     <Info className="h-5 w-5" />
                     <span>About</span>
                 </Link>
+                <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => setOpen(false)}>
+                    <Github className="h-5 w-5" />
+                    <span>GitHub</span>
+                </a>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
                  <DropdownMenu>
@@ -206,6 +211,12 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer">
+              <Github className="mr-2 h-4 w-4" />
+              <span>GitHub</span>
+            </a>
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>

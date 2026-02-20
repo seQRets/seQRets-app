@@ -67,7 +67,7 @@ export default function AboutPage() {
                                 <p><span className="font-semibold text-foreground">Shamir's Secret Sharing</span> for threshold-based backup splitting</p>
                             </div>
                             <p className="pt-2 border-t text-xs">
-                                All cryptographic operations run entirely on your device. Your secrets never leave this machine.
+                                <em>All cryptographic operations run entirely on your device. Your secrets never leave this machine.</em>
                             </p>
                         </CardContent>
                     </Card>
@@ -81,7 +81,7 @@ export default function AboutPage() {
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
                             <p>
-                                seQRets is open source. You can review the code, audit the cryptography, and build it yourself.
+                                seQRets is open source. You can <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">review the code</a>, audit the cryptography, and build it yourself.
                             </p>
                             <p className="font-semibold text-foreground">Built with:</p>
                             <ul className="list-disc pl-4 space-y-1">
