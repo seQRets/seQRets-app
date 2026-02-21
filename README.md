@@ -121,6 +121,80 @@ Purchase an official release and receive:
 ### 🧬 BIP-39 Optimization
 Seed phrases are automatically detected and converted to compact binary entropy before encryption. A 24-word phrase (~150 characters) becomes just 32 bytes, dramatically reducing QR code size.
 
+## 💡 How It Works
+
+### 📜 Encrypting an Inheritance Plan
+
+**Option A — Upload a File (Encrypt Plan tab)**
+1. **Upload** a document with instructions for your heirs (PDF, DOCX, ODT, TXT — up to 5MB)
+2. **Set** a strong password (use the same password as your Qards, or generate a new one)
+3. **Encrypt** — the file is encrypted with XChaCha20-Poly1305
+4. **Save** — choose **Save to File** and/or **Write to Smart Card** (desktop only, for files under 8 KB)
+
+**Option B — Build In-App (Create Plan tab, desktop only)**
+1. **Fill out** the structured 7-section form: plan info, recovery credentials, Qard locations, digital assets, restoration steps, professional contacts, and a personal message
+2. **Set** a strong password and optional keyfile
+3. **Encrypt** — the plan is serialized as compact JSON (~2-4 KB) and encrypted
+4. **Save** — saved with a dynamic filename based on the preparer's last name (e.g., `Smith-Inheritance-Plan.json`) and/or written to a smart card
+
+To decrypt, go to the **Decrypt Plan** tab, upload the encrypted `.json` file or **load from a smart card** (desktop only), and provide the same password (and keyfile if used). In-app plans are automatically detected and displayed in a structured read-only viewer.
+
+## 🏛️ Inheritance Planning Guide
+
+Cryptocurrency has no "forgot password" recovery. If the holder dies without a plan, the assets are permanently lost. seQRets is designed to solve this problem.
+
+### The Split Trust Model
+
+The recommended approach creates **layered security with no single point of failure**:
+
+| Layer | What | How |
+|-------|------|-----|
+| **1. Split the Secret** | Encrypt and split your seed phrase into Qards | Use the **Secure Secret** tab with a 2-of-3 or 3-of-5 threshold |
+| **2. Write the Plan** | Create a clear instruction document for your heirs | Use the **Inheritance Plan** tab to encrypt a PDF/DOCX with recovery steps |
+| **3. Distribute** | Give Qards to different trusted people/locations | No single person or location gets everything |
+
+### Example: 2-of-3 Distribution
+
+| Item | Location | Who Has Access |
+|------|----------|---------------|
+| Qard 1 | Home fireproof safe | Spouse |
+| Qard 2 | Trusted family member | Sibling or adult child |
+| Qard 3 | Bank safe deposit box | Named on the box |
+| Encrypted Plan | With estate attorney | Attorney (sealed) |
+| Password | Inside the encrypted plan only | No one — until decrypted |
+
+> **Critical rule:** The password should NEVER be stored alongside the Qards. Include it only inside the encrypted inheritance plan document.
+
+### What to Put in Your Inheritance Plan Document
+
+The desktop app's **Create Plan** tab provides a structured form covering all of these sections. Alternatively, your encrypted instruction document should include:
+- **Asset inventory** — list of wallets, exchanges, and holdings (not the secrets themselves)
+- **Recovery instructions** — step-by-step guide for using seQRets to restore the secret
+- **Qard locations** — where each Qard is physically stored and who holds it
+- **Password** — safe to include here because the document is encrypted
+- **Keyfile location** — if used, where the keyfile is stored
+- **Exchange accounts** — exchange names, registered emails, and instructions to contact them with a death certificate
+- **Hardware wallet locations** — physical devices, PINs, and access instructions
+- **Professional contacts** — attorney, financial advisor, trusted technical friend
+
+### Common Mistakes
+
+- ❌ Storing seed phrases in a will (wills become public during probate)
+- ❌ Telling no one your crypto exists
+- ❌ Giving one person all Qards + the password
+- ❌ Never testing the recovery process
+- ❌ Forgetting to update after acquiring new assets or changing passwords
+
+### Legal Considerations
+
+> ⚠️ **seQRets is not a legal tool.** Consult a qualified estate planning attorney for wills, trusts, powers of attorney, and tax planning. seQRets handles the technical security layer — splitting and encrypting your secrets — but a complete estate plan requires legal documentation.
+
+Key topics to discuss with your attorney:
+- **Digital asset clauses** in your will or trust
+- **Revocable living trusts** to avoid probate for crypto assets
+- **Durable power of attorney** explicitly covering digital assets (for incapacity, not just death)
+- **Tax implications** — inherited crypto may receive a stepped-up cost basis
+
 ## 🔐 Security Architecture
 
 All cryptographic operations run **entirely on your device**. Your secrets never leave your machine.
@@ -302,7 +376,7 @@ seQRets/
 | **Web App** | Next.js 16, React 19, TypeScript, Tailwind CSS, Radix UI |
 | **Desktop App** | Tauri v2, Vite, React 19, TypeScript, Tailwind CSS, Radix UI |
 | **Desktop Crypto (Rust)** | argon2, chacha20poly1305, zeroize, flate2, rand |
-| **Crypto Library (JS)** | @noble/ciphers, @noble/hashes, @scure/bip39, shamirs-secret-sharing-ts |
+| **Crypto Library (JS)** | @noble/ciphers, @noble/hashes, @scure/bip39, shamirs-secret-sharing-ts, pako |
 | **AI Assistant** | Google Gemini (via @google/generative-ai) |
 | **QR Codes** | qrcode (generate), jsQR (decode) |
 | **Smartcard** | JavaCard 3.0.4 applet, Rust pcsc crate, GlobalPlatformPro |
@@ -366,80 +440,6 @@ Bob is an AI assistant that can answer questions about seQRets and inheritance p
 | `npm run desktop:build` | Build desktop .dmg installer |
 | `npm run lint` | Run linter |
 | `npm run type-check` | TypeScript type checking |
-
-## 💡 How It Works
-
-### 📜 Encrypting an Inheritance Plan
-
-**Option A — Upload a File (Encrypt Plan tab)**
-1. **Upload** a document with instructions for your heirs (PDF, DOCX, ODT, TXT — up to 5MB)
-2. **Set** a strong password (use the same password as your Qards, or generate a new one)
-3. **Encrypt** — the file is encrypted with XChaCha20-Poly1305
-4. **Save** — choose **Save to File** and/or **Write to Smart Card** (desktop only, for files under 8 KB)
-
-**Option B — Build In-App (Create Plan tab, desktop only)**
-1. **Fill out** the structured 7-section form: plan info, recovery credentials, Qard locations, digital assets, restoration steps, professional contacts, and a personal message
-2. **Set** a strong password and optional keyfile
-3. **Encrypt** — the plan is serialized as compact JSON (~2-4 KB) and encrypted
-4. **Save** — saved with a dynamic filename based on the preparer's last name (e.g., `Smith-Inheritance-Plan.json`) and/or written to a smart card
-
-To decrypt, go to the **Decrypt Plan** tab, upload the encrypted `.json` file or **load from a smart card** (desktop only), and provide the same password (and keyfile if used). In-app plans are automatically detected and displayed in a structured read-only viewer.
-
-## 🏛️ Inheritance Planning Guide
-
-Cryptocurrency has no "forgot password" recovery. If the holder dies without a plan, the assets are permanently lost. seQRets is designed to solve this problem.
-
-### The Split Trust Model
-
-The recommended approach creates **layered security with no single point of failure**:
-
-| Layer | What | How |
-|-------|------|-----|
-| **1. Split the Secret** | Encrypt and split your seed phrase into Qards | Use the **Secure Secret** tab with a 2-of-3 or 3-of-5 threshold |
-| **2. Write the Plan** | Create a clear instruction document for your heirs | Use the **Inheritance Plan** tab to encrypt a PDF/DOCX with recovery steps |
-| **3. Distribute** | Give Qards to different trusted people/locations | No single person or location gets everything |
-
-### Example: 2-of-3 Distribution
-
-| Item | Location | Who Has Access |
-|------|----------|---------------|
-| Qard 1 | Home fireproof safe | Spouse |
-| Qard 2 | Trusted family member | Sibling or adult child |
-| Qard 3 | Bank safe deposit box | Named on the box |
-| Encrypted Plan | With estate attorney | Attorney (sealed) |
-| Password | Inside the encrypted plan only | No one — until decrypted |
-
-> **Critical rule:** The password should NEVER be stored alongside the Qards. Include it only inside the encrypted inheritance plan document.
-
-### What to Put in Your Inheritance Plan Document
-
-The desktop app's **Create Plan** tab provides a structured form covering all of these sections. Alternatively, your encrypted instruction document should include:
-- **Asset inventory** — list of wallets, exchanges, and holdings (not the secrets themselves)
-- **Recovery instructions** — step-by-step guide for using seQRets to restore the secret
-- **Qard locations** — where each Qard is physically stored and who holds it
-- **Password** — safe to include here because the document is encrypted
-- **Keyfile location** — if used, where the keyfile is stored
-- **Exchange accounts** — exchange names, registered emails, and instructions to contact them with a death certificate
-- **Hardware wallet locations** — physical devices, PINs, and access instructions
-- **Professional contacts** — attorney, financial advisor, trusted technical friend
-
-### Common Mistakes
-
-- ❌ Storing seed phrases in a will (wills become public during probate)
-- ❌ Telling no one your crypto exists
-- ❌ Giving one person all Qards + the password
-- ❌ Never testing the recovery process
-- ❌ Forgetting to update after acquiring new assets or changing passwords
-
-### Legal Considerations
-
-> ⚠️ **seQRets is not a legal tool.** Consult a qualified estate planning attorney for wills, trusts, powers of attorney, and tax planning. seQRets handles the technical security layer — splitting and encrypting your secrets — but a complete estate plan requires legal documentation.
-
-Key topics to discuss with your attorney:
-- **Digital asset clauses** in your will or trust
-- **Revocable living trusts** to avoid probate for crypto assets
-- **Durable power of attorney** explicitly covering digital assets (for incapacity, not just death)
-- **Tax implications** — inherited crypto may receive a stepped-up cost basis
 
 ## 🤝 Contributing
 
