@@ -10,9 +10,9 @@
 
 **Secure. Split. Share.**
 
-seQRets is a hyper-secure, open-source application designed to protect your most sensitive digital information — from crypto seed phrases and private keys to passwords and other confidential data. It uses **Shamir's Secret Sharing** to split your secret into multiple QR codes called **Qards**.
+seQRets **encrypts** and splits your most sensitive secrets — seed phrases, private keys, passwords, and other confidential data — into QR codes called **Qards**, using **Shamir's Secret Sharing**. Use it to **protect your own digital assets** with layered, distributed security, or to ensure your **loved ones can inherit them** when the time comes.
 
-To restore your original secret, you must bring a specific number of these Qards back together. This eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning. Everything runs locally — your secrets are never transmitted to any server.
+Recovering a secret requires combining a configurable threshold of Qards (e.g., 2 of 3) — no single Qard holds enough to restore anything on its own, eliminating the single point of failure that plagues traditional backups. Nothing is stored online: no accounts, no KYC, no data shared with anyone you don't choose. The desktop app includes **EAL6+ JavaCard smartcard support** for tamper-resistant, simple physical distribution of Qards and inheritance plans.
 
 > 🛡️ **Your secrets never leave your device.** All encryption, splitting, and decryption happens entirely in your browser (web) or on your machine (desktop). No servers, no cloud, no accounts, no telemetry. seQRets is [open source](https://github.com/jalapeno4332/seQRets) — audit every line.
 
