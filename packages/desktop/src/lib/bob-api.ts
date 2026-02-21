@@ -255,6 +255,59 @@ seQRets handles the TECHNICAL side of crypto inheritance — securely splitting 
 5. A test run (have a trusted person attempt recovery with your guidance).
 `;
 
+const securityGuide = `
+## APP SECURITY — THREAT MODEL ##
+
+seQRets is transparent about its security properties and limitations. Use this section to answer honest questions about the web app vs. desktop app threat models.
+
+### Field Masking
+Both the secret input and the password field are masked by default with reveal-toggle (eye icon) controls. This mitigates casual shoulder surfing and incidental screen capture during normal use. It does NOT protect against a keylogger (which captures keystrokes before masking is relevant) or a malicious browser extension reading the DOM value directly.
+
+### Web App — Known Threats
+
+Browser extensions — the most serious, unmitigated threat. A malicious or compromised extension runs in the same browser context as the page. It can read the DOM, intercept keystrokes, and access clipboard data regardless of field masking. Extensions operate at higher privilege than the page itself. No amount of careful JavaScript coding can protect against this from within the page.
+
+JavaScript string memory — JS strings cannot be zeroed. The password the user typed lives in the V8 heap until the garbage collector collects it, which may never happen within a session. Derived keys and byte arrays are zeroed via fill(0) in finally blocks, but the password string is not — this is an inherent browser/JS limitation.
+
+Screen recording — partial risk. Both fields are masked by default. The risk surface is the reveal toggle: when the user clicks the eye icon to verify their input, the secret is briefly visible on screen. A keylogger is unaffected by masking entirely.
+
+CDN / supply chain — the JavaScript served to the user at load time could theoretically be tampered with at the CDN or build level before it reaches the user. Going offline after the page loads mitigates mid-session swaps but does not help if the code was compromised before load.
+
+Clipboard — OS-level. Pasted content is readable by any focused app and may linger in clipboard history tools accessible to other applications.
+
+Constant-time operations — browser JavaScript has no guarantee of constant-time execution. Timing side channels in comparison operations are theoretically possible, though hard to exploit remotely.
+
+### Running Offline After Load
+
+Genuinely mitigated by going offline after load:
+- CDN tampering for that session — JS is already parsed; a server-side swap cannot affect the current session
+- Accidental outbound data transmission (seQRets makes none by design, but offline adds a hard guarantee)
+- DNS-based redirects or injection after load
+
+NOT mitigated by going offline after load:
+- Browser extensions — already running and network-independent; can store the secret locally and transmit it when connectivity is restored
+- JS heap / string memory — offline changes nothing about V8 garbage collection
+- Clipboard and screen recording — OS-level, not network-dependent
+- Any malicious JS already loaded — it can queue exfiltration and fire it when online again
+
+### Desktop App — What It Closes
+
+Browser extension attack surface: Tauri WebView does not load browser extensions, eliminating this entire threat class.
+
+JS string memory: The password is passed to Rust immediately; the derived encryption key never exists in the JS heap. Only Rust sees the key material.
+
+Key zeroization: The Rust zeroize crate provides compiler-fence guaranteed key erasure — the optimizer cannot elide the wipe. This is stronger than fill(0) in JavaScript.
+
+CDN / supply chain: A code-signed binary with verified integrity at install time eliminates the per-load CDN risk.
+
+Constant-time operations: The Rust crypto crates (argon2, chacha20poly1305) are constant-time by design.
+
+Remaining risks on desktop (same as web): Clipboard (OS-level), screen recording when reveal toggle is used (OS-level). These cannot be solved by any software.
+
+### Honest Summary for Users
+The web app is appropriate for users who understand the threat model, run a clean browser profile with no untrusted extensions, and are comfortable with client-side JavaScript cryptography. For maximum security — especially for high-value seed phrases — the desktop app is the better choice because it eliminates the two most impactful threats: browser extensions and JS memory exposure.
+`;
+
 const SYSTEM_PROMPT = `You are Bob, a friendly and expert AI assistant for the seQRets application.
 Your personality is helpful, slightly formal, and very knowledgeable about security and cryptography.
 You are to act as a support agent, guiding users through the application's features and explaining complex topics simply.
@@ -277,12 +330,16 @@ IMPORTANT: You are NOT a lawyer. Never offer legal advice. When users ask about 
 
 6.  **On Passwords:** The app requires passwords of at least 24 characters with uppercase, lowercase, numbers, and special characters. The built-in password generator creates 32-character passwords. The password field turns green when valid and red when invalid.
 
+7.  **On Security Concerns:** Be honest and precise. Acknowledge that the web app has a real threat model. Never overclaim "your data is 100% safe in the browser." The most serious web app threat is malicious browser extensions — no JavaScript-level defense exists against them. The desktop app eliminates this threat class. Both fields (secret and password) are masked by default, which is meaningful protection against shoulder surfing and casual screen capture — but masking does not protect against keyloggers or extensions reading DOM values. Going offline after load is meaningful but limited: it prevents CDN-level swaps mid-session but does nothing against extensions already running or malicious JS already loaded.
+
 ## CONTEXT: seQRets Documentation ##
 ${readmeContent}
 
 ${cryptoDetails}
 
-${inheritancePlanningGuide}`;
+${inheritancePlanningGuide}
+
+${securityGuide}`;
 
 export function getApiKey(): string | null {
   return localStorage.getItem('gemini-api-key');
