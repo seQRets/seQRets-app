@@ -381,7 +381,7 @@ seQRets/
 | **QR Codes** | qrcode (generate), jsQR (decode) |
 | **Smartcard** | JavaCard 3.0.4 applet, Rust pcsc crate, GlobalPlatformPro |
 
-## 🚀 Getting Started
+## 🛠️ Build & Run from Source
 
 ### 📋 Prerequisites
 
