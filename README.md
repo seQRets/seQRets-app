@@ -133,8 +133,8 @@ All cryptographic operations run **entirely on your device**. Your secrets never
 | **Nonce** | 24 random bytes | Per-encryption nonce for XChaCha20 |
 | **Splitting** | Shamir's Secret Sharing | Threshold-based secret splitting into Qards |
 | **Compression** | Gzip (level 9) | Reduce payload size before encryption |
-| **RNG** | Web Crypto API CSPRNG (`crypto.getRandomValues()`) | All random bytes — salts, nonces, passwords, seed entropy, keyfiles |
-| **Memory** | Buffer zeroing | Derived keys, decrypted plaintext, and keyfile bytes are zeroed via `fill(0)` in `finally` blocks after each operation. Note: JavaScript strings (e.g. passwords) cannot be cryptographically zeroed — an inherent browser/JS limitation. |
+| **RNG** | OS-backed CSPRNG | **Desktop:** Rust `rand::thread_rng()` (OS entropy) for salts/nonces; `crypto.getRandomValues()` for passwords/keyfiles. **Web:** `crypto.getRandomValues()` for all operations. |
+| **Memory** | Key zeroization | **Desktop:** Rust `zeroize` crate — compiler-fence guaranteed, optimizer-proof. Keys never cross the JS/Rust boundary. **Web:** `fill(0)` in `finally` blocks. Note: JS strings (passwords) cannot be zeroed — a browser/JS limitation. |
 
 ### 🔗 Encrypt-First Architecture (Security by Design)
 
@@ -170,8 +170,8 @@ All randomness in seQRets is sourced from a **Cryptographically Secure Pseudo-Ra
 | **Seed phrase (24 words)** | 256 bits | `@scure/bip39` → `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
 | **Password generation** | 32 × 32-bit values | `window.crypto.getRandomValues(new Uint32Array(32))` mapped to 88-char charset |
 | **Keyfile generation** | 256 bits | `window.crypto.getRandomValues(new Uint8Array(32))` |
-| **Encryption salt** | 128 bits (16 bytes) | `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
-| **Encryption nonce** | 192 bits (24 bytes) | `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Encryption salt** | 128 bits (16 bytes) | Desktop: Rust `rand::thread_rng()` → OS entropy; Web: `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Encryption nonce** | 192 bits (24 bytes) | Desktop: Rust `rand::thread_rng()` → OS entropy; Web: `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
 
 No `Math.random()` or any other weak PRNG is used for any security-critical operation.
 
@@ -234,11 +234,11 @@ seQRets/
 │       ├── page.tsx         #   Home (Secure Secret / Restore Secret)
 │       └── instructions/    #   Inheritance Plan (Encrypt / Decrypt)
 ├── packages/
-│   ├── crypto/              # @seqrets/crypto — shared cryptography library
-│   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39
+│   ├── crypto/              # @seqrets/crypto — shared JS crypto library
+│   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39 (full impl. for web; BIP-39 helpers for desktop)
 │   ├── desktop/             # @seqrets/desktop — Tauri v2 desktop app
 │   │   ├── src/             #   React + Vite frontend (pages + components)
-│   │   └── src-tauri/       #   Rust backend (PC/SC smartcard + macOS config)
+│   │   └── src-tauri/       #   Rust backend (crypto engine, PC/SC smartcard, macOS config)
 │   └── javacard/            # JavaCard applet for smartcard storage
 │       ├── src/             #   SeQRetsApplet.java (APDU command handler)
 │       └── build.xml        #   Ant build file (produces .cap)
@@ -252,7 +252,8 @@ seQRets/
 |-----------|------------|
 | **Web App** | Next.js 16, React 19, TypeScript, Tailwind CSS, Radix UI |
 | **Desktop App** | Tauri v2, Vite, React 19, TypeScript, Tailwind CSS, Radix UI |
-| **Crypto Library** | @noble/ciphers, @noble/hashes, @scure/bip39, shamirs-secret-sharing-ts |
+| **Desktop Crypto (Rust)** | argon2, chacha20poly1305, zeroize, flate2, rand |
+| **Crypto Library (JS)** | @noble/ciphers, @noble/hashes, @scure/bip39, shamirs-secret-sharing-ts |
 | **AI Assistant** | Google Gemini (via @google/generative-ai) |
 | **QR Codes** | qrcode (generate), jsQR (decode) |
 | **Smartcard** | JavaCard 3.0.4 applet, Rust pcsc crate, GlobalPlatformPro |
@@ -318,19 +319,6 @@ Bob is an AI assistant that can answer questions about seQRets and inheritance p
 | `npm run type-check` | TypeScript type checking |
 
 ## 💡 How It Works
-
-### 🔏 Encrypting a Secret
-
-1. **Enter** your secret (seed phrase, private key, password, or any text)
-2. **Secure** it with a strong password (and optional keyfile)
-3. **Split** into your chosen Qard configuration (e.g., 2-of-3)
-4. **Download** your Qards as QR images, a ZIP, a `.seqrets` vault file, or **write to a smartcard**
-
-### 🔑 Restoring a Secret
-
-1. **Add** the required number of Qards (drag-drop, upload, camera scan, smartcard, or manual entry)
-2. **Enter** your password (and keyfile if used during encryption)
-3. **Restore** — your original secret is revealed
 
 ### 📜 Encrypting an Inheritance Plan
 
