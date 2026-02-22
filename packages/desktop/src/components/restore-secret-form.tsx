@@ -5,7 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
-import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown } from 'lucide-react';
+import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, QrCode, Sprout } from 'lucide-react';
+import QRCode from 'qrcode';
+import { wordlist } from '@scure/bip39/wordlists/english';
+import { tryGetEntropy } from '@/lib/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
@@ -41,6 +44,9 @@ export function RestoreSecretForm() {
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
+  const [qrMode, setQrMode] = useState<'none' | 'data' | 'seed'>('none');
+  const [qrDataUri, setQrDataUri] = useState<string | null>(null);
+  const [seedQrUris, setSeedQrUris] = useState<string[]>([]);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
@@ -438,8 +444,43 @@ export function RestoreSecretForm() {
     setUseKeyfile(false);
     setKeyfile(null);
     setKeyfileName(null);
+    setQrMode('none');
+    setQrDataUri(null);
+    setSeedQrUris([]);
     setStep(1);
   }
+
+  // ── QR display helpers ───────────────────────────────────────────
+
+  /** Encode a single BIP-39 phrase as a SeedQR numeric string (4-digit zero-padded word indices). */
+  const toSeedQR = (phrase: string): string =>
+    phrase.split(/\s+/).map(word => wordlist.indexOf(word).toString().padStart(4, '0')).join('');
+
+  const mnemonicResult = restoredSecret ? tryGetEntropy(restoredSecret) : null;
+  const isMnemonic = mnemonicResult !== null;
+
+  const handleDataQr = async () => {
+    if (qrMode === 'data') { setQrMode('none'); return; }
+    try {
+      const uri = await QRCode.toDataURL(restoredSecret, { errorCorrectionLevel: 'L', margin: 2, width: 800 });
+      setQrDataUri(uri);
+      setQrMode('data');
+    } catch { /* QR generation failed — secret may be too long */ }
+  };
+
+  const handleSeedQr = async () => {
+    if (qrMode === 'seed') { setQrMode('none'); return; }
+    if (!mnemonicResult) return;
+    try {
+      const uris = await Promise.all(
+        mnemonicResult.chunks.map(chunk =>
+          QRCode.toDataURL(toSeedQR(chunk), { errorCorrectionLevel: 'L', margin: 2, width: 800 })
+        )
+      );
+      setSeedQrUris(uris);
+      setQrMode('seed');
+    } catch { /* QR generation failed */ }
+  };
 
   const handleCopy = () => {
     if (restoredSecret) {
@@ -504,6 +545,46 @@ export function RestoreSecretForm() {
                         </Button>
                     </div>
                 </div>
+                <div className="flex justify-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(qrMode === 'data' && "border-primary text-primary")}
+                        onClick={handleDataQr}
+                    >
+                        <QrCode className="mr-2 h-4 w-4" />
+                        QR Code
+                    </Button>
+                    {isMnemonic && (
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(qrMode === 'seed' && "border-primary text-primary")}
+                          onClick={handleSeedQr}
+                      >
+                          <Sprout className="mr-2 h-4 w-4" />
+                          SeedQR
+                      </Button>
+                    )}
+                </div>
+                {qrMode === 'data' && qrDataUri && (
+                  <div className={cn("transition-all duration-300", !isSecretVisible && "blur-md")}>
+                    <img src={qrDataUri} alt="QR Code" className="mx-auto max-w-[250px] rounded" />
+                    <p className="text-xs text-muted-foreground mt-1">Data QR</p>
+                  </div>
+                )}
+                {qrMode === 'seed' && seedQrUris.length > 0 && (
+                  <div className={cn("space-y-3 transition-all duration-300", !isSecretVisible && "blur-md")}>
+                    {seedQrUris.map((uri, i) => (
+                      <div key={i}>
+                        <img src={uri} alt={`SeedQR ${i + 1}`} className="mx-auto max-w-[250px] rounded" />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          SeedQR{seedQrUris.length > 1 ? ` ${i + 1} of ${seedQrUris.length}` : ''}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Button onClick={handleReset} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
                   <RefreshCcw className="mr-2 h-4 w-4" /> Start Over
                 </Button>
