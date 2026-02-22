@@ -68,6 +68,10 @@ export const readCardItems = (reader: string, pin?: string | null) =>
 export const readCardItem = (reader: string, index: number, pin?: string | null) =>
   invoke<CardItem>('read_card_item', { reader, index, pin: pin || null });
 
+/** Write a complete set of items to the card, replacing any existing data. */
+export const writeAllItems = (reader: string, items: CardItem[], pin?: string | null) =>
+  invoke<void>('write_all_items', { reader, items, pin: pin || null });
+
 // ── Delete operations ───────────────────────────────────────────────────
 
 /** Delete a single item by index (rewrites remaining items). */

@@ -313,6 +313,7 @@ The desktop app supports storing Shamir shares, encrypted vaults, and encrypted 
 - **PIN retry countdown** — real-time display of remaining PIN attempts (color-coded: gray → amber → red) across both the Smart Card Manager page and the smart card dialog
 - **Generate PIN** — CSPRNG-powered 16-character PIN generator (upper/lowercase, numbers, symbols) with copy-to-clipboard and reveal/hide toggle
 - **Data chunking** — automatically handles payloads larger than the 240-byte APDU limit
+- **Clone card** — read all items from one card and write them to another card via the Smart Card Manager page; supports both single-reader (swap card) and dual-reader workflows with an optional destination PIN
 - **Erase** confirmation to prevent accidental data loss
 
 ### Applet Installation

@@ -569,6 +569,25 @@ pub fn erase_card(reader: String, pin: Option<String>) -> Result<(), String> {
     result.map(|_| ())
 }
 
+/// Write a complete set of items to the card, replacing any existing data.
+/// Used by the clone-card feature to bulk-write items read from another card.
+#[tauri::command]
+pub fn write_all_items(
+    reader: String,
+    items: Vec<CardItem>,
+    pin: Option<String>,
+) -> Result<(), String> {
+    if items.is_empty() {
+        return Err("No items to write.".to_string());
+    }
+    let (_ctx, card) = connect_reader(&reader)?;
+    select_applet(&card)?;
+    verify_pin_if_needed(&card, &pin)?;
+    let result = write_items_to_card(&card, &items);
+    disconnect_with_reset(card);
+    result
+}
+
 /// Force-erase a card without PIN verification.
 /// Used to recover locked cards (PIN retries exhausted).
 /// The applet allows ERASE_DATA without prior PIN verification.

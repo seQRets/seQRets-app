@@ -41,6 +41,7 @@ import {
   Eye,
   EyeOff,
   Copy,
+  CopyCheck,
   Key,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -60,7 +61,10 @@ import {
   eraseCard,
   forceEraseCard,
   deleteCardItem,
+  readCardItems,
+  writeAllItems,
   CardStatus,
+  CardItem,
 } from '@/lib/smartcard';
 
 export default function SmartCardPage() {
@@ -108,6 +112,12 @@ export default function SmartCardPage() {
   const [keyfileData, setKeyfileData] = useState<string | null>(null);
   const [keyfileName, setKeyfileName] = useState<string | null>(null);
   const [showKeyfileSmartCard, setShowKeyfileSmartCard] = useState(false);
+
+  // ── Clone card state ───────────────────────────────────────────
+  const [cloneStep, setCloneStep] = useState<'idle' | 'reading' | 'ready' | 'writing'>('idle');
+  const [clonedItems, setClonedItems] = useState<CardItem[]>([]);
+  const [cloneDestReader, setCloneDestReader] = useState<string>('');
+  const [cloneDestPin, setCloneDestPin] = useState('');
 
   // ── General state ────────────────────────────────────────────────
   const [actionError, setActionError] = useState<string | null>(null);
@@ -303,6 +313,48 @@ export default function SmartCardPage() {
       setIsDeletingItem(false);
       setDeletingItemIndex(null);
     }
+  };
+
+  // ── Clone card handlers ─────────────────────────────────────────
+
+  const handleCloneRead = async () => {
+    if (!selectedReader) return;
+    setCloneStep('reading');
+    setActionError(null);
+    try {
+      const items = await readCardItems(selectedReader, verifiedPin);
+      setClonedItems(items);
+      setCloneStep('ready');
+      toast({ title: 'Source Card Read', description: `${items.length} item${items.length !== 1 ? 's' : ''} ready to clone.` });
+    } catch (e: any) {
+      setActionError(e?.toString() || 'Failed to read source card');
+      setCloneStep('idle');
+    }
+  };
+
+  const handleCloneWrite = async () => {
+    const destReader = readers.length > 1 ? cloneDestReader : selectedReader;
+    if (!destReader || clonedItems.length === 0) return;
+    setCloneStep('writing');
+    setActionError(null);
+    try {
+      await writeAllItems(destReader, clonedItems, cloneDestPin || null);
+      toast({ title: 'Card Cloned', description: `${clonedItems.length} item${clonedItems.length !== 1 ? 's' : ''} written to destination card.` });
+      setCloneStep('idle');
+      setClonedItems([]);
+      setCloneDestPin('');
+      await loadCardStatus();
+    } catch (e: any) {
+      setActionError(e?.toString() || 'Failed to write to destination card');
+      setCloneStep('ready');
+    }
+  };
+
+  const handleCloneReset = () => {
+    setCloneStep('idle');
+    setClonedItems([]);
+    setCloneDestPin('');
+    setActionError(null);
   };
 
   // ── Derived state ────────────────────────────────────────────────
@@ -592,6 +644,142 @@ export default function SmartCardPage() {
                   <CreditCard className="mr-2 h-4 w-4" />
                   Write to Card
                 </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              Clone Card
+              ═══════════════════════════════════════════════════════════ */}
+          {cardStatus && !needsPinUnlock && cardStatus.has_data && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CopyCheck className="h-5 w-5" />
+                  Clone Card
+                </CardTitle>
+                <CardDescription>
+                  Read all items from this card and write them to another card.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {cloneStep === 'idle' && (
+                  <Button onClick={handleCloneRead} className="w-full sm:w-auto">
+                    <CopyCheck className="mr-2 h-4 w-4" />
+                    Read Source Card
+                  </Button>
+                )}
+
+                {cloneStep === 'reading' && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Reading source card...
+                  </div>
+                )}
+
+                {(cloneStep === 'ready' || cloneStep === 'writing') && (
+                  <div className="space-y-4">
+                    {/* Items summary */}
+                    <div className="rounded-lg border bg-card p-3 space-y-1">
+                      <p className="text-sm font-medium">
+                        {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} ready to clone:
+                      </p>
+                      {clonedItems.map((item, i) => (
+                        <div key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                          <span className="capitalize font-medium">{item.item_type}</span>
+                          {item.label && <span>&mdash; {item.label}</span>}
+                          <span className="text-xs">({item.data.length}B)</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Destination: multi-reader picker or swap prompt */}
+                    {readers.length > 1 ? (
+                      <div className="space-y-1.5">
+                        <Label>Destination Reader</Label>
+                        <Select value={cloneDestReader} onValueChange={setCloneDestReader}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select destination reader..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {readers
+                              .filter((r) => r !== selectedReader)
+                              .map((r) => (
+                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Remove the source card and insert the destination card into your reader before writing.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Destination PIN (optional) */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="clone-dest-pin">Destination Card PIN (if set)</Label>
+                      <Input
+                        id="clone-dest-pin"
+                        type="password"
+                        placeholder="Leave blank if no PIN"
+                        maxLength={16}
+                        value={cloneDestPin}
+                        onChange={(e) => setCloneDestPin(e.target.value)}
+                        disabled={cloneStep === 'writing'}
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleCloneReset}
+                        disabled={cloneStep === 'writing'}
+                      >
+                        Cancel
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={cloneStep === 'writing' || (readers.length > 1 && !cloneDestReader)}
+                          >
+                            {cloneStep === 'writing' ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Writing...
+                              </>
+                            ) : (
+                              <>
+                                <CopyCheck className="mr-2 h-4 w-4" />
+                                Write to Card
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Clone to Destination Card?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will overwrite all existing data on the destination card with {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} from the source card.
+                              <br /><br />
+                              <strong>Any existing data on the destination card will be replaced.</strong>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCloneWrite}>
+                              Yes, Clone
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
