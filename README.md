@@ -337,3 +337,13 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 ### Commercial Licensing
 
 We also offer commercial licenses for companies wanting to use seQRets in proprietary products or avoid copyleft — email **licensing@seqrets.app**.
+
+Copyright (c) 2025 seQRets — All rights reserved where applicable.
+
+## ⚠️ Disclaimer
+
+Do not use seQRets on a computer that is not specifically provisioned for secret management (no data persistence or unnecessary network connectivity) unless your secret is already present on that computer.
+
+The developers, contributors, and maintainers of seQRets cannot be held liable for lost or stolen secrets. **USE AT YOUR OWN RISK.**
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
