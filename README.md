@@ -338,7 +338,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 We also offer commercial licenses for companies wanting to use seQRets in proprietary products or avoid copyleft — email **licensing@seqrets.app**.
 
-Copyright (c) 2025 seQRets — All rights reserved where applicable.
+Copyright (c) 2026 seQRets — All rights reserved where applicable.
 
 ## ⚠️ Disclaimer
 
