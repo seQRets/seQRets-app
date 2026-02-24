@@ -43,6 +43,7 @@ export function RestoreSecretForm() {
   const { toast } = useToast();
   const audioRef = useRef(typeof window !== 'undefined' ? new Audio('/sound.mp3') : null);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
+  const [isQrVisible, setIsQrVisible] = useState(false);
   const [qrMode, setQrMode] = useState<'none' | 'data' | 'seed'>('none');
   const [qrDataUri, setQrDataUri] = useState<string | null>(null);
   const [seedQrUris, setSeedQrUris] = useState<string[]>([]);
@@ -423,7 +424,7 @@ export function RestoreSecretForm() {
   const isMnemonic = mnemonicResult !== null;
 
   const handleDataQr = async () => {
-    if (qrMode === 'data') { setQrMode('none'); return; }
+    if (qrMode === 'data') { setQrMode('none'); setIsQrVisible(false); return; }
     try {
       const uri = await QRCode.toDataURL(restoredSecret, { errorCorrectionLevel: 'L', margin: 2, width: 800 });
       setQrDataUri(uri);
@@ -432,7 +433,7 @@ export function RestoreSecretForm() {
   };
 
   const handleSeedQr = async () => {
-    if (qrMode === 'seed') { setQrMode('none'); return; }
+    if (qrMode === 'seed') { setQrMode('none'); setIsQrVisible(false); return; }
     if (!mnemonicResult) return;
     try {
       const uris = await Promise.all(
@@ -530,14 +531,25 @@ export function RestoreSecretForm() {
                       </Button>
                     )}
                 </div>
+                {qrMode !== 'none' && (qrDataUri || seedQrUris.length > 0) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground mx-auto"
+                    onClick={() => setIsQrVisible(!isQrVisible)}
+                    title={isQrVisible ? 'Hide QR code' : 'Show QR code'}
+                  >
+                    {isQrVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </Button>
+                )}
                 {qrMode === 'data' && qrDataUri && (
-                  <div className={cn("transition-all duration-300", !isSecretVisible && "blur-md")}>
+                  <div className={cn("transition-all duration-300", !isQrVisible && "blur-md")}>
                     <img src={qrDataUri} alt="QR Code" className="mx-auto max-w-[250px] rounded" />
                     <p className="text-xs text-muted-foreground mt-1">Data QR</p>
                   </div>
                 )}
                 {qrMode === 'seed' && seedQrUris.length > 0 && (
-                  <div className={cn("space-y-3 transition-all duration-300", !isSecretVisible && "blur-md")}>
+                  <div className={cn("space-y-3 transition-all duration-300", !isQrVisible && "blur-md")}>
                     {seedQrUris.map((uri, i) => (
                       <div key={i}>
                         <img src={uri} alt={`SeedQR ${i + 1}`} className="mx-auto max-w-[250px] rounded" />
