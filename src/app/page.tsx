@@ -20,8 +20,11 @@ import { useTheme } from "next-themes";
 
 function App() {
   const [activeTab, setActiveTab] = React.useState<'create' | 'restore'>('create');
+  const [mounted, setMounted] = React.useState(false);
   const { resolvedTheme } = useTheme();
-  const logoSrc = resolvedTheme === 'dark' ? '/icons/logo-dark.png' : '/icons/logo-light.png';
+  const logoSrc = mounted && resolvedTheme === 'dark' ? '/icons/logo-dark.png' : '/icons/logo-light.png';
+
+  React.useEffect(() => { setMounted(true); }, []);
 
   const searchParams = useSearchParams();
 
