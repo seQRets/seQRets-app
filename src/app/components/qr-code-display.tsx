@@ -9,7 +9,6 @@ import JSZip from 'jszip';
 import { useToast } from '@/hooks/use-toast';
 import { CreateSharesResult, QrCodeData, EncryptedVaultFile } from '@/lib/types';
 import QRCode from 'qrcode';
-import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -171,62 +170,127 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
   };
 
   /**
-   * Render the card via html2canvas, then overdraw the QR region with the raw
-   * QR data-URL using nearest-neighbour scaling so every module stays crisp.
+   * Pure Canvas 2D renderer for the Qard card layout.
+   * Draws the full "Secret Qard Backup" card programmatically without html2canvas,
+   * ensuring reliable cross-browser support (including Safari).
    */
-  const compositeQrOntoCard = async (
-    elementToCapture: HTMLElement,
-    qrUri: string | null,
-    scale: number,
-  ): Promise<HTMLCanvasElement> => {
-    // 1. Find the QR <img> inside the card so we know where to overdraw
-    const qrImg = elementToCapture.querySelector('img[alt="QR Code"]') as HTMLImageElement | null;
-    let qrRect: { x: number; y: number; w: number; h: number } | null = null;
-    if (qrImg && qrUri) {
-      const cardRect = elementToCapture.getBoundingClientRect();
-      const imgRect = qrImg.getBoundingClientRect();
-      qrRect = {
-        x: (imgRect.left - cardRect.left) * scale,
-        y: (imgRect.top - cardRect.top) * scale,
-        w: imgRect.width * scale,
-        h: imgRect.height * scale,
-      };
-    }
+  const renderCardToCanvas = (
+    index: number,
+    qrDataUrl: string,
+    scale: number = 4,
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // A5 dimensions at ~96 DPI
+      const W = 560;
+      const H = 794;
 
-    // 2. Capture the full card (QR will be blurry — we'll fix that next)
-    const canvas = await html2canvas(elementToCapture, {
-      scale,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
-
-    // 3. Overdraw the QR region with the raw data-URL at native resolution
-    if (qrRect && qrUri) {
+      const canvas = document.createElement('canvas');
+      canvas.width = W * scale;
+      canvas.height = H * scale;
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        const img = new window.Image();
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = reject;
-          img.src = qrUri;
-        });
-        // Clear the blurry QR area and redraw with nearest-neighbour
-        ctx.imageSmoothingEnabled = false;
-        ctx.clearRect(qrRect.x, qrRect.y, qrRect.w, qrRect.h);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(qrRect.x, qrRect.y, qrRect.w, qrRect.h);
-        ctx.drawImage(img, qrRect.x, qrRect.y, qrRect.w, qrRect.h);
-      }
-    }
+      if (!ctx) { reject(new Error('Canvas 2d context unavailable')); return; }
 
-    return canvas;
+      ctx.scale(scale, scale);
+
+      // ── Background ──
+      ctx.fillStyle = '#fdfdfd';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Outer border ──
+      ctx.strokeStyle = '#d3cdc1';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+
+      // ── Title ──
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#231f20';
+      ctx.font = 'bold 24px Inter, system-ui, -apple-system, sans-serif';
+      ctx.fillText('Secret Qard Backup', W / 2, 85);
+
+      // ── QR Code ──
+      const qrImgSize = 378; // ~10cm at 96 DPI
+      const qrPad = 10;
+      const qrBorder = 1;
+      const qrBoxSize = qrImgSize + (qrPad + qrBorder) * 2;
+      const qrBoxX = (W - qrBoxSize) / 2;
+      const qrBoxY = 140;
+
+      // QR border box
+      ctx.strokeStyle = '#d3cdc1';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(qrBoxX + 0.5, qrBoxY + 0.5, qrBoxSize - 1, qrBoxSize - 1);
+
+      // White background inside QR box
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(qrBoxX + qrBorder, qrBoxY + qrBorder, qrBoxSize - qrBorder * 2, qrBoxSize - qrBorder * 2);
+
+      // Load and draw the QR code image
+      const qrImg = new window.Image();
+      qrImg.onload = () => {
+        // Nearest-neighbour scaling for crisp QR modules
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(
+          qrImg,
+          qrBoxX + qrBorder + qrPad,
+          qrBoxY + qrBorder + qrPad,
+          qrImgSize,
+          qrImgSize,
+        );
+        ctx.imageSmoothingEnabled = true;
+
+        // ── Bottom info section ──
+        let y = qrBoxY + qrBoxSize + 30;
+
+        // Qard #N
+        ctx.fillStyle = '#231f20';
+        ctx.font = 'bold 20px Inter, system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`Qard #${index + 1}`, W / 2, y);
+        y += 28;
+
+        // Set: XXXXX
+        ctx.fillStyle = '#6b6567';
+        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
+        ctx.fillText(`Set: ${setId}`, W / 2, y);
+        y += 24;
+
+        // Label (optional)
+        ctx.fillStyle = '#3e3739';
+        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
+        if (label) {
+          ctx.fillText(`Label: ${label}`, W / 2, y);
+          y += 22;
+        }
+
+        // Created date
+        const dateStr = new Date().toLocaleDateString('en-US');
+        ctx.fillText(`Created: ${dateStr}`, W / 2, y);
+        y += 30;
+
+        // Warning
+        ctx.fillStyle = '#DC2626';
+        ctx.font = '500 14px Inter, system-ui, -apple-system, sans-serif';
+        ctx.fillText('\u26A0 Store securely and separately from other qards', W / 2, y);
+        y += 25;
+
+        // Footer
+        ctx.fillStyle = '#6b6567';
+        ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
+        ctx.fillText('Scan QR with seQRets App to recover secret.', W / 2, y);
+
+        resolve(canvas.toDataURL('image/png'));
+      };
+      qrImg.onerror = () => reject(new Error('Failed to load QR code image'));
+      qrImg.src = qrDataUrl;
+    });
   };
 
   // Synchronous click handler — uses pre-generated card images so Safari
   // doesn't lose the user-gesture context (which blocks programmatic downloads).
-  // Falls back to the raw QR code image if html2canvas failed (e.g. Safari).
   const handleDownload = (index: number) => {
-    const dataUrl = cardDataUrls[index] || qrCodeUris[index];
+    const dataUrl = cardDataUrls[index];
     if (!dataUrl) {
       toast({ variant: "destructive", title: "Image not ready", description: "The Qard image is still being generated. Please try again in a moment." });
       return;
@@ -416,6 +480,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
   }, [shares, isTextOnly]);
 
   // Pre-generate card images as data URLs after QR codes are ready.
+  // Uses pure Canvas 2D API (no html2canvas) for reliable cross-browser support.
   // This allows the PNG download click handler to be fully synchronous,
   // which is required by Safari (async breaks the user-gesture context).
   useEffect(() => {
@@ -425,25 +490,19 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     }
     let cancelled = false;
     const preGenerate = async () => {
+      // Ensure fonts are loaded before Canvas text rendering
+      await document.fonts.ready;
       const urls: (string | null)[] = [];
       for (let i = 0; i < shares.length; i++) {
         if (cancelled) return;
         if (!qrCodeUris[i]) { urls.push(null); continue; }
-        const container = document.createElement('div');
-        container.innerHTML = getPrintableHtmlForShare(i);
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-        const el = document.getElementById(`qard-to-print-${i}`);
-        if (!el) { urls.push(null); document.body.removeChild(container); continue; }
         try {
-          const canvas = await compositeQrOntoCard(el, qrCodeUris[i], 4);
-          urls.push(canvas.toDataURL('image/png'));
+          const dataUrl = await renderCardToCanvas(i, qrCodeUris[i]!);
+          urls.push(dataUrl);
         } catch (err) {
           console.error(`Pre-generation failed for share ${i}:`, err);
           urls.push(null);
         }
-        document.body.removeChild(container);
       }
       if (!cancelled) setCardDataUrls(urls);
     };
@@ -557,7 +616,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
                     <p className="font-semibold text-sm">Share {index + 1} of {totalShares}</p>
                     <div className={cn("grid grid-cols-1 gap-2 mt-2 w-full max-w-[252.7px]", isTextOnly || !qrCodeUris[index] ? "grid-cols-1" : "grid-cols-2")}>
                         {!isTextOnly && qrCodeUris[index] && (
-                            <Button variant="outline" size="sm" onClick={() => handleDownload(index)} disabled={!cardDataUrls[index] && !qrCodeUris[index]} className="col-span-1">
+                            <Button variant="outline" size="sm" onClick={() => handleDownload(index)} disabled={!cardDataUrls[index]} className="col-span-1">
                                 PNG
                             </Button>
                         )}
