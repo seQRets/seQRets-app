@@ -5,11 +5,11 @@ Protect your sensitive data with Shamir's Secret Sharing and XChaCha20-Poly1305 
 
 | Platform | Download |
 |---|---|
-| 🍎 macOS (Apple Silicon) | [seQRets_1.0.1_aarch64.dmg](https://github.com/jalapeno4332/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_aarch64.dmg) |
-| 🍎 macOS (Intel) | [seQRets_1.0.1_x64.dmg](https://github.com/jalapeno4332/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64.dmg) |
-| 🪟 Windows | [seQRets_1.0.1_x64-setup.exe](https://github.com/jalapeno4332/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64-setup.exe) |
-| 🐧 Linux (Debian/Ubuntu) | [seQRets_1.0.1_amd64.deb](https://github.com/jalapeno4332/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.deb) |
-| 🐧 Linux (Universal) | [seQRets_1.0.1_amd64.AppImage](https://github.com/jalapeno4332/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.AppImage) |
+| 🍎 macOS (Apple Silicon) | [seQRets_1.0.1_aarch64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_aarch64.dmg) |
+| 🍎 macOS (Intel) | [seQRets_1.0.1_x64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64.dmg) |
+| 🪟 Windows | [seQRets_1.0.1_x64-setup.exe](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64-setup.exe) |
+| 🐧 Linux (Debian/Ubuntu) | [seQRets_1.0.1_amd64.deb](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.deb) |
+| 🐧 Linux (Universal) | [seQRets_1.0.1_amd64.AppImage](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.AppImage) |
 
 ### What's New
 

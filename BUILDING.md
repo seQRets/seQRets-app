@@ -14,7 +14,7 @@ This guide covers everything you need to build and run seQRets locally from sour
 ## ⚙️ Setup
 
 ```bash
-git clone https://github.com/jalapeno4332/seQRets.git
+git clone https://github.com/seQRets/seQRets.git
 cd seQRets
 npm install
 ```

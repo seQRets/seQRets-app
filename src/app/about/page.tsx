@@ -82,7 +82,7 @@ export default function AboutPage() {
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
                             <p>
-                                seQRets is open source. You can <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">review the code</a>, audit the cryptography, and build it yourself.
+                                seQRets is open source. You can <a href="https://github.com/seQRets/seQRets" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">review the code</a>, audit the cryptography, and build it yourself.
                             </p>
                             <p className="font-semibold text-foreground">Built with:</p>
                             <ul className="list-disc pl-4 space-y-1">

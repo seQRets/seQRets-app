@@ -14,7 +14,7 @@ seQRets **encrypts** and splits your most sensitive secrets — seed phrases, pr
 
 Recovering a secret requires combining a configurable threshold of Qards (e.g., 2 of 3) — no single Qard holds enough to restore anything on its own, eliminating the single point of failure that plagues traditional backups. Nothing is stored online: no accounts, no KYC, no data shared with anyone you don't choose. The desktop app includes **EAL6+ JavaCard smartcard support** for tamper-resistant, simple physical distribution of Qards and inheritance plans.
 
-> 🛡️ **Your secrets never leave your device.** All encryption, splitting, and decryption happens entirely in your browser (web) or on your machine (desktop). No servers, no cloud, no accounts, no telemetry. seQRets is <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer">open source</a> — audit every line.
+> 🛡️ **Your secrets never leave your device.** All encryption, splitting, and decryption happens entirely in your browser (web) or on your machine (desktop). No servers, no cloud, no accounts, no telemetry. seQRets is <a href="https://github.com/seQRets/seQRets" target="_blank" rel="noopener noreferrer">open source</a> — audit every line.
 
 ## ⚠️ Warning
 

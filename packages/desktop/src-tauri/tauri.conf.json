@@ -45,7 +45,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBNTgwRDEyMjY5RjI0MkIKUldRckpKOG1FZzFZbXVpaGRLZm1TYll2alpqODNJejV4Rzd5Z2VsN1JCTUZMY1NtZ2d6bjQ2ZUgK",
       "endpoints": [
-        "https://github.com/jalapeno4332/seQRets-Releases/releases/latest/download/latest.json"
+        "https://github.com/seQRets/seQRets-Releases/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

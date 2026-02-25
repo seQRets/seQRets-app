@@ -105,7 +105,7 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                     <Info className="h-5 w-5" />
                     <span>About</span>
                 </Link>
-                <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => setOpen(false)}>
+                <a href="https://github.com/seQRets/seQRets" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => setOpen(false)}>
                     <Github className="h-5 w-5" />
                     <span>GitHub</span>
                 </a>
@@ -213,7 +213,7 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <a href="https://github.com/jalapeno4332/seQRets" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/seQRets/seQRets" target="_blank" rel="noopener noreferrer">
               <Github className="mr-2 h-4 w-4" />
               <span>GitHub</span>
             </a>
