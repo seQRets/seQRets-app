@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
-import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, FolderOpen, QrCode, Sprout } from 'lucide-react';
+import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, QrCode, Sprout } from 'lucide-react';
 import QRCode from 'qrcode';
 import { validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
@@ -578,6 +578,7 @@ export function RestoreSecretForm() {
                         onFilesAdded={handleFilesAdded}
                         onCameraOpen={() => setIsCameraOpen(true)}
                         onManualOpen={() => setIsManualEntryOpen(true)}
+                        onImportVault={handleImportVaultFile}
                     />
                     <DialogContent className="max-w-md">
                         <DialogHeader>
@@ -612,21 +613,6 @@ export function RestoreSecretForm() {
                     </DialogContent>
                 </Dialog>
 
-                <div className="relative flex items-center py-2">
-                  <div className="flex-grow border-t border-muted-foreground/20"></div>
-                  <span className="mx-3 text-xs text-muted-foreground uppercase">or restore from a vault file</span>
-                  <div className="flex-grow border-t border-muted-foreground/20"></div>
-                </div>
-
-                <div className="rounded-lg border border-dashed border-accent bg-accent/10 dark:bg-accent/5 p-4 space-y-2">
-                  <Button variant="outline" onClick={handleImportVaultFile} className="w-full border-accent hover:bg-accent hover:text-accent-foreground">
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    Import Vault File (.seqrets)
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Load all shares at once from a previously exported <code className="bg-muted px-1 py-0.5 rounded">.seqrets</code> file.
-                  </p>
-                </div>
 
                 {decodedShares.length > 0 && (
                     <div className="space-y-2">

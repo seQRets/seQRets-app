@@ -3,16 +3,17 @@
 
 import { useState, useRef, DragEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Camera, FileUp, TextCursorInput } from 'lucide-react';
+import { Camera, FileUp, FolderOpen, TextCursorInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FileUploadProps {
   onFilesAdded: (files: File[]) => void;
   onCameraOpen: () => void;
   onManualOpen: () => void;
+  onImportVault?: () => void;
 }
 
-export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen }: FileUploadProps) {
+export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen, onImportVault }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,18 +86,22 @@ export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen }: FileUpl
                 onChange={handleFileSelect}
             />
         </div>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
-            <p className="text-sm text-muted-foreground">or use another method:</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={onManualOpen}>
-                  <TextCursorInput className="mr-1.5 h-4 w-4" />
-                  Manual Entry
+        <p className="text-xs text-muted-foreground text-center">or use another method:</p>
+        <div className="grid grid-cols-3 gap-2">
+            <Button variant="outline" onClick={onManualOpen} className="w-full text-xs px-2 dark-thin-border dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black">
+                <TextCursorInput className="mr-1.5 h-4 w-4 shrink-0" />
+                Manual Entry
+            </Button>
+            <Button variant="outline" onClick={onCameraOpen} className="w-full text-xs px-2 dark-thin-border dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black">
+                <Camera className="mr-1.5 h-4 w-4 shrink-0" />
+                Scan Camera
+            </Button>
+            {onImportVault && (
+              <Button variant="outline" onClick={onImportVault} className="w-full text-xs px-2 dark-thin-border dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black">
+                  <FolderOpen className="mr-1.5 h-4 w-4 shrink-0" />
+                  Import Vault
               </Button>
-              <Button variant="outline" size="sm" onClick={onCameraOpen}>
-                  <Camera className="mr-1.5 h-4 w-4" />
-                  Scan Camera
-              </Button>
-            </div>
+            )}
         </div>
     </div>
   );

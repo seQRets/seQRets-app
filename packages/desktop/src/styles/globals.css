@@ -86,3 +86,7 @@
   }
 }
 
+.dark .dark-thin-border {
+  border-width: 0.5px !important;
+}
+
