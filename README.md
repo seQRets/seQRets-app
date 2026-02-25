@@ -326,7 +326,9 @@ Source is available for security audit and self-compilation under AGPLv3. See [B
 
 ## 🤝 Contributing
 
-This project is open source. Contributions, bug reports, and feature requests are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+We rely on GitHub for bug tracking. Before reporting a new bug, please take a moment to search the [existing issues](https://github.com/seQRets/seQRets/issues) to see if your problem has already been addressed. If you can't find an existing report, feel free to create a new issue.
+
+We encourage contributions to the project by submitting pull requests to improve the codebase or introduce new features. All pull requests will be thoroughly reviewed. Your contributions are invaluable to us! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
 
 By contributing, you agree to our [Contributor License Agreement (CLA)](CONTRIBUTING.md#contributor-license-agreement-cla).
 

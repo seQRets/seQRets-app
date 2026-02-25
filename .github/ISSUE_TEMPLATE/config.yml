@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contributing Guide
+    url: https://opensource.guide/how-to-contribute/
+    about: New to open source? Learn how to contribute.
