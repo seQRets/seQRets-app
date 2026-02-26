@@ -93,23 +93,23 @@ export function SeedPhraseGenerator({ onPhraseGenerated }: SeedPhraseGeneratorPr
                 </button>
             </div>
 
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                  <div className="flex items-center text-sm">
                     {isValid ? (
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-500 shrink-0" />
                     ) : (
-                        <ShieldAlert className="h-4 w-4 mr-2 text-red-500" />
+                        <ShieldAlert className="h-4 w-4 mr-2 text-red-500 shrink-0" />
                     )}
                     <span className={cn(isValid ? 'text-green-600' : 'text-red-600')}>
                         {isValid ? 'Valid Mnemonic Phrase' : 'Invalid Phrase'}
                     </span>
                  </div>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={handleCopy}>
+                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
                         <Copy className="h-5 w-5" />
                         <span className="sr-only">Copy Phrase</span>
                     </Button>
-                     <Button onClick={handleUsePhrase} disabled={!isValid} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
+                     <Button onClick={handleUsePhrase} disabled={!isValid} className="flex-1 sm:flex-initial bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
                         Use This Phrase
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>

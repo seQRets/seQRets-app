@@ -87,15 +87,15 @@ export function KeyfileGenerator({ onKeyfileGenerated }: KeyfileGeneratorProps) 
   if (isGenerated && keyfileData) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between w-full p-3 border rounded-lg bg-green-500/10 border-green-500/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full p-3 border rounded-lg bg-green-500/10 border-green-500/30">
           <div className="flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 text-green-500" />
+            <CheckCircle className="w-6 h-6 text-green-500 shrink-0" />
             <div className="flex flex-col">
               <span className="text-sm font-medium text-green-700 dark:text-green-300">Keyfile Generated & Applied</span>
               <span className="text-xs text-muted-foreground">`seqrets-keyfile.bin`</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={() => handleDownload(keyfileData)}>
                 <Download className="mr-2 h-4 w-4" /> Download Again
             </Button>
