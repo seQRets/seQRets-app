@@ -1,15 +1,15 @@
-## seQRets Desktop v1.0.1 🔥 Ignition
+## seQRets Desktop v1.3.7 🔥 Ignition
 Protect your sensitive data with Shamir's Secret Sharing and XChaCha20-Poly1305 encryption.
 
 ### Downloads
 
 | Platform | Download |
 |---|---|
-| 🍎 macOS (Apple Silicon) | [seQRets_1.0.1_aarch64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_aarch64.dmg) |
-| 🍎 macOS (Intel) | [seQRets_1.0.1_x64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64.dmg) |
-| 🪟 Windows | [seQRets_1.0.1_x64-setup.exe](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_x64-setup.exe) |
-| 🐧 Linux (Debian/Ubuntu) | [seQRets_1.0.1_amd64.deb](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.deb) |
-| 🐧 Linux (Universal) | [seQRets_1.0.1_amd64.AppImage](https://github.com/seQRets/seQRets-Releases/releases/download/v1.0.1/seQRets_1.0.1_amd64.AppImage) |
+| 🍎 macOS (Apple Silicon) | [seQRets_1.3.7_aarch64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.3.7/seQRets_1.3.7_aarch64.dmg) |
+| 🍎 macOS (Intel) | [seQRets_1.3.7_x64.dmg](https://github.com/seQRets/seQRets-Releases/releases/download/v1.3.7/seQRets_1.3.7_x64.dmg) |
+| 🪟 Windows | [seQRets_1.3.7_x64-setup.exe](https://github.com/seQRets/seQRets-Releases/releases/download/v1.3.7/seQRets_1.3.7_x64-setup.exe) |
+| 🐧 Linux (Debian/Ubuntu) | [seQRets_1.3.7_amd64.deb](https://github.com/seQRets/seQRets-Releases/releases/download/v1.3.7/seQRets_1.3.7_amd64.deb) |
+| 🐧 Linux (Universal) | [seQRets_1.3.7_amd64.AppImage](https://github.com/seQRets/seQRets-Releases/releases/download/v1.3.7/seQRets_1.3.7_amd64.AppImage) |
 
 ### What's New
 
@@ -63,21 +63,21 @@ After downloading, verify file integrity with a checksum:
 
 **macOS:**
 ```bash
-shasum -a 256 ~/Downloads/seQRets_1.0.1_aarch64.dmg
+shasum -a 256 ~/Downloads/seQRets_1.3.7_aarch64.dmg
 ```
 
 **Linux:**
 ```bash
-sha256sum ~/Downloads/seQRets_1.0.1_amd64.deb
+sha256sum ~/Downloads/seQRets_1.3.7_amd64.deb
 ```
 
 **Windows (PowerShell):**
 ```powershell
-Get-FileHash ~\Downloads\seQRets_1.0.1_x64-setup.exe -Algorithm SHA256
+Get-FileHash ~\Downloads\seQRets_1.3.7_x64-setup.exe -Algorithm SHA256
 ```
 
 Compare the output against the `sha256` hash shown next to each asset below.
 
 ---
 
-> **Note:** Download URLs assume Tauri generates filenames in the `seQRets_1.0.1_*` pattern. Verify actual filenames once build artifacts are uploaded and adjust links if needed.
+> **Note:** Download URLs assume Tauri generates filenames in the `seQRets_1.3.7_*` pattern. Verify actual filenames once build artifacts are uploaded and adjust links if needed.
