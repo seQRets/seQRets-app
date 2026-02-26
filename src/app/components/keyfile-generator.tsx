@@ -114,8 +114,8 @@ export function KeyfileGenerator({ onKeyfileGenerated }: KeyfileGeneratorProps) 
         <p className="text-sm text-muted-foreground">
             A keyfile is a file containing random data that acts as a second password. It provides a massive security boost.
         </p>
-        <Button onClick={handleGenerate} className="w-full bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
-            <Wand2 className="mr-2 h-4 w-4" />
+        <Button onClick={handleGenerate} className="w-full whitespace-normal bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
+            <Wand2 className="mr-2 h-4 w-4 shrink-0" />
             Generate & Download Secure Keyfile
         </Button>
     </div>
