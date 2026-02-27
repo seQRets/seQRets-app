@@ -11,7 +11,6 @@ import {
   CreditCard,
   FileText,
   RefreshCw,
-  Github,
 } from 'lucide-react';
 import { UpdateChecker } from '@/components/update-checker';
 import { Link, useLocation } from 'react-router-dom';
@@ -109,10 +108,6 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                     <Info className="h-5 w-5" />
                     <span>About</span>
                 </Link>
-                <a href="https://github.com/seQRets/seQRets-app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => setOpen(false)}>
-                    <Github className="h-5 w-5" />
-                    <span>GitHub</span>
-                </a>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
                 <Button variant="outline" className="w-full justify-start gap-3" onClick={() => { setOpen(false); setCheckingUpdate(true); }}>
@@ -229,12 +224,6 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <a href="https://github.com/seQRets/seQRets-app" target="_blank" rel="noopener noreferrer">
-              <Github className="mr-2 h-4 w-4" />
-              <span>GitHub</span>
-            </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setCheckingUpdate(true)}>

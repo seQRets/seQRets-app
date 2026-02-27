@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Lock, Key, QrCode, Github } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Key, QrCode, Github, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/header";
 import { ConnectionStatus } from "@/components/connection-status";
@@ -117,6 +117,17 @@ export default function AboutPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <div className="flex justify-center gap-6 mb-8">
+                    <Link to="/privacy" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>Privacy Policy</span>
+                    </Link>
+                    <a href="https://github.com/seQRets/seQRets-app" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                        <Github className="h-4 w-4" />
+                        <span>GitHub</span>
+                    </a>
+                </div>
 
                 <footer className="text-center text-sm text-muted-foreground pb-8">
                     <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>

@@ -7,6 +7,7 @@ import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
 import SmartCardPage from '@/pages/SmartCardPage';
 import InstructionsPage from '@/pages/InstructionsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/smartcard" element={<SmartCardPage />} />
         <Route path="/instructions" element={<InstructionsPage />} />
