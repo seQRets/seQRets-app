@@ -59,7 +59,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "20.11.20",
+    "@types/node": "20.19.35",
     "@types/pako": "^2.0.3",
     "@types/qrcode": "^1.5.5",
     "@types/react": "npm:types-react@rc",
