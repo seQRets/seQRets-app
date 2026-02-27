@@ -18,7 +18,7 @@ Recovering a secret requires combining a configurable threshold of Qards (e.g., 
 
 ## ⚠️ Warning
 
-> 🚧 **Beta Software — No Independent Security Audit.** seQRets v1.3.7 has not undergone a formal third-party security audit. The cryptographic primitives are industry-standard, but the implementation has not been independently reviewed. **Do not use seQRets as your only backup for high-value secrets.** Always maintain independent backups through other secure means (hardware wallet, paper backup in a fireproof safe, etc.) until a formal audit has been completed.
+> 🚧 **Beta Software — No Independent Security Audit.** seQRets v1.3.8 has not undergone a formal third-party security audit. The cryptographic primitives are industry-standard, but the implementation has not been independently reviewed. **Do not use seQRets as your only backup for high-value secrets.** Always maintain independent backups through other secure means (hardware wallet, paper backup in a fireproof safe, etc.) until a formal audit has been completed.
 
 **Your security is your responsibility.** seQRets gives you full control over your digital assets. Misplacing your password or the required number of Qards can result in the **permanent loss** of your secret. The developers have no access to your data, cannot recover your password, and cannot restore your secrets. Manage your Qards and password with extreme care.
 
