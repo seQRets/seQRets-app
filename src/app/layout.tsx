@@ -5,8 +5,29 @@ import { ThemeProvider } from './components/theme-provider';
 import React from 'react';
 
 export const metadata: Metadata = {
-  title: 'seQRets',
-  description: 'Secure. Split. Share. Encrypt, split, and secure your secrets with QR codes using Shamir\'s Secret Sharing.',
+  title: 'seQRets — Secure. Split. Share.',
+  description: 'Encrypt, split, and secure your secrets with QR codes using Shamir\'s Secret Sharing. Zero-knowledge crypto inheritance for Bitcoin seed phrases.',
+  openGraph: {
+    title: 'seQRets — Secure. Split. Share.',
+    description: 'Encrypt, split, and secure your secrets with QR codes using Shamir\'s Secret Sharing. Zero-knowledge crypto inheritance.',
+    url: 'https://app.seqrets.app',
+    siteName: 'seQRets',
+    type: 'website',
+    images: [
+      {
+        url: 'https://app.seqrets.app/icons/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'seQRets — Secure. Split. Share.',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'seQRets — Secure. Split. Share.',
+    description: 'Encrypt, split, and secure your secrets with QR codes using Shamir\'s Secret Sharing.',
+    images: ['https://app.seqrets.app/icons/og-image.png'],
+  },
 };
 
 export default function RootLayout({

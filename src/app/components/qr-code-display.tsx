@@ -250,7 +250,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         ctx.fillText(`Qard #${index + 1}`, W / 2, y);
         y += 28;
 
-        // Set: XXXXX
+        // Set ID
         ctx.fillStyle = '#6b6567';
         ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
         ctx.fillText(`Set: ${setId}`, W / 2, y);
