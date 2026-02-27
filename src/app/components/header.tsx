@@ -13,6 +13,7 @@ import {
   Home,
   FileText,
   Github,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -104,6 +105,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                 <Link href="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
                     <span>About</span>
+                </Link>
+                <Link href="/privacy" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <ShieldCheck className="h-5 w-5" />
+                    <span>Privacy</span>
                 </Link>
                 <a href="https://github.com/seQRets/seQRets-app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => setOpen(false)}>
                     <Github className="h-5 w-5" />
@@ -210,6 +215,12 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             <Link href="/about">
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/privacy">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              <span>Privacy</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
