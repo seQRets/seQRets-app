@@ -32,7 +32,7 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
   };
 
   return (
-    <div className="flex flex-col h-full items-center justify-center p-0 overflow-hidden">
+    <div className="flex flex-col h-full items-center p-0 overflow-y-auto">
       <Card className="w-full bg-muted/50">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
