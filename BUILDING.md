@@ -4,7 +4,7 @@ This guide covers everything you need to build and run seQRets locally from sour
 
 ## 📋 Prerequisites
 
-- **Node.js 18+** — [nodejs.org](https://nodejs.org/)
+- **Node.js 20+** — [nodejs.org](https://nodejs.org/)
 - **Rust** (desktop app only) — [rustup.rs](https://rustup.rs/)
 - **C++ build tools** (desktop app only, platform-specific):
   - **macOS** — `xcode-select --install`
@@ -15,7 +15,7 @@ This guide covers everything you need to build and run seQRets locally from sour
 
 ```bash
 git clone https://github.com/seQRets/seQRets-app.git
-cd seQRets
+cd seQRets-app
 npm install
 ```
 
