@@ -7,7 +7,7 @@ import { ArrowLeft, Rocket, Shield, ShieldAlert, ShieldCheck, Check, Minus, Exte
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "../components/header";
-import { ConnectionStatus } from "../components/connection-status";
+import { AppFooter } from "../components/app-footer";
 
 const features = [
     { name: 'XChaCha20-Poly1305 encryption', web: true, desktop: true },
@@ -183,11 +183,7 @@ export default function GoProPage() {
                     </p>
                 </div>
 
-                <footer className="text-center text-sm text-muted-foreground mt-8 mb-16">
-                    <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
-                    <p className="mt-1">All data is processed locally. Your security is your responsibility.</p>
-                    <p className="mt-1"><ConnectionStatus /></p>
-                </footer>
+                <AppFooter />
             </div>
         </main>
     );

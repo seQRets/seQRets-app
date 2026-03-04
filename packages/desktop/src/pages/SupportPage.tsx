@@ -8,6 +8,7 @@ import { useTheme } from "@/components/theme-provider";
 import logoLight from "@/assets/icons/logo-light.png";
 import logoDark from "@/assets/icons/logo-dark.png";
 import { BobChatInterface } from '@/components/bob-chat-interface';
+import { AppFooter } from "@/components/app-footer";
 
 export default function SupportPage() {
     const { theme } = useTheme();
@@ -55,6 +56,7 @@ export default function SupportPage() {
                        <BobChatInterface initialMessage="How can I help you with seQRets today?" />
                     </CardContent>
                 </Card>
+                <AppFooter />
             </div>
         </main>
     );

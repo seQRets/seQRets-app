@@ -52,6 +52,7 @@ import logoDark from '@/assets/icons/logo-dark.png';
 import { useToast } from '@/hooks/use-toast';
 import { KeyfileUpload } from '@/components/keyfile-upload';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
+import { AppFooter } from '@/components/app-footer';
 import {
   listReaders,
   getCardStatus,
@@ -1178,6 +1179,7 @@ export default function SmartCardPage() {
             </Alert>
           )}
         </div>
+        <AppFooter />
       </div>
 
       {/* ── Smart Card Dialog for writing keyfile ── */}

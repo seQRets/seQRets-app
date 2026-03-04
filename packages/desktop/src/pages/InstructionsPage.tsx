@@ -28,7 +28,7 @@ import { InheritancePlanViewer } from '@/components/inheritance-plan-viewer';
 import { createBlankPlan } from '@/lib/inheritance-plan-types';
 import type { InheritancePlan } from '@/lib/inheritance-plan-types';
 import { planToRawInstruction, isInheritancePlan, rawInstructionToPlan } from '@/lib/inheritance-plan-utils';
-import { ConnectionStatus } from '@/components/connection-status';
+import { AppFooter } from '@/components/app-footer';
 import logoLight from '@/assets/icons/logo-light.png';
 import logoDark from '@/assets/icons/logo-dark.png';
 
@@ -893,11 +893,7 @@ export default function InstructionsPage() {
           </CardContent>
         </Card>
 
-        <footer className="text-center text-sm text-muted-foreground pb-8">
-          <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
-          <p className="mt-1">All data is processed locally. Your security is your responsibility.</p>
-          <p className="mt-1"><ConnectionStatus /></p>
-        </footer>
+        <AppFooter />
       </div>
 
       {/* Smart Card Dialog for writing encrypted instructions */}

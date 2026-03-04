@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BobChatInterface } from "@/components/bob-chat-interface";
 import { BitcoinTicker } from "@/components/bitcoin-ticker";
-import { ConnectionStatus } from "@/components/connection-status";
+import { AppFooter } from "@/components/app-footer";
 import { WelcomeGuide } from "@/components/welcome-guide";
 import { useTheme } from "@/components/theme-provider";
 import logoLight from "@/assets/icons/logo-light.png";
@@ -94,12 +94,7 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
 
-        <footer className="text-center mt-12 text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
-          <p className="mt-1">v1.3.8 🛫 Pre-flight</p>
-          <p className="mt-1">All data is processed locally. Your security is your responsibility.</p>
-          <p className="mt-1"><ConnectionStatus /></p>
-        </footer>
+        <AppFooter />
       </div>
     </main>
   );

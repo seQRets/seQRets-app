@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Header } from "../components/header";
 import { BobChatInterface } from '../components/bob-chat-interface';
+import { AppFooter } from "../components/app-footer";
 
 
 export default function SupportPage() {
@@ -56,6 +57,7 @@ export default function SupportPage() {
                        <BobChatInterface initialMessage="How can I help you with seQRets today?" />
                     </CardContent>
                 </Card>
+                <AppFooter />
             </div>
         </main>
     );

@@ -8,6 +8,7 @@ import SupportPage from '@/pages/SupportPage';
 import SmartCardPage from '@/pages/SmartCardPage';
 import InstructionsPage from '@/pages/InstructionsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/smartcard" element={<SmartCardPage />} />
         <Route path="/instructions" element={<InstructionsPage />} />

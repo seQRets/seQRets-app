@@ -1,10 +1,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ShieldCheck, EyeOff, Database, Bot, Globe, HardDrive } from "lucide-react";
+import { ArrowLeft, ShieldCheck, EyeOff, Database, Bot, Globe, HardDrive, Server } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/header";
-import { ConnectionStatus } from "@/components/connection-status";
+import { AppFooter } from "@/components/app-footer";
 
 export default function PrivacyPage() {
     return (
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
                     <h1 className="font-body text-4xl md:text-5xl font-black text-foreground tracking-tighter mb-2">
                         Privacy Policy
                     </h1>
-                    <p className="text-sm text-muted-foreground">Last updated: February 27, 2026</p>
+                    <p className="text-sm text-muted-foreground">Last updated: March 3, 2026</p>
                 </div>
 
                 <Card className="mb-6">
@@ -149,13 +149,71 @@ export default function PrivacyPage() {
                             <p>All core functionality (encryption, splitting, QR generation, restoration, smart card operations) works fully offline with no network access required.</p>
                         </CardContent>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <Server className="h-5 w-5 text-primary" />
+                                <CardTitle className="text-base">Third-Party Services</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="text-sm text-muted-foreground space-y-2">
+                            <p>The following third-party services may be involved when you use seQRets. Each has its own privacy policy and terms:</p>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="text-left p-3 font-semibold text-foreground">Service</th>
+                                            <th className="text-left p-3 font-semibold text-foreground">Purpose</th>
+                                            <th className="text-left p-3 font-semibold text-foreground">Data Shared</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="bg-muted/30">
+                                            <td className="p-3 font-medium text-foreground">Tauri Updater</td>
+                                            <td className="p-3">Version check</td>
+                                            <td className="p-3">Current app version (read-only check)</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="p-3 font-medium text-foreground">Coinbase API</td>
+                                            <td className="p-3">Bitcoin price display</td>
+                                            <td className="p-3">None (unauthenticated read-only request)</td>
+                                        </tr>
+                                        <tr className="bg-muted/30">
+                                            <td className="p-3 font-medium text-foreground">Google Gemini API</td>
+                                            <td className="p-3">Bob AI Assistant (opt-in)</td>
+                                            <td className="p-3">Your queries, sent directly with your API key</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
+
+                <Card className="mb-6">
+                    <CardContent className="pt-6 text-sm text-muted-foreground space-y-4">
+                        <div>
+                            <p className="text-foreground font-semibold mb-1">Children's Privacy</p>
+                            <p>seQRets is not directed at children under the age of 13. We do not knowingly collect personal information from children. Since we do not collect personal information from anyone, this concern is moot in practice — but we state it here for completeness.</p>
+                        </div>
+                        <div>
+                            <p className="text-foreground font-semibold mb-1">Changes to This Policy</p>
+                            <p>If we update this policy, the revised version will be posted here with an updated date. Because seQRets does not collect email addresses or user accounts, we cannot notify you directly of changes. Material changes — particularly any that involve new data collection — will also be noted in our{' '}
+                                <a href="https://github.com/seQRets/seQRets-app" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">GitHub repository</a>.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <Card className="mb-8 border-primary/20">
                     <CardContent className="pt-6 text-sm text-muted-foreground space-y-2">
                         <p className="text-foreground font-semibold">Contact</p>
                         <p>
                             If you have questions about this privacy policy, contact us at{' '}
+                            <a href="mailto:hello@seqrets.app" className="underline text-foreground hover:text-primary" target="_blank" rel="noopener noreferrer">
+                                hello@seqrets.app
+                            </a>. For security concerns, reach out to{' '}
                             <a href="mailto:security@seqrets.app" className="underline text-foreground hover:text-primary" target="_blank" rel="noopener noreferrer">
                                 security@seqrets.app
                             </a>.
@@ -169,11 +227,7 @@ export default function PrivacyPage() {
                     </CardContent>
                 </Card>
 
-                <footer className="text-center text-sm text-muted-foreground pb-8">
-                    <p>&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
-                    <p className="mt-1">All data is processed locally. Your security is your responsibility.</p>
-                    <p className="mt-1"><ConnectionStatus /></p>
-                </footer>
+                <AppFooter />
             </div>
         </main>
     );
