@@ -2,7 +2,7 @@
 import { xchacha20poly1305 } from '@noble/ciphers/chacha';
 import { argon2id } from '@noble/hashes/argon2';
 import { randomBytes, concatBytes } from '@noble/hashes/utils';
-import { split, combine } from 'shamirs-secret-sharing-ts';
+import { split, combine } from 'shamir-secret-sharing';
 import { CreateSharesRequest, CreateSharesResult, RestoreSecretResult, RestoreSecretRequest, EncryptedInstruction, DecryptInstructionRequest, DecryptInstructionResult, RawInstruction } from './types';
 import { Buffer } from 'buffer';
 import { gzip, ungzip } from 'pako';
@@ -136,12 +136,11 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
         combinedEncrypted.set(nonce, 0);
         combinedEncrypted.set(encryptedSecret, nonce.length);
 
-        const encryptedBuffer = Buffer.from(combinedEncrypted);
-        const encryptedShares = split(encryptedBuffer, { shares: totalShares, threshold: requiredShares });
+        const encryptedShares = await split(combinedEncrypted, totalShares, requiredShares);
 
         const saltBase64 = Buffer.from(salt).toString('base64');
         const formattedShares = encryptedShares.map(shareData => {
-            const shareDataBase64 = shareData.toString('base64');
+            const shareDataBase64 = Buffer.from(shareData).toString('base64');
             return `seQRets|${saltBase64}|${shareDataBase64}`;
         });
 
@@ -169,7 +168,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
     }
 
     let saltBase64: string | null = null;
-    const encryptedShares: Buffer[] = [];
+    const encryptedShares: Uint8Array[] = [];
 
     for (const share of shares) {
         const parts = share.split('|');
@@ -185,7 +184,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
             throw new Error('Inconsistent salts found across shares. Shares might be from different secrets.');
         }
 
-        const encryptedShareData = Buffer.from(parts[2], 'base64');
+        const encryptedShareData = new Uint8Array(Buffer.from(parts[2], 'base64'));
         encryptedShares.push(encryptedShareData);
     }
 
@@ -195,8 +194,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
 
     let combinedEncryptedSecret: Uint8Array;
     try {
-        const combinedBuffer = combine(encryptedShares);
-        combinedEncryptedSecret = new Uint8Array(combinedBuffer);
+        combinedEncryptedSecret = await combine(encryptedShares);
     } catch (error) {
         throw new Error('Could not combine encrypted shares. Not enough shares provided, or shares are corrupted.');
     }

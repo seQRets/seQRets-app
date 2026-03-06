@@ -14,11 +14,10 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { split, combine } from 'shamirs-secret-sharing-ts';
+import { split, combine } from 'shamir-secret-sharing';
 import { buildSharePayload, parseSharePayload } from '@seqrets/crypto';
-// buffer-setup MUST be imported before any call to split/combine:
-// shamirs-secret-sharing-ts uses Buffer as a bare global (Node.js style) and
-// WKWebView (macOS) does not provide it. buffer-setup patches globalThis.Buffer.
+// buffer-setup provides a Buffer polyfill for WKWebView (macOS) which does not
+// expose globalThis.Buffer. We still need Buffer for base64 encoding/decoding.
 import { Buffer } from './buffer-setup';
 import type {
     CreateSharesRequest,
@@ -66,8 +65,8 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
     });
 
     // Step 3: Shamir-split the raw (nonce||ciphertext) bytes.
-    const encryptedBytes = Buffer.from(data, 'base64');
-    const encryptedShares = split(encryptedBytes, { shares: totalShares, threshold: requiredShares });
+    const encryptedBytes = new Uint8Array(Buffer.from(data, 'base64'));
+    const encryptedShares = await split(encryptedBytes, totalShares, requiredShares);
 
     // Step 4: Format shares. The salt is already base64 (returned from Rust).
     const formattedShares = encryptedShares.map(
@@ -106,7 +105,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
 
     // Step 1: Validate and parse share strings.
     let saltBase64: string | null = null;
-    const shareBuffers: Buffer[] = [];
+    const shareBuffers: Uint8Array[] = [];
 
     for (const share of shares) {
         const parts = share.split('|');
@@ -119,7 +118,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
         } else if (saltBase64 !== currentSalt) {
             throw new Error('Inconsistent salts found across shares. Shares might be from different secrets.');
         }
-        shareBuffers.push(Buffer.from(parts[2], 'base64'));
+        shareBuffers.push(new Uint8Array(Buffer.from(parts[2], 'base64')));
     }
 
     if (!saltBase64) {
@@ -127,9 +126,9 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
     }
 
     // Step 2: Shamir combine — reconstructs the raw (nonce||ciphertext) bytes.
-    let combinedBuffer: Buffer;
+    let combinedBytes: Uint8Array;
     try {
-        combinedBuffer = Buffer.from(combine(shareBuffers));
+        combinedBytes = await combine(shareBuffers);
     } catch {
         throw new Error(
             'Could not combine encrypted shares. Not enough shares provided, or shares are corrupted.'
@@ -141,7 +140,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
     try {
         jsonPayload = await invoke<string>('crypto_restore', {
             saltB64: saltBase64,
-            encryptedB64: combinedBuffer.toString('base64'),
+            encryptedB64: Buffer.from(combinedBytes).toString('base64'),
             password,
             keyfileB64: keyfile ?? null,
         });

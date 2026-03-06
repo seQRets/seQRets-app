@@ -231,9 +231,9 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
   HIGH      ██░░░░░░░░░░░░░░░░░░  1 found → ✅ 1 fixed
   MEDIUM    ████████░░░░░░░░░░░░  4 found → ✅ 4 fixed
   LOW       ██████░░░░░░░░░░░░░░  3 found → ✅ 2 fixed, ⚠️ 1 partial
-  INFO      ████░░░░░░░░░░░░░░░░  2 found → ✅ 1 fixed, 1 accepted risk
+  INFO      ████░░░░░░░░░░░░░░░░  2 found → ✅ 2 fixed
             ────────────────────
-            Total: 11 findings, 9 fixed
+            Total: 11 findings, 10 fixed
 ```
 
 ### Detailed Findings
@@ -284,7 +284,7 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 | # | Finding | Component | Notes |
 |:-:|---------|-----------|-------|
 | I1 | ~~Argon2id iterations at lower OWASP bound~~ | Crypto core | ~~t=3 at lower OWASP bound~~ — now t=4 |
-| I2 | `shamirs-secret-sharing-ts` lacks public audit | Dependency | Algorithm is sound; implementation quality is unverified by third party |
+| I2 | ~~`shamirs-secret-sharing-ts` lacks public audit~~ | Dependency | ~~Unaudited implementation~~ — replaced with `shamir-secret-sharing` (audited by Cure53 + Zellic) |
 
 ---
 
@@ -366,7 +366,7 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 | `@noble/ciphers` | 0.4.0 | XChaCha20-Poly1305 | ✅ Audited (Paul Miller) |
 | `@noble/hashes` | ^1.4.0 | Argon2id, randomBytes | ✅ Audited (Paul Miller) |
 | `@scure/bip39` | ^1.3.0 | BIP-39 mnemonic validation | ✅ Audited (Paul Miller) |
-| `shamirs-secret-sharing-ts` | ^1.0.2 | Shamir's Secret Sharing | ⚠️ No public audit |
+| `shamir-secret-sharing` | ^0.0.4 | Shamir's Secret Sharing | ✅ Audited (Cure53 + Zellic) |
 | `pako` | ^2.1.0 | Gzip compression | ✅ Widely used |
 
 ### Audit Results
@@ -469,12 +469,12 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 | L2 | UTF-8 boundary-aware label truncation | `smartcard.rs` | ✅ Done |
 | M2 | API key moved to OS keychain (desktop) | `keychain.rs`, `bob-api.ts` | ✅ Done |
 | I1 | Argon2id iterations increased to t=4 | `crypto.rs`, `crypto.ts` | ✅ Done |
+| I2 | Replaced unaudited Shamir library with audited alternative | `crypto.ts`, `desktop-crypto.ts` | ✅ Done |
 
 ### Remaining (Roadmap)
 
 | # | Fix | Notes | Effort |
 |:-:|-----|-------|:------:|
-| I2 | Audit or replace `shamirs-secret-sharing-ts` | Consider well-audited alternatives | Large |
 | L3 | Query actual card capacity via GET STATUS APDU | Avoid hardcoded 8192-byte assumption | Medium |
 
 ---
@@ -512,12 +512,12 @@ The Rust backend includes unit tests verifying:
 
 seQRets demonstrates **strong cryptographic engineering** with a well-designed zero-knowledge architecture. The desktop app provides meaningful security advantages over the web version through Rust-native cryptography, compiler-guaranteed memory erasure, browser extension immunity, and code-signed binary integrity.
 
-The 11 findings identified in this analysis were primarily configuration hardening opportunities (CSP, source maps) and edge-case robustness improvements (chunk overflow, clipboard clearing) — **none compromised the core cryptographic guarantees** of the application. **9 of 11 findings have been resolved**, with the remaining 2 on the roadmap (1 informational, 1 partial-fix item).
+The 11 findings identified in this analysis were primarily configuration hardening opportunities (CSP, source maps) and edge-case robustness improvements (chunk overflow, clipboard clearing) — **none compromised the core cryptographic guarantees** of the application. **10 of 11 findings have been resolved**, with the remaining 1 on the roadmap (L3: smart card capacity query).
 
 The cryptographic primitives (XChaCha20-Poly1305, Argon2id, Shamir's Secret Sharing) are industry-standard, properly parameterized, and correctly implemented across both the Rust and JavaScript codebases.
 
 ---
 
 <p align="center">
-<em>This analysis was conducted through a full source code review of all Rust, TypeScript, and configuration files in the seQRets desktop application (v1.3.8). 9 of 11 findings were remediated immediately following the audit. Last updated March 2026.</em>
+<em>This analysis was conducted through a full source code review of all Rust, TypeScript, and configuration files in the seQRets desktop application (v1.3.8). 10 of 11 findings were remediated immediately following the audit. Last updated March 2026.</em>
 </p>
