@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, ExternalLink, Key, Check, AlertCircle, MessageCircle, User } from 'lucide-react';
+import { Bot, ExternalLink, Key, Check, AlertCircle, MessageCircle, User, ChevronDown } from 'lucide-react';
 import { setApiKey } from '@/ai/flows/ask-bob-flow';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -31,8 +31,22 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
     onKeyConfigured();
   };
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollHint, setShowScrollHint] = useState(true);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollTop > 20) setShowScrollHint(false);
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div className="flex flex-col h-full items-center p-0 overflow-y-auto">
+    <div className="relative h-full">
+    <div ref={scrollRef} className="flex flex-col h-full items-center p-0 overflow-y-auto">
       <Card className="w-full bg-muted/50">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
@@ -74,7 +88,7 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
 
           {/* Setup heading */}
           <div className="border-t pt-3">
-            <p className="text-xs font-medium text-center text-muted-foreground mb-3">Connect Bob with a free Google Gemini API key — takes about 2 minutes</p>
+            <p className="text-xs font-medium text-center text-muted-foreground mb-3">Connect Bob with a Google Gemini API key — it's FREE & takes about 2 minutes</p>
           </div>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-start gap-3">
@@ -130,6 +144,14 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
+    <div className={`pointer-events-none absolute bottom-0 left-0 right-0 flex flex-col items-center pb-2 transition-opacity duration-300 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+      <div className="relative flex flex-col items-center gap-0.5 text-muted-foreground">
+        <span className="text-xs font-medium">Set up below</span>
+        <ChevronDown className="h-4 w-4 animate-bounce" />
+      </div>
+    </div>
     </div>
   );
 }
