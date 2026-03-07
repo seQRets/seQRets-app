@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import { Shield, Sparkles, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Sparkles, AlertTriangle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoDark from '@/assets/icons/logo-dark.png';
 
 const WELCOME_GUIDE_KEY = 'seQRets_welcomeGuideShown_v2';
 
@@ -36,65 +37,54 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
   const steps = [
     // ── Card 1: Welcome ──────────────────────────────────────────
     {
-      icon: <Shield className="h-8 w-8 text-amber-400" />,
+      icon: <img src={logoDark} alt="seQRets" className="h-12 w-12" />,
       title: 'Welcome to seQRets',
       body: (
-        <p className="text-sm leading-relaxed text-[hsl(37,10%,75%)]">
-          seQRets helps you protect your most sensitive information today — and
-          make sure the right people can access it tomorrow. Encrypt, split, and
-          store your secrets using military-grade encryption and Shamir&apos;s
-          Secret Sharing. Nothing stored online. No accounts. No KYC. Nothing
-          shared with anyone you don&apos;t choose.
-        </p>
+        <div className="space-y-3 text-base leading-relaxed text-[hsl(37,10%,75%)]">
+          <p>
+            Protect your secrets today — ensure the right people
+            can access them tomorrow.
+          </p>
+          <p className="text-amber-300 font-medium">
+            Zero knowledge. No accounts. Nothing stored online.
+          </p>
+        </div>
       ),
       button: 'Next',
     },
     // ── Card 2: Features ─────────────────────────────────────────
     {
-      icon: <Sparkles className="h-8 w-8 text-amber-400" />,
+      icon: <Sparkles className="h-10 w-10 text-amber-400" />,
       title: 'What Can You Do?',
       body: (
-        <ul className="space-y-1.5 text-sm text-[hsl(37,10%,75%)]">
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Encrypt secrets with native Rust crypto (XChaCha20-Poly1305 + Argon2id)</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Split into Shamir shares as scannable QR &ldquo;Qards&rdquo; — print them, store digitally, or distribute to trusted people</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Restore by scanning, uploading, or pasting Qards</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>View restored secrets as Data QR or SeedQR (BIP-39)</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Store shares, vaults, keyfiles, and inheritance plans on EAL6+ JavaCard smart cards</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Build structured inheritance plans in-app</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Clone smart cards for redundant physical backups</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Generate secure passwords and BIP-39 seed phrases</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Ask Bob, your AI assistant, for guidance</li>
+        <ul className="space-y-2.5 text-base text-[hsl(37,10%,75%)]">
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Encrypt and split secrets into QR &ldquo;Qards&rdquo;</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Store shares on EAL6+ JavaCard smart cards</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Create encrypted inheritance plans</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate passwords and seed phrases</li>
         </ul>
       ),
       button: 'Next',
     },
     // ── Card 3: Security ─────────────────────────────────────────
     {
-      icon: <AlertTriangle className="h-8 w-8 text-amber-400" />,
+      icon: <AlertTriangle className="h-10 w-10 text-amber-400" />,
       title: 'Before You Begin',
       body: (
         <>
-          <div className="rounded-md border border-green-500/30 bg-green-950/20 p-3 space-y-2">
-            <p className="text-sm font-semibold text-green-300">
-              You&apos;re using the desktop app — the most secure way to run seQRets:
+          <div className="rounded-md border border-green-500/30 bg-green-950/20 p-3">
+            <p className="text-base text-green-300">
+              Native Rust crypto, fully offline, no browser attack surface.
             </p>
-            <ul className="space-y-1 text-sm text-[hsl(37,10%,75%)]">
-              <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">•</span>Native Rust cryptography with guaranteed key zeroization</li>
-              <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">•</span>No browser extensions, no CDN, no shared JavaScript environment</li>
-              <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">•</span>Runs fully offline — no network required after installation</li>
-              <li className="flex items-start gap-2"><span className="text-green-400 mt-0.5">•</span>EAL6+ smart card support for tamper-resistant physical backups</li>
-            </ul>
           </div>
           <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-950/20 p-3 space-y-2">
-            <p className="text-sm text-amber-300">
-              <strong>Your security is your responsibility.</strong> If you lose
-              your password or the required number of Qards, your secret is gone
-              forever. The developers cannot recover your data.
+            <p className="text-base text-amber-300">
+              <strong>Your security is your responsibility.</strong> Lose your
+              password or the required Qards, and your data is unrecoverable.
             </p>
-            <p className="text-sm text-amber-300 flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-              <span>For maximum security, disconnect from the internet before handling
-              secrets.</span>
+            <p className="text-base text-amber-300 flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+              <span>Go offline before handling secrets for maximum security.</span>
             </p>
           </div>
         </>
@@ -136,7 +126,7 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
           </div>
 
           {/* Body */}
-          <div className="mb-6">{current.body}</div>
+          <div className="mb-6 min-h-[180px]">{current.body}</div>
 
           {/* Action */}
           <Button

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import { Shield, Sparkles, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Sparkles, AlertTriangle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const WELCOME_GUIDE_KEY = 'seQRets_welcomeGuideShown_v2';
@@ -38,39 +38,37 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
   const steps = [
     // ── Card 1: Welcome ──────────────────────────────────────────
     {
-      icon: <Shield className="h-8 w-8 text-amber-400" />,
+      icon: <img src="/icons/logo-dark.png" alt="seQRets" className="h-12 w-12" />,
       title: 'Welcome to seQRets',
       body: (
-        <p className="text-sm leading-relaxed text-[hsl(37,10%,75%)]">
-          seQRets helps you protect your most sensitive information today — and
-          make sure the right people can access it tomorrow. Encrypt, split, and
-          store your secrets using military-grade encryption and Shamir&apos;s
-          Secret Sharing. Nothing stored online. No accounts. No KYC. Nothing
-          shared with anyone you don&apos;t choose.
-        </p>
+        <div className="space-y-3 text-base leading-relaxed text-[hsl(37,10%,75%)]">
+          <p>
+            Protect your secrets today — ensure the right people
+            can access them tomorrow.
+          </p>
+          <p className="text-amber-300 font-medium">
+            Zero knowledge. No accounts. Nothing stored online.
+          </p>
+        </div>
       ),
       button: 'Next',
     },
     // ── Card 2: Features ─────────────────────────────────────────
     {
-      icon: <Sparkles className="h-8 w-8 text-amber-400" />,
+      icon: <Sparkles className="h-10 w-10 text-amber-400" />,
       title: 'What Can You Do?',
       body: (
         <>
-          <ul className="space-y-1.5 text-sm text-[hsl(37,10%,75%)]">
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Encrypt secrets with XChaCha20-Poly1305 + Argon2id</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Split into Shamir shares as scannable QR &ldquo;Qards&rdquo; — print them, store digitally, or distribute to trusted people</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Restore by scanning, uploading, or pasting Qards</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>View restored secrets as Data QR or SeedQR (BIP-39)</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Encrypt inheritance plans for your heirs</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Generate secure passwords and BIP-39 seed phrases</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Ask Bob, your AI assistant, for guidance</li>
+          <ul className="space-y-2.5 text-base text-[hsl(37,10%,75%)]">
+            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Encrypt and split secrets into QR &ldquo;Qards&rdquo;</li>
+            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Restore by scanning, uploading, or pasting</li>
+            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Create encrypted inheritance plans</li>
+            <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate passwords and seed phrases</li>
           </ul>
-          <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-xs text-amber-300/90">
-            The desktop app adds EAL6+ JavaCard smart card storage, offline-native
-            operation, and Rust-backed cryptography.{' '}
+          <div className="mt-4 rounded-md border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-sm text-amber-300/90">
+            The paid desktop app adds native Rust crypto, offline operation, smart card storage, and more.{' '}
             <a href="https://seqrets.app" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-amber-200 hover:text-white">
-              Available at seqrets.app
+              seqrets.app
             </a>
           </div>
         </>
@@ -79,35 +77,27 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
     },
     // ── Card 3: Security Warning ─────────────────────────────────
     {
-      icon: <AlertTriangle className="h-8 w-8 text-amber-400" />,
+      icon: <AlertTriangle className="h-10 w-10 text-amber-400" />,
       title: 'Before You Begin',
       body: (
         <>
-          <div className="rounded-md border border-amber-500/30 bg-amber-950/20 p-3 space-y-2">
-            <p className="text-sm font-semibold text-amber-300">
-              This is a web application. While all encryption happens locally in
-              your browser, web apps carry inherent risks:
+          <div className="rounded-md border border-amber-500/30 bg-amber-950/20 p-3">
+            <p className="text-base text-amber-300">
+              This is a web app. All encryption runs locally, but browsers
+              carry risks from extensions, shared environments, and CDN delivery.
             </p>
-            <ul className="space-y-1 text-sm text-[hsl(37,10%,75%)]">
-              <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Browser extensions can read page content</li>
-              <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>JavaScript runs in a shared environment with other tabs and extensions</li>
-              <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>CDN delivery means you trust the server on every page load</li>
-              <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">•</span>Passwords in JavaScript memory cannot be securely erased</li>
-            </ul>
           </div>
           <div className="mt-3 rounded-md border border-green-500/30 bg-green-950/20 p-3 space-y-2">
-            <p className="text-sm text-green-300 flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-              <span><strong>Recommended:</strong> Disconnect from the internet before
-              handling secrets. The app works fully offline once loaded.</span>
+            <p className="text-base text-green-300 flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+              <span>Go offline before handling secrets. The app works fully offline once loaded.</span>
             </p>
-            <p className="text-sm text-green-300">
-              For the strongest protection, use the{' '}
+            <p className="text-base text-green-300">
+              For maximum security, use the{' '}
               <a href="https://seqrets.app" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-green-200 hover:text-white">
                 seQRets desktop app
               </a>{' '}
-              — native Rust cryptography, no browser attack surface, and EAL6+
-              smart card support.
+              (paid).
             </p>
           </div>
         </>
@@ -149,7 +139,7 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
           </div>
 
           {/* Body */}
-          <div className="mb-6">{current.body}</div>
+          <div className="mb-6 min-h-[180px]">{current.body}</div>
 
           {/* Action */}
           <Button
