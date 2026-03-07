@@ -507,12 +507,17 @@ export default function SmartCardPage() {
                 ) : cardStatus ? (
                   <div className="space-y-3">
                     {/* PIN Status */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {cardStatus.pin_set ? (
                         cardStatus.pin_verified || verifiedPin ? (
                           <>
                             <LockOpen className="h-4 w-4 text-green-600" />
                             <span className="text-sm font-medium text-green-600">PIN Protected — Unlocked</span>
+                          </>
+                        ) : cardStatus.pin_retries_remaining === 0 ? (
+                          <>
+                            <ShieldAlert className="h-4 w-4 text-destructive" />
+                            <span className="text-sm font-bold text-destructive">Card Permanently Locked — Factory Reset Required</span>
                           </>
                         ) : (
                           <>
@@ -790,44 +795,67 @@ export default function SmartCardPage() {
               PIN Unlock (if card is locked)
               ═══════════════════════════════════════════════════════════ */}
           {cardStatus && needsPinUnlock && (
-            <Card className="border-accent dark:border-accent/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-primary" />
-                  Unlock Card
-                </CardTitle>
-                <CardDescription>
-                  This card is PIN-protected. Enter your PIN to unlock it for management.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    type="password"
-                    placeholder="Enter PIN"
-                    maxLength={16}
-                    value={unlockPinInput}
-                    onChange={(e) => setUnlockPinInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleUnlockPin();
-                    }}
-                    disabled={isUnlocking}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleUnlockPin}
-                    disabled={isUnlocking || unlockPinInput.length < 8}
-                  >
-                    {isUnlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
-                  </Button>
-                </div>
-                {cardStatus.pin_retries_remaining < 5 && (
-                  <p className={`text-sm font-medium mt-2 ${cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
-                    ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before the card locks permanently.
+            cardStatus.pin_retries_remaining === 0 ? (
+              /* Card is permanently locked — show prominent alert instead of PIN input */
+              <Card className="border-destructive dark:border-destructive/70">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                    <ShieldAlert className="h-5 w-5" />
+                    Card Permanently Locked
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      All 5 PIN attempts have been exhausted. This card is permanently locked and cannot be unlocked.
+                    </AlertDescription>
+                  </Alert>
+                  <p className="text-sm text-muted-foreground">
+                    To use this card again, you must perform a <strong>Factory Reset</strong> below. This will erase ALL data on the card and remove the PIN, returning it to a blank state.
                   </p>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-accent dark:border-accent/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Lock className="h-5 w-5 text-primary" />
+                    Unlock Card
+                  </CardTitle>
+                  <CardDescription>
+                    This card is PIN-protected. Enter your PIN to unlock it for management.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      placeholder="Enter PIN"
+                      maxLength={16}
+                      value={unlockPinInput}
+                      onChange={(e) => setUnlockPinInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUnlockPin();
+                      }}
+                      disabled={isUnlocking}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleUnlockPin}
+                      disabled={isUnlocking || unlockPinInput.length < 8}
+                    >
+                      {isUnlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
+                    </Button>
+                  </div>
+                  {cardStatus.pin_retries_remaining < 5 && (
+                    <p className={`text-sm font-medium mt-2 ${cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                      ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before the card locks permanently.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )
           )}
 
           {/* ═══════════════════════════════════════════════════════════════

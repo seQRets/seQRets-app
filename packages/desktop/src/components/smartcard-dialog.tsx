@@ -429,37 +429,51 @@ export function SmartCardDialog({
 
           {/* ── PIN Verification (if needed) ── */}
           {needsPinVerification && (
-            <div className="rounded-lg border border-accent bg-accent/10 dark:bg-accent/5 p-3 space-y-2">
-              <Label htmlFor="pin-verify" className="text-sm font-medium">Enter PIN to unlock card</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="pin-verify"
-                  type="password"
-                  placeholder="Enter PIN"
-                  maxLength={16}
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyPin(); }}
-                  disabled={isPinVerifying}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleVerifyPin}
-                  disabled={isPinVerifying || pinInput.length < 8}
-                  size="sm"
-                >
-                  {isPinVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
-                </Button>
+            cardStatus && cardStatus.pin_retries_remaining === 0 ? (
+              /* Card is permanently locked — hide PIN input, show locked alert */
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="space-y-2">
+                  <p className="font-semibold">This card is permanently locked.</p>
+                  <p className="text-xs">
+                    All PIN attempts have been exhausted. The card must be factory reset before it can be used again.
+                    Factory reset will erase ALL data on the card.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="rounded-lg border border-accent bg-accent/10 dark:bg-accent/5 p-3 space-y-2">
+                <Label htmlFor="pin-verify" className="text-sm font-medium">Enter PIN to unlock card</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="pin-verify"
+                    type="password"
+                    placeholder="Enter PIN"
+                    maxLength={16}
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyPin(); }}
+                    disabled={isPinVerifying}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleVerifyPin}
+                    disabled={isPinVerifying || pinInput.length < 8}
+                    size="sm"
+                  >
+                    {isPinVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Unlock'}
+                  </Button>
+                </div>
+                {cardStatus && cardStatus.pin_set && cardStatus.pin_retries_remaining < 5 && (
+                  <p className={cn(
+                    'text-xs font-medium',
+                    cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                  )}>
+                    ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before card locks permanently.
+                  </p>
+                )}
               </div>
-              {cardStatus && cardStatus.pin_set && cardStatus.pin_retries_remaining < 5 && (
-                <p className={cn(
-                  'text-xs font-medium',
-                  cardStatus.pin_retries_remaining <= 1 ? 'text-destructive' : cardStatus.pin_retries_remaining <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
-                )}>
-                  ⚠ {cardStatus.pin_retries_remaining} attempt{cardStatus.pin_retries_remaining !== 1 ? 's' : ''} remaining before card locks permanently.
-                </p>
-              )}
-            </div>
+            )
           )}
 
           {/* ── PIN Setup (optional, available in all modes) ── */}

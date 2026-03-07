@@ -68,6 +68,18 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         return () => { cancelled = true; };
     }, []);
 
+    // Re-read chat history when API key becomes available — ensures the
+    // conversation survives route transitions where the async keychain
+    // check may cause the component to remount after localStorage was saved.
+    useEffect(() => {
+        if (hasApiKey) {
+            const saved = getChatHistory();
+            if (saved.length > 0) {
+                setConversation(saved);
+            }
+        }
+    }, [hasApiKey]);
+
     // Scroll to bottom on mount (so the user sees the most recent messages)
     useEffect(() => {
         scrollToBottom();
