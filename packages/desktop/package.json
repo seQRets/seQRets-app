@@ -40,7 +40,6 @@
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "html2canvas": "^1.4.1",
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
