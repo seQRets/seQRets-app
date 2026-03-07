@@ -116,7 +116,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: center; color: #DC2626; font-weight: 500; font-size: 14px; margin-bottom: 10px;">
-                    <svg viewBox="0 0 20 20" fill="currentColor" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.001-1.742 3.001H4.42c-1.532 0-2.492-1.667-1.742-3.001l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    <span style="margin-right: 6px; font-size: 16px;">⚠️</span>
                     <span>Store securely and separately from other qards</span>
                 </div>
 
