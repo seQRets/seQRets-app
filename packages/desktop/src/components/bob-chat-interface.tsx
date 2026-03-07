@@ -171,7 +171,7 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
 
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full flex-1 min-h-0">
             <Dialog open={showDisclaimer} onOpenChange={() => {}}>
                 <DialogContent className="sm:max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
