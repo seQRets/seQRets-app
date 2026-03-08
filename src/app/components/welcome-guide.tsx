@@ -75,7 +75,7 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Restore by scanning, uploading, or pasting</li>
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>View restored secrets as Data QR or SeedQR</li>
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Create encrypted inheritance plans</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate passwords and seed phrases</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate secure passwords and BIP-39 seed phrases</li>
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Ask Bob, your AI assistant, for guidance</li>
         </ul>
       ),
@@ -88,17 +88,16 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
       body: (
         <>
           <div className="rounded-md border border-amber-500/30 bg-amber-950/20 p-3">
-            <p className="text-base text-amber-300">
+            <p className="text-base text-center text-amber-300">
               This is a web app. All encryption runs locally, but browsers
               carry risks from extensions, shared environments, and CDN delivery.
             </p>
           </div>
           <div className="mt-3 rounded-md border border-green-500/30 bg-green-950/20 p-3 space-y-2">
-            <p className="text-base text-green-300 flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-              <span>Go offline before handling secrets. The app works fully offline once loaded.</span>
+            <p className="text-base text-center text-green-300">
+              Go offline before handling secrets. The app works fully offline once loaded.
             </p>
-            <p className="text-base text-green-300">
+            <p className="text-base text-center text-green-300">
               For maximum security, use the{' '}
               <a href="https://seqrets.app" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-green-200 hover:text-white">
                 seQRets desktop app

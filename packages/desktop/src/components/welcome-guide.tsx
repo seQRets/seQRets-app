@@ -67,8 +67,9 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
         <ul className="space-y-2.5 text-base text-[hsl(37,10%,75%)]">
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Encrypt and split secrets into QR &ldquo;Qards&rdquo;</li>
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Store shares on EAL6+ JavaCard smart cards</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>View restored secrets as a Data QR or SeedQR</li>
           <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Create encrypted inheritance plans</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate passwords and seed phrases</li>
+          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">&bull;</span>Generate secure passwords and BIP-39 seed phrases</li>
         </ul>
       ),
       button: 'Next',
@@ -80,18 +81,17 @@ export function WelcomeGuide({ activeTab }: WelcomeGuideProps) {
       body: (
         <>
           <div className="rounded-md border border-green-500/30 bg-green-950/20 p-3">
-            <p className="text-base text-green-300">
+            <p className="text-base text-center text-green-300">
               Native Rust crypto, fully offline, no browser attack surface.
             </p>
           </div>
           <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-950/20 p-3 space-y-2">
-            <p className="text-base text-amber-300">
+            <p className="text-base text-center text-amber-300">
               <strong>Your security is your responsibility.</strong> Lose your
               password or the required Qards, and your data is unrecoverable.
             </p>
-            <p className="text-base text-amber-300 flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-              <span>Go offline before handling secrets for maximum security.</span>
+            <p className="text-base text-center text-amber-300">
+              Go offline before handling secrets for maximum security.
             </p>
           </div>
         </>
