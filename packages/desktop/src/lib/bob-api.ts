@@ -20,11 +20,13 @@ v1.4.3 "Ignition" — Available as a web app (Next.js) and native desktop app (T
 - **Seed Phrase Generator:** A tool to generate a new 12 or 24-word BIP-39 mnemonic seed phrase.
 - **BIP-39 Optimization:** Seed phrases are automatically detected and converted to compact binary entropy before encryption. A 24-word phrase (~150 characters) becomes just 32 bytes, dramatically reducing QR code size.
 - **Optional Keyfile:** For enhanced security, you can use any file as an additional "key." Both the password AND the keyfile are required for recovery. Users can generate a keyfile and either download it or save it to a smart card. Keyfiles can also be loaded from a smart card anywhere keyfiles are accepted (desktop only).
-- **Export Vault File:** Export your encrypted Qards as a local .seqrets file for safekeeping in iCloud, Google Drive, or a USB drive.
+- **Export Vault File:** Export your encrypted Qards as a local .seqrets file for safekeeping in iCloud, Google Drive, or a USB drive. Vault files can optionally be encrypted with their own password (separate from the secret's encryption password) for an additional layer of protection.
 - **Import Vault File:** Import a previously exported .seqrets file to restore your Qards into the app.
-- **Flexible Backup Options:** Download your Qards as printable QR code images (PNG), as raw text files (TXT), or both.
+- **Flexible Backup Options:** Download individual Qards as QR code images (PNG) or raw text files (TXT), or download all Qards at once as a ZIP archive (includes PNGs, TXTs, and encrypted instructions). Print individual Qards or all Qards in A5 card format directly from the app.
 - **Write to JavaCard Smartcard:** Store individual shares, full vaults, or keyfiles on JCOP3 hardware smartcards with optional PIN protection (desktop only).
+- **QR Code Size Estimation:** Real-time byte estimate per share with a visual progress bar during encryption. Warnings appear when share data approaches QR scanning reliability limits (~900 bytes yellow warning, ~1400 bytes red warning). Oversized payloads automatically switch to text-only export mode.
 - **Secure Memory Handling:** **Desktop:** Rust zeroize crate — compiler-fence guaranteed key zeroization, optimizer-proof. The derived encryption key stays entirely in Rust and never enters the JS heap. The password string does transit JS briefly via IPC but cannot be zeroed (JS string limitation). **Web:** Zeroes cryptographic byte buffers (derived keys, decrypted data, keyfile bytes) in finally blocks using fill(0). Keyfile data and Shamir share data are cleared from UI state immediately after a successful operation. Note: JS strings (passwords) cannot be cryptographically zeroed — a known limitation of browser-based applications.
+- **Clipboard Auto-Clear:** When copying a restored secret or seed phrase to the clipboard, the app automatically clears the clipboard after 60 seconds to prevent accidental exposure.
 
 ### Inheritance Plan
 - **In-app plan builder** (desktop only) — create your inheritance plan directly inside the app using a structured, 8-section form (plan info, recovery credentials, device & account access, Qard locations, digital assets, restoration steps, professional contacts, personal message). The plan is encrypted as a compact JSON blob (~2-4 KB) that fits on a smart card.
@@ -69,14 +71,14 @@ The app guides you through a simple, step-by-step process.
 ### Encrypting a Secret (The "Secure Secret" Tab)
 1.  **Step 1: Enter Your Secret.** Enter the secret you want to protect (e.g., a 12/24 word seed phrase). You can also use the **Seed Phrase Generator** to create a new one. Once done, click **Next Step**.
 2.  **Step 2: Secure Your Secret.** Generate or enter a strong password (24+ characters with mixed character types). For maximum security, you can add a **Keyfile**. When your credentials are set, click **Next Step**.
-3.  **Step 3: Split into Qards.** Choose the total number of Qards to create and how many are required for restoration. When you're ready, click the final button to **Encrypt & Generate** your Qards. You can then download them, export as a vault file, or write to a smart card.
+3.  **Step 3: Split into Qards.** Choose the total number of Qards to create and how many are required for restoration. When you're ready, click the final button to **Encrypt & Generate** your Qards. You can then download them individually (PNG/TXT), download all as a ZIP archive, print as A5 cards, export as a vault file, or write to a smart card.
 
 ### Decrypting a Secret (The "Restore Secret" Tab)
 1.  **Step 1: Add Your Qards.** Add the required number of shares using one of these methods:
     *   **Upload Images:** Drag and drop the Qard images.
     *   **Scan with Camera:** Scan the Qards one by one.
     *   **Manual Entry:** Paste the raw text of each share.
-    *   **Import Vault File:** Load shares from a previously exported .seqrets file.
+    *   **Import Vault File:** Load shares from a previously exported .seqrets file. If the vault was password-protected, you will need the vault password to import.
     *   **Read from Smartcard:** Load a share or vault from a JavaCard (desktop only).
     Once you've added enough shares, click **Next Step**.
 2. **Step 2: Provide Your Credentials.** Enter the password that was used to encrypt the Qards. If a keyfile was used, upload the original file. When ready, click **Next Step**.
@@ -394,7 +396,7 @@ Screen recording — partial risk. Both fields are masked by default. The risk s
 
 CDN / supply chain — the JavaScript served to the user at load time could theoretically be tampered with at the CDN or build level before it reaches the user. Going offline after the page loads mitigates mid-session swaps but does not help if the code was compromised before load.
 
-Clipboard — OS-level. Pasted content is readable by any focused app and may linger in clipboard history tools accessible to other applications.
+Clipboard — OS-level. Pasted content is readable by any focused app and may linger in clipboard history tools accessible to other applications. Mitigation: seQRets automatically clears the clipboard 60 seconds after copying a restored secret, reducing the window of exposure. This does not protect against clipboard managers that capture entries in real time.
 
 Constant-time operations — browser JavaScript has no guarantee of constant-time execution. Timing side channels in comparison operations are theoretically possible, though hard to exploit remotely.
 
