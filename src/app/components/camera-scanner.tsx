@@ -87,15 +87,33 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error("Camera access is not supported by your browser.");
         }
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (isComponentMounted) {
-            if(videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
-            setHasCameraPermission(true);
-            animationFrameId.current = requestAnimationFrame(tick);
+
+        // Prefer rear camera on mobile, fall back to any camera on desktop
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: 'environment' } }
+            });
+        } catch {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
+
+        // If component unmounted while awaiting camera, release immediately
+        if (!isComponentMounted) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+        } else {
+            // Ref lost — release the stream to avoid locking the camera
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+
+        setHasCameraPermission(true);
+        animationFrameId.current = requestAnimationFrame(tick);
       } catch (error) {
         console.error('Error accessing camera:', error);
         if(isComponentMounted){
@@ -117,6 +135,9 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
       isComponentMounted = false;
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
