@@ -431,6 +431,138 @@ Remaining risks on desktop (same as web): Clipboard (OS-level), screen recording
 The web app is appropriate for users who understand the threat model, run a clean browser profile with no untrusted extensions, and are comfortable with client-side JavaScript cryptography. For maximum security — especially for high-value seed phrases — the desktop app is the better choice because it eliminates the two most impactful threats: browser extensions and JS memory exposure.
 `;
 
+const bitcoinGuide = `
+## BITCOIN & CRYPTOCURRENCY FUNDAMENTALS ##
+
+Use this section to answer questions about how Bitcoin wallets, seed phrases, keys, and addresses actually work under the hood. This helps users understand WHY protecting their seed phrase with seQRets is so critical.
+
+### Why the Seed Phrase Is Everything
+
+A seed phrase (BIP-39 mnemonic) is the single master backup for an entire wallet. From those 12 or 24 words, a wallet deterministically derives:
+1. A master private key (and master chain code)
+2. Unlimited child private keys via derivation paths
+3. The corresponding public keys
+4. All wallet addresses (receiving and change)
+
+Anyone who obtains the seed phrase can regenerate every key and spend every coin. There is no "password reset" — the seed phrase IS the wallet. This is why seQRets exists: to protect this single catastrophic secret using Shamir splitting and strong encryption.
+
+### BIP-39: Mnemonic Seed Phrases
+
+**What it is:** BIP-39 defines how random entropy is encoded as human-readable words.
+
+**How it works:**
+- 12 words = 128 bits of entropy + 4-bit checksum = 132 bits total
+- 24 words = 256 bits of entropy + 8-bit checksum = 264 bits total
+- The word list contains exactly 2,048 words (11 bits per word: 2^11 = 2048)
+- The last word includes a checksum (SHA-256 hash of the entropy), so not every combination of words is valid
+- The mnemonic is converted to a 512-bit seed using PBKDF2-HMAC-SHA512 with 2,048 iterations, using "mnemonic" + optional passphrase as the salt
+
+**The optional passphrase (sometimes called "25th word"):**
+- An additional passphrase can be appended during seed derivation
+- The SAME mnemonic + DIFFERENT passphrase = COMPLETELY DIFFERENT wallet
+- An empty passphrase (the default) is valid and produces a specific wallet
+- This enables plausible deniability: one mnemonic can unlock multiple wallets depending on the passphrase
+- WARNING: There is no "wrong passphrase" error — any passphrase produces a valid (but different) wallet. A typo means a different, empty wallet, not an error message. Users must remember the exact passphrase.
+
+**seQRets BIP-39 optimization:** When seQRets detects a valid BIP-39 mnemonic, it converts it to compact binary entropy before encryption. A 24-word phrase (~150 characters of text) becomes just 32 bytes of entropy, dramatically reducing QR code size while preserving all information. On restoration, the entropy is converted back to the original words.
+
+### BIP-32: Hierarchical Deterministic (HD) Wallets
+
+**What it is:** BIP-32 defines how a single master seed generates an entire tree of key pairs.
+
+**How it works:**
+- The 512-bit seed from BIP-39 is split: left 256 bits = master private key, right 256 bits = master chain code
+- Child keys are derived using HMAC-SHA512 with the parent key + chain code + index
+- Each level in the tree can produce 2^31 normal children and 2^31 hardened children (4+ billion total per level)
+- Hardened derivation (index >= 2^31, written with an apostrophe like 44') prevents child public keys from being used to derive parent keys — a critical security property
+
+**Why it matters:** Before HD wallets, every address required a separate private key backup. With BIP-32, one seed phrase backs up unlimited addresses forever.
+
+### BIP-44 / BIP-84 / BIP-86: Derivation Paths
+
+Derivation paths tell the wallet WHERE in the key tree to find specific accounts. They follow the format: m / purpose' / coin_type' / account' / change / address_index
+
+**Common paths:**
+- **BIP-44** (Legacy P2PKH, addresses start with "1"): m/44'/0'/0'/0/0 — oldest format, largest transactions
+- **BIP-84** (Native SegWit P2WPKH, addresses start with "bc1q"): m/84'/0'/0'/0/0 — most common today, lower fees
+- **BIP-86** (Taproot P2TR, addresses start with "bc1p"): m/86'/0'/0'/0/0 — newest, enables advanced scripting and better privacy
+
+**Key insight for users:** The SAME seed phrase produces DIFFERENT addresses depending on which derivation path the wallet software uses. If a user restores their seed in a new wallet and doesn't see their balance, they likely need to select the correct address type / derivation path. This is NOT a seQRets issue — it's a wallet configuration issue.
+
+- coin_type: 0' = Bitcoin mainnet, 60' = Ethereum, 1' = Bitcoin testnet
+- account: allows multiple logical accounts from one seed (0', 1', 2', ...)
+- change: 0 = receiving (external) addresses, 1 = internal change addresses
+- address_index: sequential index (0, 1, 2, ...) for generating new addresses
+
+### BIP-85: Deterministic Entropy
+
+**What it is:** BIP-85 derives NEW, independent seed phrases (or other entropy) from an existing master seed.
+
+**How it works:**
+- Uses HMAC-SHA512 with the master key to generate child entropy
+- Each derived seed is cryptographically independent — knowing a child seed does NOT reveal the master or any sibling seeds
+- Can generate 12-word mnemonics, 24-word mnemonics, WIF private keys, hex entropy, and more
+
+**Why it matters for seQRets users:** A user with one master seed phrase (securely stored with seQRets) can deterministically generate separate seed phrases for different wallets or purposes. If they protect their master seed, they can always regenerate the child seeds — reducing the number of secrets that need physical backup.
+
+### secp256k1: The Elliptic Curve
+
+**What it is:** The specific elliptic curve used by Bitcoin (and Ethereum, and most cryptocurrencies) for public key cryptography.
+
+**Key properties:**
+- Defined over a 256-bit prime field
+- A private key is a random 256-bit integer (1 to n-1, where n is the curve order)
+- The public key is computed by multiplying the generator point G by the private key: pubkey = privkey × G
+- This is a one-way function: computing the public key from the private key is trivial, but reversing it (the elliptic curve discrete logarithm problem) is computationally infeasible
+- Private key: 32 bytes. Uncompressed public key: 65 bytes. Compressed public key: 33 bytes.
+
+**Signing algorithms:**
+- **ECDSA** (Elliptic Curve Digital Signature Algorithm): the original Bitcoin signing algorithm; used for Legacy and SegWit transactions
+- **Schnorr signatures** (BIP-340): introduced with Taproot (November 2021); simpler, more efficient, enables native multisig aggregation (MuSig2)
+
+### Bitcoin Address Types
+
+**Legacy P2PKH** (Pay-to-Public-Key-Hash): Addresses start with "1". Format: Base58Check(RIPEMD160(SHA256(pubkey))). Oldest, largest transaction size.
+
+**P2SH** (Pay-to-Script-Hash): Addresses start with "3". Used for multisig and wrapped SegWit (P2SH-P2WPKH). The spending conditions are hashed into the address.
+
+**Native SegWit P2WPKH** (Pay-to-Witness-Public-Key-Hash): Addresses start with "bc1q". Bech32 encoding. Smaller transactions, lower fees. Most widely used today.
+
+**Taproot P2TR** (Pay-to-Taproot): Addresses start with "bc1p". Bech32m encoding. Uses Schnorr signatures. Complex scripts look identical to simple payments on-chain, improving privacy.
+
+### The UTXO Model
+
+Bitcoin does NOT use account balances. Instead, it tracks Unspent Transaction Outputs (UTXOs).
+
+**How it works:**
+- Every Bitcoin transaction consumes one or more UTXOs as inputs and creates new UTXOs as outputs
+- A UTXO is a specific amount of bitcoin locked to a specific address (script)
+- Your "balance" is the sum of all UTXOs your keys can spend
+- When you spend, you must consume an entire UTXO — any excess is sent back to yourself as "change" to a change address (derivation path index 1)
+- Each UTXO can only be spent once (this prevents double-spending)
+
+**Why users care:** UTXO management affects transaction fees (more UTXOs = more inputs = higher fees) and privacy (change addresses help prevent linking transactions). Wallet software handles this automatically, but advanced users may want to understand it.
+
+### Multisig Wallets
+
+**What it is:** A wallet that requires M-of-N signatures to authorize a transaction (e.g., 2-of-3).
+
+**How it works:**
+- Multiple independent private keys (often from different seed phrases) are combined into a multisig script
+- Spending requires signatures from at least M of the N keys
+- Common setups: 2-of-3 (personal security), 3-of-5 (corporate treasury)
+
+**seQRets relevance:** Each key in a multisig setup comes from a different seed phrase. Users may want to protect each seed separately with seQRets, using different passwords and distributing Qards independently. This provides defense in depth: Shamir splitting for each individual seed, plus multisig for the wallet itself.
+
+**Important:** Multisig wallets typically require additional backup beyond just the seed phrases — the wallet descriptor or xpub information is needed to reconstruct the multisig script. Users should back up their wallet configuration file in addition to each seed phrase.
+
+### Ethereum & Other Chains
+
+While seQRets is chain-agnostic (it encrypts any text), most EVM chains (Ethereum, Polygon, Arbitrum, etc.) also use BIP-39 seed phrases and BIP-32 HD derivation with secp256k1. The default Ethereum path is m/44'/60'/0'/0/0. The same seed phrase will produce different addresses on Bitcoin vs. Ethereum because the derivation paths differ.
+
+Non-EVM chains (Solana, Cosmos, Polkadot, etc.) may use different curves (Ed25519) or derivation schemes, but many still use BIP-39 mnemonics as the starting point. seQRets protects the mnemonic regardless of which chain it's used for.
+`;
+
 const SYSTEM_PROMPT = `You are Bob, a friendly and expert AI assistant for the seQRets application.
 Your personality is helpful, slightly formal, and very knowledgeable about security and cryptography.
 You are to act as a support agent, guiding users through the application's features and explaining complex topics simply.
@@ -453,7 +585,9 @@ IMPORTANT: You are NOT a lawyer. Never offer legal advice. When users ask about 
 
 6.  **On Passwords:** The app requires passwords of at least 24 characters with uppercase, lowercase, numbers, and special characters. The built-in password generator creates 32-character passwords. The password field turns green when valid and red when invalid.
 
-7.  **On Security Concerns:** Be honest and precise. Acknowledge that the web app has a real threat model. Never overclaim "your data is 100% safe in the browser." The most serious web app threat is malicious browser extensions — no JavaScript-level defense exists against them. The desktop app eliminates this threat class. Both fields (secret and password) are masked by default, which is meaningful protection against shoulder surfing and casual screen capture — but masking does not protect against keyloggers or extensions reading DOM values. Going offline after load is meaningful but limited: it prevents CDN-level swaps mid-session but does nothing against extensions already running or malicious JS already loaded.
+7.  **On Bitcoin & Crypto Fundamentals:** When users ask about how seed phrases, wallets, keys, derivation paths, or addresses work, use the Bitcoin & Cryptocurrency Fundamentals knowledge section. Explain concepts clearly and always tie them back to why seQRets matters — the seed phrase is the single point of failure that seQRets eliminates. If a user reports "wrong addresses" after restoring a seed, explain derivation paths (BIP-44 vs BIP-84 vs BIP-86) — this is a wallet configuration issue, not a seQRets issue.
+
+8.  **On Security Concerns:** Be honest and precise. Acknowledge that the web app has a real threat model. Never overclaim "your data is 100% safe in the browser." The most serious web app threat is malicious browser extensions — no JavaScript-level defense exists against them. The desktop app eliminates this threat class. Both fields (secret and password) are masked by default, which is meaningful protection against shoulder surfing and casual screen capture — but masking does not protect against keyloggers or extensions reading DOM values. Going offline after load is meaningful but limited: it prevents CDN-level swaps mid-session but does nothing against extensions already running or malicious JS already loaded.
 
 ## CONTEXT: seQRets Documentation ##
 ${readmeContent}
@@ -464,7 +598,9 @@ ${javaCardGuide}
 
 ${inheritancePlanningGuide}
 
-${securityGuide}`;
+${securityGuide}
+
+${bitcoinGuide}`;
 
 const KEYCHAIN_KEY = 'gemini-api-key';
 const MIGRATION_FLAG = 'gemini-key-migrated-to-keychain';
