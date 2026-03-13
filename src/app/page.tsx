@@ -1,9 +1,9 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateSharesForm } from "@/app/components/create-shares-form";
 import { RestoreSecretForm } from "@/app/components/restore-secret-form";
-import { Lock, Combine, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
+import { AppNavTabs } from "./components/app-nav-tabs";
 import Image from "next/image";
 import React, { useEffect } from "react";
 import { Header } from "./components/header";
@@ -76,24 +76,11 @@ function App() {
           <BitcoinTicker />
         </div>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'create' | 'restore')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12">
-            <TabsTrigger value="create" className="text-base">
-              <Lock className="mr-2 h-5 w-5" />
-              Secure Secret
-            </TabsTrigger>
-            <TabsTrigger value="restore" className="text-base">
-              <Combine className="mr-2 h-5 w-5" />
-              Restore Secret
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="create" className="mt-6">
-            <CreateSharesForm />
-          </TabsContent>
-          <TabsContent value="restore" className="mt-6">
-            <RestoreSecretForm />
-          </TabsContent>
-        </Tabs>
+        <AppNavTabs activePage={activeTab} onHomeTabChange={setActiveTab} />
+
+        <div className="mt-6">
+          {activeTab === 'create' ? <CreateSharesForm /> : <RestoreSecretForm />}
+        </div>
 
         <AppFooter />
       </div>
