@@ -383,7 +383,6 @@ cd workers/waitlist && npx wrangler secret put ADMIN_SECRET
 - Plausible or Umami — Cookie-free, GDPR-compliant. Need signal on user flow completion vs. drop-off.
 
 **Features**
-- Vault export improvements — Password-protected vault file for backup/transfer
 - QR card templates — Custom labels, branding, layouts (wallet-size, full page, multi-card sheet)
 - Guided inheritance plan builder — Wizard → printable instruction document alongside Qards
 

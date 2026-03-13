@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/icons/logo-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="public/icons/logo-light.png" />
-    <img src="public/icons/logo-dark.png" alt="seQRets Logo" width="200" />
+    <source media="(prefers-color-scheme: dark)" srcset="public/icons/logo-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="public/icons/logo-light.webp" />
+    <img src="public/icons/logo-dark.webp" alt="seQRets Logo" width="200" />
   </picture>
 </p>
 
