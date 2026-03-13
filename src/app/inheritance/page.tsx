@@ -262,6 +262,11 @@ export default function InstructionsPage() {
             <p className="text-muted-foreground text-sm mb-4">
               Encrypt a document with instructions for your heirs, or decrypt a previously encrypted file.
             </p>
+            <p className="text-xs text-muted-foreground/70 mb-2">
+              Need a guided plan builder with printable PDF export? The{' '}
+              <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary">seQRets desktop app</a>{' '}
+              includes an 8-section inheritance planner.
+            </p>
             <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); handleEncryptReset(); handleDecryptReset(); }}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="encrypt"><Lock className="mr-2 h-4 w-4" /> Encrypt Plan</TabsTrigger>

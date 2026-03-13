@@ -617,9 +617,16 @@ export function RestoreSecretForm() {
 
 
                 {decodedShares.length === 0 && (
+                    <>
                     <p className="text-sm text-muted-foreground text-center py-2">
                       Don&apos;t have Qards yet? <a href="/?tab=create" className="text-primary underline underline-offset-4 hover:text-primary/80">Secure a secret</a> first to generate them.
                     </p>
+                    <p className="text-xs text-muted-foreground/70 text-center">
+                      The{' '}
+                      <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary">seQRets desktop app</a>{' '}
+                      can import directly from smart cards with PIN protection.
+                    </p>
+                    </>
                 )}
 
                 {decodedShares.length > 0 && (

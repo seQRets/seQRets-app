@@ -543,6 +543,10 @@ export function CreateSharesForm() {
                   qrCodeData={generatedQrData}
                   keyfileUsed={!!keyfile}
                 />
+                <p className="text-xs text-muted-foreground/70 text-center pt-2">
+                  Want to export shares to smart cards for secure offline storage? Available in the{' '}
+                  <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary">seQRets desktop app</a>.
+                </p>
             </CardContent>
         </>
       )}
