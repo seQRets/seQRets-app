@@ -376,3 +376,23 @@ cd workers/waitlist && npx wrangler secret put ADMIN_SECRET
 - JSON-LD structured data
 - YouTube launch content for @SVRNMoney
 - Remove localhost origins from waitlist Worker CORS before production
+
+### After Launch
+
+**Analytics (privacy-respecting)**
+- Plausible or Umami — Cookie-free, GDPR-compliant. Need signal on user flow completion vs. drop-off.
+
+**Features**
+- Vault export improvements — Password-protected vault file for backup/transfer
+- QR card templates — Custom labels, branding, layouts (wallet-size, full page, multi-card sheet)
+- Guided inheritance plan builder — Wizard → printable instruction document alongside Qards
+
+**Growth**
+- SEO content — Blog posts: "How to set up Bitcoin inheritance," "Shamir's Secret Sharing explained"
+- Publish @seqrets/crypto to npm — Already in roadmap
+- GitHub community — CONTRIBUTING.md, issue templates, discussions
+- Bug bounty program — Informal: "report vulnerabilities to security@seqrets.app and we'll credit you"
+
+**UX Iteration**
+- User testing — 3-5 people using the app for the first time
+- Progressive disclosure — Hide advanced options behind an "Advanced" toggle

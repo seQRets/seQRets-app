@@ -4,8 +4,7 @@
 import { useState } from 'react';
 import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
-import { generateMnemonic, validateMnemonic } from '@scure/bip39';
-import { wordlist } from '@scure/bip39/wordlists/english';
+import { generateMnemonic, validateMnemonic, bip39Wordlist as wordlist } from '@seqrets/crypto';
 import { Copy, RefreshCw, CheckCircle, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
