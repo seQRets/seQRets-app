@@ -20,7 +20,7 @@ export default function App() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/smartcard" element={<SmartCardPage />} />
-        <Route path="/instructions" element={<InstructionsPage />} />
+        <Route path="/inheritance" element={<InstructionsPage />} />
       </Routes>
       <UpdateChecker checkOnMount />
       <Toaster />

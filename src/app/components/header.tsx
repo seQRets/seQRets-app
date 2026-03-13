@@ -93,18 +93,26 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                         </Link>
                     </>
                 )}
+                {pathname !== '/inheritance' && (
+                <Link href="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <FileText className="h-5 w-5" />
+                    <span>Inheritance Plan</span>
+                </Link>
+                )}
+                <div className="border-t mt-2 pt-2">
+                {pathname !== '/support' && (
                  <Link href="/support" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Bot className="h-5 w-5" />
                     <span>Ask Bob AI</span>
                 </Link>
-                <Link href="/instructions" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                    <FileText className="h-5 w-5" />
-                    <span>Inheritance Plan</span>
-                </Link>
+                )}
+                {pathname !== '/about' && (
                 <Link href="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
                     <span>About</span>
                 </Link>
+                )}
+                </div>
                 <div className="border-t mt-2 pt-2">
                     <Link href="/go-pro" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary font-medium" onClick={() => handleLinkClick()}>
                         <Rocket className="h-5 w-5" />
@@ -195,25 +203,31 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                     </DropdownMenuItem>
                 </>
             )}
+          {pathname !== '/inheritance' && (
+          <DropdownMenuItem asChild>
+            <Link href="/inheritance">
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Inheritance Plan</span>
+            </Link>
+          </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
+          {pathname !== '/support' && (
           <DropdownMenuItem asChild>
             <Link href="/support">
               <Bot className="mr-2 h-4 w-4" />
               <span>Ask Bob AI</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/instructions">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Inheritance Plan</span>
-            </Link>
-          </DropdownMenuItem>
+          )}
+          {pathname !== '/about' && (
           <DropdownMenuItem asChild>
             <Link href="/about">
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
             </Link>
           </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href="/go-pro" className="text-primary font-medium">

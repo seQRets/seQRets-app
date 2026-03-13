@@ -19,7 +19,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
 
   const handleClick = (value: ActivePage) => {
     if (value === "plan") {
-      if (activePage !== "plan") navigate("/instructions");
+      if (activePage !== "plan") navigate("/inheritance");
     } else {
       if (activePage === "plan") {
         navigate(`/?tab=${value}`);

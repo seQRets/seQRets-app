@@ -92,22 +92,32 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                         </Link>
                     </>
                 )}
+                {pathname !== '/inheritance' && (
+                <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <FileText className="h-5 w-5" />
+                    <span>Inheritance Plan</span>
+                </Link>
+                )}
+                <div className="border-t mt-2 pt-2">
+                {pathname !== '/support' && (
                  <Link to="/support" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Bot className="h-5 w-5" />
                     <span>Ask Bob AI</span>
                 </Link>
-                <Link to="/instructions" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                    <FileText className="h-5 w-5" />
-                    <span>Inheritance Plan</span>
-                </Link>
+                )}
+                {pathname !== '/smartcard' && (
                 <Link to="/smartcard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <CreditCard className="h-5 w-5" />
                     <span>Smart Card</span>
                 </Link>
+                )}
+                {pathname !== '/about' && (
                 <Link to="/about" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <Info className="h-5 w-5" />
                     <span>About</span>
                 </Link>
+                )}
+                </div>
             </nav>
             <div className="mt-auto p-4 border-t space-y-2">
                 <Button variant="outline" className="w-full justify-start gap-3" onClick={() => { setOpen(false); setCheckingUpdate(true); }}>
@@ -200,31 +210,39 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                     </DropdownMenuItem>
                 </>
             )}
+          {pathname !== '/inheritance' && (
+          <DropdownMenuItem asChild>
+            <Link to="/inheritance">
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Inheritance Plan</span>
+            </Link>
+          </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
+          {pathname !== '/support' && (
           <DropdownMenuItem asChild>
             <Link to="/support">
               <Bot className="mr-2 h-4 w-4" />
               <span>Ask Bob AI</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/instructions">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Inheritance Plan</span>
-            </Link>
-          </DropdownMenuItem>
+          )}
+          {pathname !== '/smartcard' && (
           <DropdownMenuItem asChild>
             <Link to="/smartcard">
               <CreditCard className="mr-2 h-4 w-4" />
               <span>Smart Card</span>
             </Link>
           </DropdownMenuItem>
+          )}
+          {pathname !== '/about' && (
           <DropdownMenuItem asChild>
             <Link to="/about">
               <Info className="mr-2 h-4 w-4" />
               <span>About</span>
             </Link>
           </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setCheckingUpdate(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />

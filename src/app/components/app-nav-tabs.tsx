@@ -14,10 +14,10 @@ interface AppNavTabsProps {
 export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
   const pathname = usePathname();
 
-  const tabs: { value: ActivePage; label: string; icon: React.ReactNode }[] = [
-    { value: "create", label: "Secure Secret", icon: <Lock className="mr-2 h-5 w-5" /> },
-    { value: "plan", label: "Inheritance Plan", icon: <FileText className="mr-2 h-5 w-5" /> },
-    { value: "restore", label: "Restore Secret", icon: <Combine className="mr-2 h-5 w-5" /> },
+  const tabs: { value: ActivePage; label: string; shortLabel: string; icon: typeof Lock }[] = [
+    { value: "create", label: "Secure Secret", shortLabel: "Secure", icon: Lock },
+    { value: "plan", label: "Inheritance Plan", shortLabel: "Inherit", icon: FileText },
+    { value: "restore", label: "Restore Secret", shortLabel: "Restore", icon: Combine },
   ];
 
   const handleClick = (value: ActivePage) => {
@@ -25,7 +25,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
       // Navigation handled by Link
       return;
     }
-    if (pathname === "/instructions") {
+    if (pathname === "/inheritance") {
       // Navigation handled by Link
       return;
     }
@@ -34,30 +34,37 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
   };
 
   const getHref = (value: ActivePage) => {
-    if (value === "plan") return "/instructions";
+    if (value === "plan") return "/inheritance";
     return `/?tab=${value}`;
   };
 
   const needsLink = (value: ActivePage) => {
     if (value === "plan") return activePage !== "plan";
-    return pathname === "/instructions";
+    return pathname === "/inheritance";
   };
 
   return (
     <div className="grid w-full grid-cols-3 h-12 items-center justify-center rounded-md bg-accent p-1 text-muted-foreground">
       {tabs.map((tab) => {
         const isActive = activePage === tab.value;
-        const className = `inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+        const Icon = tab.icon;
+        const className = `inline-flex items-center justify-center whitespace-nowrap rounded-sm px-1 sm:px-3 py-1.5 text-xs sm:text-base font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
           isActive
             ? "bg-primary text-primary-foreground shadow-sm"
             : "hover:text-black"
         }`;
+        const content = (
+          <>
+            <Icon className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">{tab.shortLabel}</span>
+          </>
+        );
 
         if (needsLink(tab.value)) {
           return (
             <Link key={tab.value} href={getHref(tab.value)} className={className}>
-              {tab.icon}
-              {tab.label}
+              {content}
             </Link>
           );
         }
@@ -68,8 +75,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
             onClick={() => handleClick(tab.value)}
             className={className}
           >
-            {tab.icon}
-            {tab.label}
+            {content}
           </button>
         );
       })}
