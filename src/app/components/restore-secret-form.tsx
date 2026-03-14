@@ -115,18 +115,23 @@ export function RestoreSecretForm() {
     };
   }, []);
 
+  // Best-effort wipe: overwrites React state with random data, then clears it.
+  // IMPORTANT: This does NOT guarantee memory erasure. JS strings are immutable —
+  // the overwrite creates a *new* string while the original persists in the V8 heap
+  // until garbage-collected. React may also batch the setState calls, so the random
+  // intermediate value may never be committed to the fiber tree. This is an inherent
+  // limitation of in-browser secret handling; for memory-safe zeroization, use the
+  // seQRets desktop app (Rust + zeroize crate).
   const secureWipe = (valueSetter: React.Dispatch<React.SetStateAction<string>>, currentValue: string) => {
     if (!currentValue) return;
     try {
         const randomData = new Uint8Array(currentValue.length);
         window.crypto.getRandomValues(randomData);
         const randomString = Array.from(randomData).map(byte => String.fromCharCode(byte)).join('');
-        // Overwrite the state with random data first, then clear
         valueSetter(randomString);
     } catch (e) {
         console.error("Crypto API not available for secure wipe.");
     } finally {
-        // Finally, clear the state
         setTimeout(() => valueSetter(''), 50);
     }
   };
