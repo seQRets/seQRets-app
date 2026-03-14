@@ -259,6 +259,15 @@ export function SmartCardDialog({
     setShowEraseConfirm(false);
 
     try {
+      // Block force-erase when wipe protection is enabled
+      if (needsPinVerification && cardStatus?.wipe_protected) {
+        setActionError(
+          'This card has wipe protection enabled. You must unlock it with your PIN before erasing. ' +
+          'If the card is permanently locked, the data is unrecoverable by design.'
+        );
+        setIsErasing(false);
+        return;
+      }
       // Use force erase when PIN is locked/unverified
       if (needsPinVerification) {
         await forceEraseCard(selectedReader);
@@ -436,8 +445,9 @@ export function SmartCardDialog({
                 <AlertDescription className="space-y-2">
                   <p className="font-semibold">This card is permanently locked.</p>
                   <p className="text-xs">
-                    All PIN attempts have been exhausted. The card must be factory reset before it can be used again.
-                    Factory reset will erase ALL data on the card.
+                    {cardStatus.wipe_protected
+                      ? 'All PIN attempts have been exhausted and wipe protection is enabled. This card is permanently inaccessible — it cannot be erased or read.'
+                      : 'All PIN attempts have been exhausted. The card must be factory reset before it can be used again. Factory reset will erase ALL data on the card.'}
                   </p>
                 </AlertDescription>
               </Alert>
@@ -565,11 +575,11 @@ export function SmartCardDialog({
               variant="outline"
               size="sm"
               onClick={handleErase}
-              disabled={isErasing}
+              disabled={isErasing || (!!needsPinVerification && !!cardStatus?.wipe_protected)}
               className="text-red-600 border-red-300 hover:bg-red-50 dark:border-red-500/40 dark:hover:bg-red-500/10"
             >
               <Trash2 className="mr-1 h-3 w-3" />
-              {needsPinVerification ? 'Factory Reset' : 'Erase Card'}
+              {needsPinVerification && cardStatus?.wipe_protected ? 'Wipe Protected' : needsPinVerification ? 'Factory Reset' : 'Erase Card'}
             </Button>
           )}
 

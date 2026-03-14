@@ -27,6 +27,7 @@ const INS_SET_LABEL: u8 = 0x11;
 const INS_VERIFY_PIN: u8 = 0x20;
 const INS_CHANGE_PIN: u8 = 0x21;
 const INS_SET_PIN: u8 = 0x22;
+const INS_SET_WIPE_PROTECT: u8 = 0x23;
 
 /// Maximum bytes per APDU data field
 const CHUNK_SIZE: usize = 240;
@@ -70,6 +71,7 @@ pub struct CardStatus {
     pub pin_verified: bool,
     pub pin_retries_remaining: u8,
     pub free_bytes_estimate: i32,
+    pub wipe_protected: bool,
 }
 
 // ── Helper functions ────────────────────────────────────────────────────
@@ -181,6 +183,20 @@ fn verify_pin_if_needed(card: &Card, pin: &Option<String>) -> Result<(), String>
 ///   [5]=pinRetries, [6]=labelLen, [7..7+labelLen]=label,
 ///   [7+labelLen..7+labelLen+2]=capacity
 ///
+/// Returns `false` if the response is too short (older applet without the field).
+fn parse_wipe_protected(status_resp: &[u8]) -> bool {
+    if status_resp.len() < 7 {
+        return false;
+    }
+    let label_length = status_resp[6] as usize;
+    let wipe_protect_offset = 7 + label_length + 2; // after capacity (2 bytes)
+    if status_resp.len() > wipe_protect_offset {
+        status_resp[wipe_protect_offset] == 0x01
+    } else {
+        false
+    }
+}
+
 /// Returns DEFAULT_CARD_CAPACITY if the response is too short (older applet).
 fn parse_card_capacity(status_resp: &[u8]) -> usize {
     if status_resp.len() < 7 {
@@ -403,6 +419,7 @@ pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus
 
     // Parse card capacity from GET_STATUS response (falls back to default for older applets)
     let card_capacity = parse_card_capacity(&resp) as u16;
+    let wipe_protected = parse_wipe_protected(&resp);
 
     // If there's data, read and parse to get item summaries
     let (total_items, items) = if data_length > 0 {
@@ -477,6 +494,7 @@ pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus
         pin_verified,
         pin_retries_remaining,
         free_bytes_estimate,
+        wipe_protected,
     })
 }
 
@@ -634,14 +652,27 @@ pub fn write_all_items(
 }
 
 /// Force-erase a card without PIN verification.
-/// Used to recover locked cards (PIN retries exhausted).
-/// The applet allows ERASE_DATA without prior PIN verification.
+/// Used to recover locked cards (PIN retries exhausted) when wipe protection is off.
+/// Will fail with SW_SECURITY_STATUS_NOT_SATISFIED if wipe protection is enabled.
 #[tauri::command]
 pub fn force_erase_card(reader: String) -> Result<(), String> {
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
     // No PIN verification — send erase directly
     let result = send_apdu(&card, CLA, INS_ERASE_DATA, 0x00, 0x00, &[]);
+    disconnect_with_reset(card);
+    result.map(|_| ())
+}
+
+/// Enable or disable wipe protection on the card.
+/// Requires PIN verification. When enabled, ERASE_DATA requires PIN.
+#[tauri::command]
+pub fn set_wipe_protect(reader: String, pin: String, enabled: bool) -> Result<(), String> {
+    let (_ctx, card) = connect_reader(&reader)?;
+    select_applet(&card)?;
+    send_apdu(&card, CLA, INS_VERIFY_PIN, 0x00, 0x00, pin.as_bytes())?;
+    let p1 = if enabled { 0x01 } else { 0x00 };
+    let result = send_apdu(&card, CLA, INS_SET_WIPE_PROTECT, p1, 0x00, &[]);
     disconnect_with_reset(card);
     result.map(|_| ())
 }

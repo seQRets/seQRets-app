@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +45,9 @@ import {
   Copy,
   CopyCheck,
   Key,
+  ShieldOff,
+  Shield,
+  Settings,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/header';
@@ -62,6 +66,7 @@ import {
   changePin,
   eraseCard,
   forceEraseCard,
+  setWipeProtect,
   deleteCardItem,
   readCardItems,
   writeAllItems,
@@ -103,6 +108,9 @@ export default function SmartCardPage() {
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [changePinVisible, setChangePinVisible] = useState(false);
 
+  // ── Wipe protection state ────────────────────────────────────────
+  const [isTogglingWipeProtect, setIsTogglingWipeProtect] = useState(false);
+
   // ── Erase state ──────────────────────────────────────────────────
   const [isErasing, setIsErasing] = useState(false);
 
@@ -120,6 +128,9 @@ export default function SmartCardPage() {
   const [clonedItems, setClonedItems] = useState<CardItem[]>([]);
   const [cloneDestReader, setCloneDestReader] = useState<string>('');
   const [cloneDestPin, setCloneDestPin] = useState('');
+
+  // ── Tab state ───────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<string>('status');
 
   // ── General state ────────────────────────────────────────────────
   const [actionError, setActionError] = useState<string | null>(null);
@@ -268,6 +279,29 @@ export default function SmartCardPage() {
     }
   };
 
+  // ── Toggle wipe protection ─────────────────────────────────────
+
+  const handleToggleWipeProtect = async () => {
+    if (!selectedReader || !verifiedPin || !cardStatus) return;
+    const newValue = !cardStatus.wipe_protected;
+    setIsTogglingWipeProtect(true);
+    setActionError(null);
+    try {
+      await setWipeProtect(selectedReader, verifiedPin, newValue);
+      toast({
+        title: newValue ? 'Wipe Protection Enabled' : 'Wipe Protection Disabled',
+        description: newValue
+          ? 'PIN is now required to erase this card.'
+          : 'Card can now be factory-reset without PIN verification.',
+      });
+      await loadCardStatus();
+    } catch (e: any) {
+      setActionError(e?.toString() || 'Failed to toggle wipe protection');
+    } finally {
+      setIsTogglingWipeProtect(false);
+    }
+  };
+
   // ── Erase card (factory reset) ──────────────────────────────────
 
   const handleErase = async () => {
@@ -275,6 +309,15 @@ export default function SmartCardPage() {
     setIsErasing(true);
     setActionError(null);
     try {
+      // Block force-erase when wipe protection is enabled
+      if (needsPinUnlock && cardStatus?.wipe_protected) {
+        setActionError(
+          'This card has wipe protection enabled. You must unlock it with your PIN before erasing. ' +
+          'If the card is permanently locked (0 retries remaining), the data is unrecoverable by design.'
+        );
+        setIsErasing(false);
+        return;
+      }
       // Use force erase when PIN is locked (retries exhausted) or unverified
       if (needsPinUnlock) {
         await forceEraseCard(selectedReader);
@@ -421,6 +464,25 @@ export default function SmartCardPage() {
         </div>
 
         <div className="space-y-6">
+          {/* ═══════════════════════════════════════════════════════════════
+              Tabbed sections
+              ═══════════════════════════════════════════════════════════ */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full grid grid-cols-3 h-12 mb-6">
+              <TabsTrigger value="status" className="gap-2">
+                <CreditCard className="h-4 w-4" /> Status
+              </TabsTrigger>
+              <TabsTrigger value="security" className="gap-2">
+                <Shield className="h-4 w-4" /> Security
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="gap-2">
+                <Settings className="h-4 w-4" /> Advanced
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Tab 1: Status ── */}
+            <TabsContent value="status" className="space-y-6">
+
           {/* ═══════════════════════════════════════════════════════════════
               A. Reader Selection
               ═══════════════════════════════════════════════════════════ */}
@@ -655,148 +717,16 @@ export default function SmartCardPage() {
             </Card>
           )}
 
-          {/* ═══════════════════════════════════════════════════════════════
-              Clone Card
-              ═══════════════════════════════════════════════════════════ */}
-          {cardStatus && !needsPinUnlock && cardStatus.has_data && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CopyCheck className="h-5 w-5" />
-                  Clone Card
-                </CardTitle>
-                <CardDescription>
-                  Read all items from this card and write them to another card.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {cloneStep === 'idle' && (
-                  <Button onClick={handleCloneRead} className="w-full sm:w-auto">
-                    <CopyCheck className="mr-2 h-4 w-4" />
-                    Read Source Card
-                  </Button>
-                )}
+            </TabsContent>
 
-                {cloneStep === 'reading' && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Reading source card...
-                  </div>
-                )}
-
-                {(cloneStep === 'ready' || cloneStep === 'writing') && (
-                  <div className="space-y-4">
-                    {/* Items summary */}
-                    <div className="rounded-lg border bg-card p-3 space-y-1">
-                      <p className="text-sm font-medium">
-                        {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} ready to clone:
-                      </p>
-                      {clonedItems.map((item, i) => (
-                        <div key={i} className="text-sm text-muted-foreground flex items-center gap-2">
-                          <span className="capitalize font-medium">{item.item_type}</span>
-                          {item.label && <span>&mdash; {item.label}</span>}
-                          <span className="text-xs">({item.data.length}B)</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Destination: multi-reader picker or swap prompt */}
-                    {readers.length > 1 ? (
-                      <div className="space-y-1.5">
-                        <Label>Destination Reader</Label>
-                        <Select value={cloneDestReader} onValueChange={setCloneDestReader}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select destination reader..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {readers
-                              .filter((r) => r !== selectedReader)
-                              .map((r) => (
-                                <SelectItem key={r} value={r}>{r}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
-                      <Alert>
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          Remove the source card and insert the destination card into your reader before writing.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {/* Destination PIN (optional) */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="clone-dest-pin">Destination Card PIN (if set)</Label>
-                      <Input
-                        id="clone-dest-pin"
-                        type="password"
-                        placeholder="Leave blank if no PIN"
-                        maxLength={16}
-                        value={cloneDestPin}
-                        onChange={(e) => setCloneDestPin(e.target.value)}
-                        disabled={cloneStep === 'writing'}
-                      />
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={handleCloneReset}
-                        disabled={cloneStep === 'writing'}
-                      >
-                        Cancel
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            disabled={cloneStep === 'writing' || (readers.length > 1 && !cloneDestReader)}
-                          >
-                            {cloneStep === 'writing' ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Writing...
-                              </>
-                            ) : (
-                              <>
-                                <CopyCheck className="mr-2 h-4 w-4" />
-                                Write to Card
-                              </>
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Clone to Destination Card?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will overwrite all existing data on the destination card with {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} from the source card.
-                              <br /><br />
-                              <strong>Any existing data on the destination card will be replaced.</strong>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleCloneWrite}>
-                              Yes, Clone
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+            {/* ── Tab 2: Security ── */}
+            <TabsContent value="security" className="space-y-6">
 
           {/* ═══════════════════════════════════════════════════════════════
               PIN Unlock (if card is locked)
               ═══════════════════════════════════════════════════════════ */}
           {cardStatus && needsPinUnlock && (
             cardStatus.pin_retries_remaining === 0 ? (
-              /* Card is permanently locked — show prominent alert instead of PIN input */
               <Card className="border-destructive dark:border-destructive/70">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2 text-destructive">
@@ -812,7 +742,7 @@ export default function SmartCardPage() {
                     </AlertDescription>
                   </Alert>
                   <p className="text-sm text-muted-foreground">
-                    To use this card again, you must perform a <strong>Factory Reset</strong> below. This will erase ALL data on the card and remove the PIN, returning it to a blank state.
+                    To use this card again, you must perform a <strong>Factory Reset</strong> in the Advanced tab. This will erase ALL data on the card and remove the PIN, returning it to a blank state.
                   </p>
                 </CardContent>
               </Card>
@@ -1113,6 +1043,240 @@ export default function SmartCardPage() {
           )}
 
           {/* ═══════════════════════════════════════════════════════════════
+              C2. Wipe Protection
+              ═══════════════════════════════════════════════════════════ */}
+          {cardStatus && cardStatus.pin_set && !needsPinUnlock && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  {cardStatus.wipe_protected ? (
+                    <ShieldCheck className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <ShieldOff className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  Wipe Protection
+                  {cardStatus.wipe_protected && (
+                    <span className="text-xs font-medium bg-green-500/15 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {cardStatus.wipe_protected
+                    ? 'PIN verification is required to erase this card. The card cannot be factory-reset without the PIN.'
+                    : 'When enabled, the card cannot be erased without PIN verification — protecting data from physical tampering.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!cardStatus.wipe_protected && (
+                  <Alert className="border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <AlertDescription className="text-sm">
+                      <strong>Warning:</strong> If you enable wipe protection and later forget your PIN or exhaust
+                      all 5 PIN attempts, the card becomes an expensive coaster; <strong>permanently unusable</strong>.
+                      Only enable this if you have other copies of your backup data.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant={cardStatus.wipe_protected ? 'outline' : 'default'}
+                      disabled={isTogglingWipeProtect}
+                      className="w-full sm:w-auto"
+                    >
+                      {isTogglingWipeProtect ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {cardStatus.wipe_protected ? 'Disabling...' : 'Enabling...'}
+                        </>
+                      ) : cardStatus.wipe_protected ? (
+                        <>
+                          <ShieldOff className="mr-2 h-4 w-4" />
+                          Disable Wipe Protection
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          Enable Wipe Protection
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {cardStatus.wipe_protected ? 'Disable Wipe Protection?' : 'Enable Wipe Protection?'}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {cardStatus.wipe_protected
+                          ? 'The card will be erasable without PIN verification. Anyone with physical access and a reader can wipe the card.'
+                          : (
+                            <>
+                              PIN verification will be required to erase this card. This protects your data from physical tampering.
+                              <br /><br />
+                              <strong>If you forget your PIN or exhaust all 5 attempts, the card becomes permanently inaccessible and all data is unrecoverable.</strong>
+                            </>
+                          )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleToggleWipeProtect}
+                        className={cardStatus.wipe_protected ? '' : 'bg-primary hover:bg-primary/90'}
+                      >
+                        {cardStatus.wipe_protected ? 'Yes, Disable' : 'Yes, Enable Wipe Protection'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+          )}
+
+            </TabsContent>
+
+            {/* ── Tab 3: Advanced ── */}
+            <TabsContent value="advanced" className="space-y-6">
+
+          {/* ═══════════════════════════════════════════════════════════════
+              Clone Card
+              ═══════════════════════════════════════════════════════════ */}
+          {cardStatus && !needsPinUnlock && cardStatus.has_data && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CopyCheck className="h-5 w-5" />
+                  Clone Card
+                </CardTitle>
+                <CardDescription>
+                  Read all items from this card and write them to another card.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {cloneStep === 'idle' && (
+                  <Button onClick={handleCloneRead} className="w-full sm:w-auto">
+                    <CopyCheck className="mr-2 h-4 w-4" />
+                    Read Source Card
+                  </Button>
+                )}
+
+                {cloneStep === 'reading' && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Reading source card...
+                  </div>
+                )}
+
+                {(cloneStep === 'ready' || cloneStep === 'writing') && (
+                  <div className="space-y-4">
+                    {/* Items summary */}
+                    <div className="rounded-lg border bg-card p-3 space-y-1">
+                      <p className="text-sm font-medium">
+                        {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} ready to clone:
+                      </p>
+                      {clonedItems.map((item, i) => (
+                        <div key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                          <span className="capitalize font-medium">{item.item_type}</span>
+                          {item.label && <span>&mdash; {item.label}</span>}
+                          <span className="text-xs">({item.data.length}B)</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Destination: multi-reader picker or swap prompt */}
+                    {readers.length > 1 ? (
+                      <div className="space-y-1.5">
+                        <Label>Destination Reader</Label>
+                        <Select value={cloneDestReader} onValueChange={setCloneDestReader}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select destination reader..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {readers
+                              .filter((r) => r !== selectedReader)
+                              .map((r) => (
+                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Remove the source card and insert the destination card into your reader before writing.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Destination PIN (optional) */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="clone-dest-pin">Destination Card PIN (if set)</Label>
+                      <Input
+                        id="clone-dest-pin"
+                        type="password"
+                        placeholder="Leave blank if no PIN"
+                        maxLength={16}
+                        value={cloneDestPin}
+                        onChange={(e) => setCloneDestPin(e.target.value)}
+                        disabled={cloneStep === 'writing'}
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleCloneReset}
+                        disabled={cloneStep === 'writing'}
+                      >
+                        Cancel
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={cloneStep === 'writing' || (readers.length > 1 && !cloneDestReader)}
+                          >
+                            {cloneStep === 'writing' ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Writing...
+                              </>
+                            ) : (
+                              <>
+                                <CopyCheck className="mr-2 h-4 w-4" />
+                                Write to Card
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Clone to Destination Card?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will overwrite all existing data on the destination card with {clonedItems.length} item{clonedItems.length !== 1 ? 's' : ''} from the source card.
+                              <br /><br />
+                              <strong>Any existing data on the destination card will be replaced.</strong>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCloneWrite}>
+                              Yes, Clone
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════
               D. Erase / Factory Reset
               ═══════════════════════════════════════════════════════════ */}
           {cardStatus && (
@@ -1123,7 +1287,9 @@ export default function SmartCardPage() {
                   Factory Reset
                 </CardTitle>
                 <CardDescription>
-                  {needsPinUnlock
+                  {needsPinUnlock && cardStatus.wipe_protected
+                    ? 'This card is locked and has wipe protection enabled. It cannot be erased without PIN verification. If all retries are exhausted, the card is permanently inaccessible.'
+                    : needsPinUnlock
                     ? 'This card is locked. Factory reset will erase all data and remove the PIN, returning the card to a usable state.'
                     : 'Completely erase this card — removes all stored data AND the PIN. The card will be returned to a blank, unprotected state.'}
                 </CardDescription>
@@ -1144,6 +1310,7 @@ export default function SmartCardPage() {
                         </li>
                       ))}
                       {cardStatus.pin_set && <li>PIN protection</li>}
+                      {cardStatus.wipe_protected && <li>Wipe protection</li>}
                     </ul>
                   </div>
                 )}
@@ -1159,7 +1326,7 @@ export default function SmartCardPage() {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="destructive"
-                      disabled={isErasing}
+                      disabled={isErasing || (!!needsPinUnlock && !!cardStatus.wipe_protected)}
                       className="w-full sm:w-auto"
                     >
                       {isErasing ? (
@@ -1181,6 +1348,8 @@ export default function SmartCardPage() {
                       <AlertDialogDescription>
                         {needsPinUnlock
                           ? 'This card is locked due to too many incorrect PIN attempts. Factory reset will erase ALL data and remove the PIN, making the card usable again.'
+                          : cardStatus.wipe_protected
+                          ? 'This will permanently erase ALL data, remove the PIN, and disable wipe protection. The card will be returned to a blank, unprotected state.'
                           : 'This will permanently erase ALL data and remove the PIN from this card. The card will be returned to a blank, unprotected state.'}
                         <br />
                         <br />
@@ -1201,6 +1370,9 @@ export default function SmartCardPage() {
               </CardContent>
             </Card>
           )}
+
+            </TabsContent>
+          </Tabs>
 
           {/* ── Error Display ── */}
           {actionError && (

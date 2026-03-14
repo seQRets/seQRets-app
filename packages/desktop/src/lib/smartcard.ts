@@ -40,6 +40,7 @@ export interface CardStatus {
   pin_verified: boolean;
   pin_retries_remaining: number;
   free_bytes_estimate: number;
+  wipe_protected: boolean;
 }
 
 // ── Reader operations ───────────────────────────────────────────────────
@@ -105,3 +106,9 @@ export const setPin = (reader: string, pin: string) =>
 /** Change the PIN on the card (must be verified first). */
 export const changePin = (reader: string, oldPin: string, newPin: string) =>
   invoke<void>('change_pin', { reader, oldPin, newPin });
+
+// ── Wipe protection ────────────────────────────────────────────────────
+
+/** Enable or disable wipe protection (requires PIN). */
+export const setWipeProtect = (reader: string, pin: string, enabled: boolean) =>
+  invoke<void>('set_wipe_protect', { reader, pin, enabled });

@@ -34,6 +34,7 @@ pub fn run() {
       smartcard::verify_pin,
       smartcard::set_pin,
       smartcard::change_pin,
+      smartcard::set_wipe_protect,
       // Native crypto commands (Argon2id + XChaCha20-Poly1305)
       crypto::crypto_create,
       crypto::crypto_restore,

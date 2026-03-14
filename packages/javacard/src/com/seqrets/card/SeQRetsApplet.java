@@ -18,6 +18,7 @@
  *   INS 0x20  VERIFY_PIN    — Verify PIN (data = PIN bytes)
  *   INS 0x21  CHANGE_PIN    — Change PIN (P1=old len, data = old+new)
  *   INS 0x22  SET_PIN       — Initial PIN setup (only if no PIN set)
+ *   INS 0x23  SET_WIPE_PROTECT — Enable/disable wipe protection (P1=0x00 off / 0x01 on)
  *
  * @author seQRets
  * @version 1.0
@@ -39,6 +40,7 @@ public class SeQRetsApplet extends Applet {
     private static final byte INS_VERIFY_PIN   = (byte) 0x20;
     private static final byte INS_CHANGE_PIN   = (byte) 0x21;
     private static final byte INS_SET_PIN      = (byte) 0x22;
+    private static final byte INS_SET_WIPE_PROTECT = (byte) 0x23;
 
     // ── Constants ──────────────────────────────────────────────────────
     private static final byte CLA_PROPRIETARY  = (byte) 0x80;
@@ -64,6 +66,7 @@ public class SeQRetsApplet extends Applet {
     private byte   pinLength;
     private byte   pinRetries;
     private boolean pinSet;
+    private boolean wipeProtected;
 
     // ── Transient storage (RAM — clears on deselect) ───────────────────
     private boolean[] pinVerified;
@@ -81,6 +84,7 @@ public class SeQRetsApplet extends Applet {
         pinLength   = (byte) 0;
         pinRetries  = MAX_PIN_RETRIES;
         pinSet      = false;
+        wipeProtected = false;
 
         // Transient array — clears when applet is deselected (card removed)
         pinVerified = JCSystem.makeTransientBooleanArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
@@ -142,9 +146,12 @@ public class SeQRetsApplet extends Applet {
                 processGetStatus(apdu);
                 break;
             case INS_ERASE_DATA:
-                // Factory reset always allowed — even on locked cards.
-                // This is the recovery mechanism when the PIN is lost or
-                // the card is locked after too many wrong PIN attempts.
+                // If wipe protection is enabled, require PIN verification.
+                // Otherwise, factory reset is always allowed (recovery path
+                // for locked cards when wipeProtected is off).
+                if (wipeProtected) {
+                    checkPinIfRequired();
+                }
                 processEraseData(apdu);
                 break;
             case INS_SET_TYPE:
@@ -163,6 +170,9 @@ public class SeQRetsApplet extends Applet {
                 break;
             case INS_SET_PIN:
                 processSetPin(apdu);
+                break;
+            case INS_SET_WIPE_PROTECT:
+                processSetWipeProtect(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -260,6 +270,7 @@ public class SeQRetsApplet extends Applet {
      *   [6]    label length (1 byte)
      *   [7..]  label bytes (up to 64)
      *   [7+labelLen .. 7+labelLen+1]  total capacity (2 bytes, big-endian)
+     *   [7+labelLen+2]  wipe protected flag (0x00=no, 0x01=yes)
      */
     private void processGetStatus(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
@@ -296,6 +307,9 @@ public class SeQRetsApplet extends Applet {
         Util.setShort(buffer, offset, MAX_DATA_SIZE);
         offset += 2;
 
+        // Wipe protection flag
+        buffer[offset++] = wipeProtected ? (byte) 0x01 : (byte) 0x00;
+
         apdu.setOutgoingAndSend((short) 0, offset);
     }
 
@@ -319,6 +333,7 @@ public class SeQRetsApplet extends Applet {
         pinSet = false;
         pinRetries = MAX_PIN_RETRIES;
         pinVerified[0] = false;
+        wipeProtected = false;
     }
 
     // ── SET_TYPE (INS 0x10) ────────────────────────────────────────────
@@ -451,5 +466,30 @@ public class SeQRetsApplet extends Applet {
         pinSet = true;
         pinRetries = MAX_PIN_RETRIES;
         pinVerified[0] = true; // Auto-verify after initial setup
+    }
+
+    // ── SET_WIPE_PROTECT (INS 0x23) ─────────────────────────────────────
+
+    /**
+     * Enable or disable wipe protection.
+     * Requires PIN to be set and verified. P1 = 0x01 (on) / 0x00 (off).
+     * When enabled, ERASE_DATA requires PIN verification.
+     */
+    private void processSetWipeProtect(APDU apdu) {
+        if (!pinSet) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        if (!pinVerified[0]) {
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
+
+        byte[] buffer = apdu.getBuffer();
+        byte p1 = buffer[ISO7816.OFFSET_P1];
+
+        if (p1 != (byte) 0x00 && p1 != (byte) 0x01) {
+            ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
+        }
+
+        wipeProtected = (p1 == (byte) 0x01);
     }
 }
