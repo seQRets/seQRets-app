@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, ExternalLink, Key, Check, AlertCircle, MessageCircle, User, ChevronDown } from 'lucide-react';
-import { setApiKey } from '@/ai/flows/ask-bob-flow';
+import { setApiKey, setSessionApiKey } from '@/ai/flows/ask-bob-flow';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface BobSetupGuideProps {
@@ -15,6 +15,7 @@ interface BobSetupGuideProps {
 
 export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
   const [apiKey, setApiKeyInput] = useState('');
+  const [rememberKey, setRememberKey] = useState(true);
   const [error, setError] = useState('');
 
   const handleSave = () => {
@@ -27,7 +28,11 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
       setError('This doesn\'t look like a valid Gemini API key. Keys typically start with "AIza".');
       return;
     }
-    setApiKey(trimmed);
+    if (rememberKey) {
+      setApiKey(trimmed);
+    } else {
+      setSessionApiKey(trimmed);
+    }
     onKeyConfigured();
   };
 
@@ -137,11 +142,25 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
                 <AlertDescription className="text-xs">{error}</AlertDescription>
               </Alert>
             )}
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberKey}
+                onChange={(e) => setRememberKey(e.target.checked)}
+                className="rounded"
+              />
+              Remember this key
+            </label>
           </div>
 
           <div className="flex items-start gap-2 p-3 rounded-md bg-muted text-xs text-muted-foreground">
             <Key className="h-4 w-4 shrink-0 mt-0.5" />
-            <p>Your API key is stored locally in your browser and is never sent anywhere except directly to Google's API. You can remove it anytime.</p>
+            <p>
+              {rememberKey
+                ? 'Your API key will be stored in your browser\'s local storage. It persists across sessions but is accessible to browser extensions. You can remove it anytime.'
+                : 'Your API key will be held in memory only and will be cleared when you close this tab.'}
+              {' '}Your key is never sent anywhere except directly to Google\u2019s API. Your conversation history will remain in local storage until you clear the chat.
+            </p>
           </div>
         </CardContent>
       </Card>

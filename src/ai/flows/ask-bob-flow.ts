@@ -606,17 +606,32 @@ ${securityGuide}
 
 ${bitcoinGuide}`;
 
-function getApiKey(): string | null {
+// In-memory API key store (survives re-renders, clears on tab close)
+let sessionApiKey: string | null = null;
+
+export function getApiKey(): string | null {
+  if (sessionApiKey) return sessionApiKey;
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('gemini-api-key');
 }
 
 export function setApiKey(key: string) {
   localStorage.setItem('gemini-api-key', key);
+  sessionApiKey = key;
+}
+
+export function setSessionApiKey(key: string) {
+  sessionApiKey = key;
 }
 
 export function removeApiKey() {
+  sessionApiKey = null;
   localStorage.removeItem('gemini-api-key');
+}
+
+export function isKeyRemembered(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('gemini-api-key');
 }
 
 export async function askBob(input: AskBobInput): Promise<AskBobOutput> {

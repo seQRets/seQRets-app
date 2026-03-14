@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Send, User, ExternalLink, KeyRound, Eraser, TriangleAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { askBob, removeApiKey } from '@/ai/flows/ask-bob-flow';
+import { askBob, removeApiKey, getApiKey } from '@/ai/flows/ask-bob-flow';
 import { AskBobInput } from '@/lib/types';
 import { BobSetupGuide } from '@/app/components/bob-setup-guide';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -25,14 +25,6 @@ type ChatMessage = {
 };
 
 const CHAT_HISTORY_KEY = 'bob-chat-history';
-
-function getApiKey(): string | null {
-    try {
-        return localStorage.getItem('gemini-api-key');
-    } catch {
-        return null;
-    }
-}
 
 function getChatHistory(): ChatMessage[] {
     try {
