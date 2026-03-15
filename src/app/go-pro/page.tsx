@@ -61,6 +61,10 @@ export default function GoProPage() {
                     <p className="text-muted-foreground max-w-xl mx-auto">
                         Maximum security for your most valuable secrets.
                     </p>
+                    <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors">
+                        Browse the shop <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
                 </div>
 
                 {/* Why Upgrade */}
