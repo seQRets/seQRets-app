@@ -33,6 +33,7 @@ v1.4.10 "Liftoff" — Available as a web app (Next.js) and native desktop app (T
 
 ### Inheritance Plan
 - **In-app plan builder** (desktop only) — create your inheritance plan directly inside the app using a structured, 8-section form (plan info, recovery credentials, device & account access, Qard locations, digital assets, restoration steps, professional contacts, personal message). The plan is encrypted as a compact JSON blob (~2-4 KB) that fits on a smart card.
+- **2FA deadlock warning** — Section 3 (Device & Account Access) includes a prominent warning about circular dependency traps: if your password manager requires a 2FA code and your 2FA app login is stored inside that password manager, neither can be opened first. The plan prompts users to list their 2FA/authenticator app recovery credentials as a separate entry to break the loop.
 - **File upload** — alternatively, encrypt any file (PDF, DOCX, ODT, TXT — up to 5MB) with the same XChaCha20-Poly1305 + Argon2id security (available on both web and desktop).
 - Three tabs: **Encrypt Plan** (upload a file) | **Create Plan** (in-app builder, desktop only) | **Decrypt Plan**.
 - Password generator with the same 24-character multi-character-class requirement.

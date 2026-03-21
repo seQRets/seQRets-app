@@ -258,6 +258,16 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
   const deviceRows = (plan.deviceAccounts ?? []).map(d => [d.label, d.type, d.location, d.username, d.password, d.notes]);
   if (deviceRows.some(r => rowHasData(r, 2))) {
     addSectionHeader('2. Device & Account Access');
+    // 2FA deadlock warning
+    doc.setFontSize(SMALL_SIZE);
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setTextColor(180, 140, 50);
+    checkPageBreak(10);
+    doc.text(
+      '\u26A0 2FA DEADLOCK WARNING: If your password manager requires a 2FA code and your 2FA app login is inside that password manager, neither can be opened first. Make sure your 2FA app recovery credentials are listed separately below.',
+      MARGIN_L + 2, currentY, { maxWidth: CONTENT_W - 4 }
+    );
+    currentY += 12;
     addTable(
       ['Device', 'Type', 'Location', 'Username', 'Password', 'Notes'],
       deviceRows,

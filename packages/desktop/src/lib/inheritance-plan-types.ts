@@ -105,6 +105,7 @@ export function createBlankPlan(): InheritancePlan {
     deviceAccounts: [
       { id: crypto.randomUUID(), label: '', type: 'Computer', location: '', username: '', password: '', notes: '' },
       { id: crypto.randomUUID(), label: '', type: 'Password Manager', location: '', username: '', password: '', notes: '' },
+      { id: crypto.randomUUID(), label: '', type: '2FA / Authenticator App', location: '', username: '', password: '', notes: '' },
       { id: crypto.randomUUID(), label: '', type: 'Backup Drive', location: '', username: '', password: '', notes: '' },
     ],
     qardConfig: {
