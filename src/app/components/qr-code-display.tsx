@@ -40,6 +40,11 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
   const [isEncryptingVault, setIsEncryptingVault] = useState(false);
   const vaultWorkerRef = useRef<Worker>();
 
+  // Scan warning modal state — shown once per session for near-limit QR codes
+  const QR_CAPACITY_WARNING = 900;
+  const isNearLimit = !isTextOnly && shares.length > 0 && shares[0].length > QR_CAPACITY_WARNING;
+  const [showScanWarning, setShowScanWarning] = useState(isNearLimit);
+
   useEffect(() => {
     vaultWorkerRef.current = new Worker(new URL('@/lib/crypto.worker.ts', import.meta.url));
     vaultWorkerRef.current.onmessage = (event: MessageEvent<{ type: string; payload: any }>) => {
@@ -546,14 +551,11 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         </Alert>
       )}
 
-      {!isTextOnly && shares.length > 0 && shares[0].length > 900 && (
-        <Alert className="mb-4 mx-4 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 text-foreground [&>svg]:text-yellow-600">
-          <ScanLine className="h-4 w-4" />
-          <AlertTitle>Verify Your QR Qards Are Scannable</AlertTitle>
-          <AlertDescription>
-            These QR codes are near the upper size limit and may be difficult for some cameras to scan. After printing, <strong>test-scan at least one Qard</strong> using the Restore Secret tab to confirm it reads correctly before relying on them as your backup.
-          </AlertDescription>
-        </Alert>
+      {isNearLimit && (
+        <button onClick={() => setShowScanWarning(true)} className="flex items-center gap-2 mb-4 mx-4 px-3 py-2 rounded-md border border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 text-sm text-yellow-800 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-950/40 transition-colors w-fit">
+          <ScanLine className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+          <span className="font-medium">Verify Your QR Qards Are Scannable</span>
+        </button>
       )}
 
       {encryptedInstructions && (
@@ -664,6 +666,27 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
                 </p>
             </div>
         </div>
+
+        <Dialog open={showScanWarning} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TriangleAlert className="h-5 w-5 text-yellow-600" />
+                Verify Your QR Qards
+              </DialogTitle>
+              <DialogDescription className="text-left space-y-3 pt-2">
+                <span className="block"><strong className="text-foreground">These QR codes are near the upper size limit</strong> and may be difficult for some cameras to scan.</span>
+                <span className="block">After printing, <strong className="text-foreground">test-scan at least one Qard</strong> using the Restore Secret tab to confirm it reads correctly before relying on them as your backup.</span>
+                <span className="block">If scanning fails, try a shorter secret or increase the number of shares to reduce per-share data size.</span>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setShowScanWarning(false)} className="w-full">
+                I Understand
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isVaultDialogOpen} onOpenChange={(open) => { if (!isEncryptingVault) { setIsVaultDialogOpen(open); if (!open) resetVaultDialog(); } }}>
           <DialogContent className="sm:max-w-md">
