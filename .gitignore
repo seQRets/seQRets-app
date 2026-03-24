@@ -42,6 +42,9 @@ packages/desktop/src-tauri/target/
 .idx/
 .modified
 
+# Developer memory (local-only reference)
+memory.md
+
 # Proprietary guides (published in separate repo)
 /guides/
 
