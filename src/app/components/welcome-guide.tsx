@@ -178,27 +178,22 @@ function WireframeSvg() {
       <line x1="16" y1="71" x2="170" y2="71" stroke={amber} strokeWidth="2.5" />
 
       {/* Tab 1: Secure (active) */}
-      {/* Lock icon */}
       <rect x="60" y="48" width="8" height="7" rx="1.5" fill="none" stroke={amber} strokeWidth="1.3" />
       <path d="M62,48 L62,45 A2.5,2.5 0 0,1 67,45 L67,48" fill="none" stroke={amber} strokeWidth="1.3" />
       <text x="74" y="58" fill={amber} fontSize="10" fontWeight="600" fontFamily={font}>Secure</text>
 
       {/* Tab 2: Inherit */}
-      {/* Document icon */}
       <rect x="238" y="46" width="7" height="9" rx="1" fill="none" stroke={text2} strokeWidth="1.2" />
       <line x1="240" y1="50" x2="243" y2="50" stroke={text2} strokeWidth="0.8" />
       <line x1="240" y1="52" x2="243" y2="52" stroke={text2} strokeWidth="0.8" />
       <text x="250" y="58" fill={text2} fontSize="10" fontWeight="500" fontFamily={font}>Inherit</text>
 
       {/* Tab 3: Restore */}
-      {/* Combine icon — two overlapping circles */}
       <circle cx="418" cy="52" r="4.5" fill="none" stroke={text2} strokeWidth="1.2" />
       <circle cx="424" cy="52" r="4.5" fill="none" stroke={text2} strokeWidth="1.2" />
       <text x="433" y="58" fill={text2} fontSize="10" fontWeight="500" fontFamily={font}>Restore</text>
 
       {/* ── Content area ─────────────────────────────────────── */}
-
-      {/* Card background */}
       <rect x="24" y="85" width="512" height="260" rx="6" fill={card} stroke={border} />
 
       {/* Card title */}
@@ -206,87 +201,94 @@ function WireframeSvg() {
       <text x="44" y="122" fill={text2} fontSize="8.5" fontFamily={font}>Follow the steps below to encrypt and split your secret.</text>
 
       {/* ── Step 1: Secret input ──────────────────────────── */}
-      {/* Step circle */}
-      <circle cx="44" cy="142" r="8" fill={amber} />
-      <text x="44" y="146" fill={bg} fontSize="9" fontWeight="700" fontFamily={font} textAnchor="middle">1</text>
-      <text x="58" y="146" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Enter Your Secret</text>
+      <text x="44" y="140" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Enter Your Secret</text>
+
+      {/* Generate Seed button */}
+      <rect x="406" y="129" width="100" height="16" rx="3" fill={bg} stroke={border} />
+      <line x1="414" y1="137" x2="420" y2="131" stroke={text2} strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="421" cy="130" r="1.5" fill={text2} />
+      <text x="428" y="140" fill={text2} fontSize="7.5" fontFamily={font}>Generate Seed</text>
 
       {/* Textarea */}
-      <rect x="44" y="155" width="472" height="45" rx="4" fill={bg} stroke={border} />
-      <text x="56" y="172" fill={text2} fontSize="9" fontFamily={font}>Enter your seed phrase or private key...</text>
-      <text x="56" y="185" fill={text2} fontSize="9" fontFamily={font} opacity="0.5">│</text>
+      <rect x="44" y="148" width="462" height="42" rx="4" fill={bg} stroke={border} />
+      <text x="56" y="165" fill={text2} fontSize="9" fontFamily={font}>Enter your seed phrase or private key...</text>
+      <text x="56" y="178" fill={text2} fontSize="9" fontFamily={font} opacity="0.5">│</text>
 
       {/* ── Step 2: Password ──────────────────────────────── */}
-      <circle cx="44" cy="216" r="8" fill={amber} />
-      <text x="44" y="220" fill={bg} fontSize="9" fontWeight="700" fontFamily={font} textAnchor="middle">2</text>
-      <text x="58" y="220" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Secure Your Secret</text>
+      <text x="44" y="210" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Secure Your Secret</text>
 
       {/* Password field */}
-      <rect x="44" y="228" width="280" height="26" rx="4" fill={bg} stroke={border} />
-      <text x="56" y="245" fill={text2} fontSize="11" fontFamily={font} letterSpacing="3">••••••••••</text>
+      <rect x="44" y="218" width="240" height="24" rx="4" fill={bg} stroke={border} />
+      <text x="56" y="234" fill={text2} fontSize="10" fontFamily={font} letterSpacing="3">••••••••••</text>
+
+      {/* Eye toggle button */}
+      <rect x="290" y="218" width="24" height="24" rx="4" fill={bg} stroke={border} />
+      <ellipse cx="302" cy="230" rx="6" ry="4" fill="none" stroke={text2} strokeWidth="1" />
+      <circle cx="302" cy="230" r="2" fill={text2} />
+
+      {/* Copy button */}
+      <rect x="320" y="218" width="24" height="24" rx="4" fill={bg} stroke={border} />
+      <rect x="326" y="223" width="7" height="7" rx="1" fill="none" stroke={text2} strokeWidth="0.8" />
+      <rect x="330" y="227" width="7" height="7" rx="1" fill="none" stroke={text2} strokeWidth="0.8" />
+
+      {/* Generate PW button */}
+      <rect x="350" y="218" width="76" height="24" rx="4" fill={bg} stroke={border} />
+      <line x1="360" y1="230" x2="366" y2="224" stroke={text2} strokeWidth="1" strokeLinecap="round" />
+      <circle cx="367" cy="223" r="1.3" fill={text2} />
+      <text x="374" y="234" fill={text2} fontSize="8" fontFamily={font}>Generate</text>
 
       {/* ── Step 3: Split config ──────────────────────────── */}
-      <circle cx="44" cy="272" r="8" fill={amber} />
-      <text x="44" y="276" fill={bg} fontSize="9" fontWeight="700" fontFamily={font} textAnchor="middle">3</text>
-      <text x="58" y="276" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Split into Qards</text>
+      <text x="44" y="262" fill={text1} fontSize="10" fontWeight="600" fontFamily={font}>Split into Qards</text>
 
       {/* Slider 1: Total Qards */}
-      <text x="44" y="296" fill={text2} fontSize="8" fontFamily={font}>Total Qards</text>
-      <rect x="116" y="290" width="100" height="4" rx="2" fill={border} />
-      <rect x="116" y="290" width="60" height="4" rx="2" fill={amber} />
-      <circle cx="176" cy="292" r="5" fill={amber} />
-      <text x="228" y="296" fill={text1} fontSize="9" fontWeight="600" fontFamily={font}>3</text>
+      <text x="44" y="282" fill={text2} fontSize="8" fontFamily={font}>Total Qards</text>
+      <rect x="116" y="276" width="100" height="4" rx="2" fill={border} />
+      <rect x="116" y="276" width="60" height="4" rx="2" fill={amber} />
+      <circle cx="176" cy="278" r="5" fill={amber} />
+      <text x="228" y="282" fill={text1} fontSize="9" fontWeight="600" fontFamily={font}>3</text>
 
       {/* Slider 2: Required */}
-      <text x="280" y="296" fill={text2} fontSize="8" fontFamily={font}>Required</text>
-      <rect x="336" y="290" width="100" height="4" rx="2" fill={border} />
-      <rect x="336" y="290" width="40" height="4" rx="2" fill={amber} />
-      <circle cx="376" cy="292" r="5" fill={amber} />
-      <text x="448" y="296" fill={text1} fontSize="9" fontWeight="600" fontFamily={font}>2</text>
+      <text x="280" y="282" fill={text2} fontSize="8" fontFamily={font}>Required</text>
+      <rect x="336" y="276" width="100" height="4" rx="2" fill={border} />
+      <rect x="336" y="276" width="40" height="4" rx="2" fill={amber} />
+      <circle cx="376" cy="278" r="5" fill={amber} />
+      <text x="448" y="282" fill={text1} fontSize="9" fontWeight="600" fontFamily={font}>2</text>
 
       {/* ── CTA Button ────────────────────────────────────── */}
-      <rect x="44" y="310" width="472" height="24" rx="5" fill={amber} />
-      <text x="280" y="326" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">Encrypt &amp; Generate QR Qards</text>
+      <rect x="44" y="304" width="472" height="24" rx="5" fill={amber} />
+      <text x="280" y="320" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">Encrypt &amp; Generate QR Qards</text>
 
       {/* ── Annotation circles + leader lines ─────────────── */}
-
-      {/* ① Ask Bob — sits above the header, top-left */}
-      <circle cx="28" cy="20" r="0" fill="none" />
-      <g>
-        <circle cx="10" cy="20" r="0" fill="none" />
-        {/* Already labeled in the header; annotation in legend only */}
-      </g>
 
       {/* Annotation ① — Ask Bob */}
       <line x1="80" y1="20" x2="95" y2="20" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
       <circle cx="105" cy="20" r="9" fill={amber} />
       <text x="105" y="24" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">1</text>
 
-      {/* Annotation ⑥ — Menu */}
-      <line x1="540" y1="20" x2="548" y2="20" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
-      <circle cx="550" cy="20" r="0" fill="none" />
-      <circle cx="550" cy="20" r="9" fill={amber} />
-      <text x="550" y="24" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">6</text>
-
-      {/* Annotation ② — Nav tabs, right edge */}
+      {/* Annotation ② — Nav tabs */}
       <line x1="480" y1="56" x2="540" y2="56" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
       <circle cx="550" cy="56" r="9" fill={amber} />
       <text x="550" y="60" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">2</text>
 
-      {/* Annotation ③ — Secret input, right edge */}
-      <line x1="520" y1="175" x2="540" y2="175" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
-      <circle cx="550" cy="175" r="9" fill={amber} />
-      <text x="550" y="179" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">3</text>
+      {/* Annotation ③ — Secret input */}
+      <line x1="510" y1="168" x2="540" y2="168" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
+      <circle cx="550" cy="168" r="9" fill={amber} />
+      <text x="550" y="172" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">3</text>
 
-      {/* Annotation ④ — Password & settings, right edge */}
-      <line x1="520" y1="248" x2="540" y2="248" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
-      <circle cx="550" cy="248" r="9" fill={amber} />
-      <text x="550" y="252" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">4</text>
+      {/* Annotation ④ — Password & tools */}
+      <line x1="430" y1="230" x2="540" y2="230" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
+      <circle cx="550" cy="230" r="9" fill={amber} />
+      <text x="550" y="234" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">4</text>
 
-      {/* Annotation ⑤ — CTA button, right edge */}
-      <line x1="520" y1="322" x2="540" y2="322" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
-      <circle cx="550" cy="322" r="9" fill={amber} />
-      <text x="550" y="326" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">5</text>
+      {/* Annotation ⑤ — CTA button */}
+      <line x1="520" y1="316" x2="540" y2="316" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
+      <circle cx="550" cy="316" r="9" fill={amber} />
+      <text x="550" y="320" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">5</text>
+
+      {/* Annotation ⑥ — Menu */}
+      <line x1="540" y1="20" x2="548" y2="20" stroke={amber} strokeWidth="1" strokeDasharray="3,2" opacity="0.6" />
+      <circle cx="550" cy="20" r="9" fill={amber} />
+      <text x="550" y="24" fill={bg} fontSize="10" fontWeight="700" fontFamily={font} textAnchor="middle">6</text>
     </svg>
   );
 }
@@ -343,25 +345,25 @@ function WelcomeModal({
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold">②</span>
           <span className="text-stone-300">
-            <strong className="text-stone-200">Tabs</strong> — Secure, Inherit, Restore
+            <strong className="text-stone-200">Tabs</strong> — Secure Secret, Inheritance, Restore Secret
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold">③</span>
           <span className="text-stone-300">
-            <strong className="text-stone-200">Secret</strong> — Your seed phrase
+            <strong className="text-stone-200">Secret</strong> — Enter or generate a seed phrase
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold">④</span>
           <span className="text-stone-300">
-            <strong className="text-stone-200">Settings</strong> — Password & splits
+            <strong className="text-stone-200">Password</strong> — Generate, copy, or enter your own
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold">⑤</span>
           <span className="text-stone-300">
-            <strong className="text-stone-200">Encrypt</strong> — Generate Qards
+            <strong className="text-stone-200">Encrypt</strong> — Generate QR Qards
           </span>
         </div>
         <div className="flex items-center gap-2">
