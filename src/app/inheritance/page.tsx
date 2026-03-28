@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useTransition, DragEvent } from 'react';
+import React, { useState, useRef, useEffect, DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,7 +51,7 @@ export default function InstructionsPage() {
   const [encryptKeyfile, setEncryptKeyfile] = useState<string | null>(null);
   const [encryptKeyfileName, setEncryptKeyfileName] = useState<string | null>(null);
   const [isEncryptPasswordValid, setIsEncryptPasswordValid] = useState(false);
-  const [isEncrypting, startEncryptTransition] = useTransition();
+  const [isEncrypting, setIsEncrypting] = useState(false);
 
   // ── Decrypt state ──
   const [decryptStep, setDecryptStep] = useState(1);
@@ -63,7 +63,7 @@ export default function InstructionsPage() {
   const [decryptUseKeyfile, setDecryptUseKeyfile] = useState(false);
   const [decryptKeyfile, setDecryptKeyfile] = useState<string | null>(null);
   const [decryptKeyfileName, setDecryptKeyfileName] = useState<string | null>(null);
-  const [isDecrypting, startDecryptTransition] = useTransition();
+  const [isDecrypting, setIsDecrypting] = useState(false);
 
   const cryptoWorkerRef = useRef<Worker>();
 
@@ -86,10 +86,10 @@ export default function InstructionsPage() {
         URL.revokeObjectURL(url);
 
         toast({ title: 'Instructions Encrypted!', description: 'Your file "seqrets-instructions.json" is downloading.' });
-        startEncryptTransition(() => {});
+        setIsEncrypting(false);
       } else if (type === 'encryptInstructionsError') {
         toast({ variant: 'destructive', title: 'Encryption Failed', description: payload.message || 'Could not encrypt the instructions file.' });
-        startEncryptTransition(() => {});
+        setIsEncrypting(false);
       } else if (type === 'decryptInstructionsSuccess') {
         const { fileContent, fileName, fileType } = payload;
         const byteCharacters = atob(fileContent);
@@ -109,10 +109,10 @@ export default function InstructionsPage() {
         URL.revokeObjectURL(url);
 
         toast({ title: 'Instructions Decrypted!', description: `Your file "${fileName}" is downloading.` });
-        startDecryptTransition(() => {});
+        setIsDecrypting(false);
       } else if (type === 'decryptInstructionsError') {
         toast({ variant: 'destructive', title: 'Decryption Failed', description: payload.message || 'Could not decrypt the instructions file.' });
-        startDecryptTransition(() => {});
+        setIsDecrypting(false);
       }
     };
 
@@ -135,15 +135,14 @@ export default function InstructionsPage() {
       fileContent: base64Content,
       fileType: instructionsFile.type || 'application/octet-stream',
     };
-    startEncryptTransition(() => {
-      cryptoWorkerRef.current?.postMessage({
-        type: 'encryptInstructions',
-        payload: {
-          instructions: instruction,
-          password: encryptPassword,
-          keyfile: encryptUseKeyfile ? encryptKeyfile : undefined,
-        },
-      });
+    setIsEncrypting(true);
+    cryptoWorkerRef.current?.postMessage({
+      type: 'encryptInstructions',
+      payload: {
+        instructions: instruction,
+        password: encryptPassword,
+        keyfile: encryptUseKeyfile ? encryptKeyfile : undefined,
+      },
     });
   };
 
@@ -182,19 +181,18 @@ export default function InstructionsPage() {
       return;
     }
 
-    startDecryptTransition(() => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const encryptedData = e.target?.result as string;
-        const request: DecryptInstructionRequest = {
-          encryptedData,
-          password: decryptPassword,
-          keyfile: decryptUseKeyfile ? decryptKeyfile ?? undefined : undefined,
-        };
-        cryptoWorkerRef.current?.postMessage({ type: 'decryptInstructions', payload: request });
+    setIsDecrypting(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const encryptedData = e.target?.result as string;
+      const request: DecryptInstructionRequest = {
+        encryptedData,
+        password: decryptPassword,
+        keyfile: decryptUseKeyfile ? decryptKeyfile ?? undefined : undefined,
       };
-      reader.readAsText(decryptFile);
-    });
+      cryptoWorkerRef.current?.postMessage({ type: 'decryptInstructions', payload: request });
+    };
+    reader.readAsText(decryptFile);
   };
 
   const handleDecryptReset = () => {

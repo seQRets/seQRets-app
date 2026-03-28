@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,7 @@ export function RestoreSecretForm() {
   const [password, setPassword] = useState('');
   const [restoredSecret, setRestoredSecret] = useState('');
   const [restoredLabel, setRestoredLabel] = useState<string | undefined>('');
-  const [isRestoring, startRestoreTransition] = useTransition();
+  const [isRestoring, setIsRestoring] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -80,7 +80,7 @@ export function RestoreSecretForm() {
                 title: 'Secret Restored!',
                 description: 'Your secret has been successfully decrypted.',
             });
-            startRestoreTransition(() => {}); // To ensure isRestoring is set to false
+            setIsRestoring(false);
         } else if (type === 'restoreSecretError') {
             const errorMessage = payload.message || 'An unknown error occurred during restoration.';
             setError(errorMessage);
@@ -89,7 +89,7 @@ export function RestoreSecretForm() {
                 title: 'Restoration Failed',
                 description: errorMessage,
             });
-             startRestoreTransition(() => {});
+             setIsRestoring(false);
         } else if (type === 'decryptVaultSuccess') {
             try {
               const vaultData = JSON.parse(payload);
@@ -392,14 +392,13 @@ export function RestoreSecretForm() {
     setRestoredSecret('');
     setRestoredLabel('');
 
-    startRestoreTransition(() => {
-        const request: RestoreSecretRequest = {
-            shares: decodedShares.filter(s => s.success).map(s => s.data),
-            password,
-            keyfile: useKeyfile ? keyfile ?? undefined : undefined,
-        };
-        cryptoWorkerRef.current?.postMessage({ type: 'restoreSecret', payload: request });
-    });
+    setIsRestoring(true);
+    const request: RestoreSecretRequest = {
+        shares: decodedShares.filter(s => s.success).map(s => s.data),
+        password,
+        keyfile: useKeyfile ? keyfile ?? undefined : undefined,
+    };
+    cryptoWorkerRef.current?.postMessage({ type: 'restoreSecret', payload: request });
   };
 
   const handleReset = () => {
