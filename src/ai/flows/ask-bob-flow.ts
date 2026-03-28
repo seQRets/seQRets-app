@@ -11,7 +11,7 @@ seQRets is a hyper-secure, open-source application designed to protect your most
 
 To restore your original secret, you must bring a specific number of these Qards back together. This method eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning.
 
-v1.5.0 "Liftoff" — Available as a web app (Next.js) and native desktop app (Tauri).
+v1.5.2 "Ignition" — Available as a web app (Next.js) and native desktop app (Tauri).
 
 ## Core Features
 

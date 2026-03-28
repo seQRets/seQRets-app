@@ -1,6 +1,6 @@
 # seQRets Desktop App — Security Analysis
 
-> **Audit Date:** March 2026 · **App Version:** 1.5.0 · **Auditor:** Independent code review via Claude (Anthropic)
+> **Audit Date:** March 2026 · **App Version:** 1.5.2 · **Auditor:** Independent code review via Claude (Anthropic)
 > **Scope:** Full source audit of `packages/desktop/`, `packages/crypto/`, and `src-tauri/` (Rust backend)
 
 ---
@@ -536,5 +536,5 @@ The cryptographic primitives (XChaCha20-Poly1305, Argon2id, Shamir's Secret Shar
 ---
 
 <p align="center">
-<em>This analysis was conducted through a full source code review of all Rust, TypeScript, and configuration files in the seQRets desktop application (v1.5.0). All 11 findings were remediated immediately following the audit. Comprehensive Playwright e2e test suites were added for both web (342 test runs across 3 browsers) and desktop (145 tests, 136 passing + 9 Tauri-IPC-only skipped) to verify ongoing correctness. The password generator character class guarantee was propagated from the web app to the desktop app. Last updated March 17, 2026.</em>
+<em>This analysis was conducted through a full source code review of all Rust, TypeScript, and configuration files in the seQRets desktop application (v1.5.2). All 11 findings were remediated immediately following the audit. Comprehensive Playwright e2e test suites were added for both web (342 test runs across 3 browsers) and desktop (145 tests, 136 passing + 9 Tauri-IPC-only skipped) to verify ongoing correctness. The password generator character class guarantee was propagated from the web app to the desktop app. Last updated March 17, 2026.</em>
 </p>
