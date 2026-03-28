@@ -334,43 +334,45 @@ function WelcomeModal({
         <WireframeSvg />
       </div>
 
-      {/* ── Numbered legend ──────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-6 text-[13px]">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">①</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Ask Bob</strong> — AI assistant
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">②</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Tabs</strong> — Secure Secret, Inheritance, Restore Secret
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">③</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Secret</strong> — Enter or generate a seed phrase
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">④</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Password</strong> — Generate, copy, or enter your own
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">⑤</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Encrypt</strong> — Generate QR Qards
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold">⑥</span>
-          <span className="text-stone-300">
-            <strong className="text-stone-200">Menu</strong> — Settings & theme
-          </span>
+      {/* ── Numbered legend (column-first order: 1-3 left, 4-6 right) ── */}
+      <div className="flex justify-center mb-6">
+        <div className="grid grid-cols-2 grid-rows-3 grid-flow-col gap-x-8 gap-y-2 text-[13px]">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">①</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Ask Bob</strong> — AI assistant
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">②</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Tabs</strong> — Secure, Inheritance, Restore
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">③</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Secret</strong> — Your critical data
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">④</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Settings</strong> — Password & Shamir config
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">⑤</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Encrypt</strong> — Generate Qards
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">⑥</span>
+            <span className="text-stone-300">
+              <strong className="text-stone-200">Menu</strong> — Settings & theme
+            </span>
+          </div>
         </div>
       </div>
 
