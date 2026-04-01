@@ -5,7 +5,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Bot, Mail } from "lucide-react";
+import { ArrowLeft, Bot } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "../components/header";
@@ -57,14 +57,6 @@ export default function SupportPage() {
                        <BobChatInterface initialMessage="How can I help you with seQRets today?" />
                     </CardContent>
                 </Card>
-
-                <div className="flex items-center justify-center gap-2 mt-4 py-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span>Need to talk to a human?</span>
-                    <Link href="/contact" className="underline font-medium text-foreground hover:text-primary">
-                        Contact our team
-                    </Link>
-                </div>
                 <AppFooter />
             </div>
         </main>
