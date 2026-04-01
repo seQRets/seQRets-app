@@ -17,7 +17,7 @@ export default function SupportPage() {
 
     return (
         <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12">
-            <div className="w-full max-w-4xl mx-auto relative flex flex-col min-h-[calc(100vh-6rem)]">
+            <div className="w-full max-w-4xl mx-auto relative flex flex-col h-[calc(100vh*1.20-6rem)]">
                 <div className="absolute top-4 left-4 z-50">
                     <Button asChild variant="outline" size="sm">
                         <Link to="/">
