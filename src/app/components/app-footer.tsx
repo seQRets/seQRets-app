@@ -6,7 +6,7 @@ import { ConnectionStatus } from "./connection-status";
 export function AppFooter() {
     return (
         <footer className="text-center text-sm text-muted-foreground mt-8 mb-16">
-            <p className="text-sm font-bold">v1.5.3 🧨 Ignition</p>
+            <p className="text-sm font-bold">v1.6.0 🧨 Ignition</p>
             <p className="mt-1">&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
             <div className="flex justify-center items-center gap-3 mt-2">
                 <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
