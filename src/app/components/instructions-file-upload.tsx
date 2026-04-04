@@ -17,11 +17,11 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
 
   const handleFiles = useCallback((files: File[]) => {
     const file = files[0];
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'The instructions file size cannot exceed 5MB.',
+            description: 'The instructions file size cannot exceed 50MB.',
         });
         onFileSelected(null);
         return;
@@ -64,7 +64,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
       onFiles={handleFiles}
       accept=".txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       label="Drag & drop your instructions file here"
-      hint="or click to select a file (5MB limit)"
+      hint="or click to select a file (50MB limit)"
     />
   );
 }

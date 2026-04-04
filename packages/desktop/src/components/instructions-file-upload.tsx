@@ -15,11 +15,11 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
   const { toast } = useToast();
 
   const handleFile = useCallback((file: File) => {
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
         toast({
             variant: 'destructive',
             title: 'File Too Large',
-            description: 'The instructions file size cannot exceed 5MB.',
+            description: 'The instructions file size cannot exceed 50MB.',
         });
         onFileSelected(null);
         return;
@@ -118,7 +118,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
     >
       <FileUp className="w-10 h-10 text-muted-foreground mb-3" />
       <p className="text-base font-medium">Drag & drop your instructions file here</p>
-      <p className="text-sm text-muted-foreground ">or click to select a file (5MB limit)</p>
+      <p className="text-sm text-muted-foreground ">or click to select a file (50MB limit)</p>
       <input
         ref={fileInputRef}
         type="file"

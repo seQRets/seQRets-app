@@ -282,7 +282,7 @@ export default function InstructionsPage() {
                   </div>
                   <div className="sm:pl-11 space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      Select the file you want to encrypt (e.g. a pdf, docx, odt or txt file with instructions for your heirs). Max 5MB.
+                      Select the file you want to encrypt (e.g. a pdf, docx, odt or txt file with instructions for your heirs). Max 50MB.
                     </p>
                     <InstructionsFileUpload onFileSelected={setInstructionsFile} selectedFile={instructionsFile} />
                     <p className="text-xs text-muted-foreground/70">
