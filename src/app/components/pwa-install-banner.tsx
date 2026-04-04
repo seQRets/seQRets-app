@@ -86,42 +86,42 @@ export function PwaInstallBanner() {
   if (!show || !mode) return null;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2 text-card-foreground text-sm animate-in slide-in-from-top duration-300">
-      <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-[#827b6f]/40 bg-[#cbc5ba] dark:bg-[#d3cdc1] px-4 py-2 text-sm animate-in slide-in-from-top duration-300">
+      <div className="flex items-center gap-2 text-[#4a4540] dark:text-[#3a3530]">
         {mode === 'native' && (
           <>
-            <Download className="h-4 w-4 shrink-0" />
+            <Download className="h-4 w-4 shrink-0 text-[#6b645a] dark:text-[#524c44]" />
             <span>
-              <strong className="text-card-foreground">Install seQRets</strong> as an app for offline use
+              <strong className="text-[#231f20]">Install seQRets</strong> as an app for offline use
             </span>
           </>
         )}
         {mode === 'safari-mac' && (
           <>
-            <Monitor className="h-4 w-4 shrink-0" />
+            <Monitor className="h-4 w-4 shrink-0 text-[#6b645a] dark:text-[#524c44]" />
             <span>
-              <strong className="text-card-foreground">Add seQRets to your Dock</strong> — go to File &rarr; Add to Dock for offline use
+              <strong className="text-[#231f20]">Add seQRets to your Dock</strong> — go to File &rarr; Add to Dock for offline use
             </span>
           </>
         )}
         {mode === 'safari-ios' && (
           <>
-            <Share className="h-4 w-4 shrink-0" />
+            <Share className="h-4 w-4 shrink-0 text-[#6b645a] dark:text-[#524c44]" />
             <span>
-              <strong className="text-card-foreground">Install seQRets</strong> — tap the Share button &rarr; Add to Home Screen
+              <strong className="text-[#231f20]">Install seQRets</strong> — tap the Share button &rarr; Add to Home Screen
             </span>
           </>
         )}
         {mode === 'firefox' && (
           <>
-            <Download className="h-4 w-4 shrink-0" />
+            <Download className="h-4 w-4 shrink-0 text-[#6b645a] dark:text-[#524c44]" />
             <span>
               Want offline access? Try the{' '}
               <a
                 href="https://seqrets.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline font-semibold text-card-foreground hover:text-foreground"
+                className="underline font-semibold text-[#231f20] hover:text-black"
               >
                 seQRets desktop app
               </a>
@@ -134,14 +134,14 @@ export function PwaInstallBanner() {
         {mode === 'native' && (
           <button
             onClick={handleInstall}
-            className="rounded-md border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground hover:bg-accent transition-colors"
+            className="rounded-md bg-[#231f20] px-3 py-1 text-xs font-semibold text-[#d3cdc1] hover:bg-black transition-colors"
           >
             Install
           </button>
         )}
         <button
           onClick={dismiss}
-          className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="rounded-md p-1 text-[#6b645a] dark:text-[#524c44] hover:text-[#231f20] hover:bg-[#b5ada3]/30 transition-colors"
           aria-label="Dismiss install banner"
         >
           <X className="h-4 w-4" />
