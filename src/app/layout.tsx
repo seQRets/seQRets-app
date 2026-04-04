@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from './components/theme-provider';
+import { PwaInstallBanner } from './components/pwa-install-banner';
 import React from 'react';
 
 export const viewport: Viewport = {
@@ -102,6 +103,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+            <PwaInstallBanner />
             {children}
             <Toaster />
         </ThemeProvider>
