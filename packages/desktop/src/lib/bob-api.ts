@@ -8,7 +8,7 @@ seQRets is a hyper-secure, open-source application designed to protect your most
 
 To restore your original secret, you must bring a specific number of these Qards back together. This method eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning.
 
-v1.7.0 "Ignition" — Available as a web app (Next.js) and native desktop app (Tauri).
+v1.7.1 "Ignition" — Available as a web app (Next.js) and native desktop app (Tauri).
 
 ## Core Features
 
@@ -68,6 +68,10 @@ v1.7.0 "Ignition" — Available as a web app (Next.js) and native desktop app (T
 - **Bitcoin Ticker** — live BTC/USD price display.
 - **Connection Status** — real-time online/offline indicator in the footer. Uses a periodic ping (every 5 seconds) to reliably detect connectivity, not just browser events. Red dot + "Online" means the device has internet access; green dot + "Offline" means the device is safely disconnected. The inverted colors are intentional — for a security app, being offline is the safer state.
 - **Bob AI Assistant** — Google Gemini-powered AI for setup guidance and questions (optional, user-provided API key). Users choose whether to remember their key (saved to localStorage on web, OS keychain on desktop) or use it for the current session only. Users can disconnect Bob and remove their API key at any time via the "Remove API Key" link at the bottom of the chat interface.
+- **PWA Install Banner** — the web app can be installed as a Progressive Web App (PWA) on desktop and mobile for offline use. A smart install banner appears with browser-specific instructions (Chrome, Edge, Safari, Firefox, etc.). Installing as a PWA gives a native-like experience without needing the desktop app.
+
+### Zero-Knowledge Architecture
+seQRets has no servers, no accounts, and no data collection. Nothing is ever sent to a server — all encryption and decryption happens entirely on the user's device. There is no backend, no database, no analytics, and no telemetry. The developers never see user data and cannot recover secrets. The web app is a static site hosted on GitHub Pages with a service worker for offline support. The desktop app is a self-contained binary. This is true zero-knowledge: we don't just promise not to look at your data — we architecturally cannot.
 
 ## How to Use seQRets
 
@@ -435,7 +439,7 @@ Constant-time operations: The Rust crypto crates (argon2, chacha20poly1305) are 
 Remaining risks on desktop (same as web): Clipboard (OS-level), screen recording when reveal toggle is used (OS-level). These cannot be solved by any software.
 
 ### Honest Summary for Users
-The web app is appropriate for users who understand the threat model, run a clean browser profile with no untrusted extensions, and are comfortable with client-side JavaScript cryptography. For maximum security — especially for high-value seed phrases — the desktop app is the better choice because it eliminates the two most impactful threats: browser extensions and JS memory exposure.
+Both versions of seQRets are zero-knowledge: there are no servers, no accounts, and no data collection. Nothing is ever transmitted anywhere — the app is a static site (web) or self-contained binary (desktop) with no backend. The web app is appropriate for users who understand the threat model, run a clean browser profile with no untrusted extensions, and are comfortable with client-side JavaScript cryptography. For maximum security — especially for high-value seed phrases — the desktop app (available at https://seqrets.app/shop) is the better choice because it eliminates the two most impactful threats: browser extensions and JS memory exposure.
 `;
 
 const bitcoinGuide = `
