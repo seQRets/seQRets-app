@@ -11,7 +11,7 @@ seQRets is a hyper-secure, open-source application designed to protect your most
 
 To restore your original secret, you must bring a specific number of these Qards back together. This method eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning.
 
-v1.7.1 "Ignition" — Available as a web app (Next.js) and native desktop app (Tauri).
+v1.7.2 "Ignition" — Available as a web app (Next.js) and native desktop app (Tauri).
 
 ## Core Features
 
@@ -35,6 +35,7 @@ v1.7.1 "Ignition" — Available as a web app (Next.js) and native desktop app (T
 ### Inheritance Plan
 - **In-app plan builder** (desktop only) — create your inheritance plan directly inside the app using a structured, 9-section form (plan info, beneficiaries, secret sets with Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, personal message). The plan is encrypted as a compact JSON blob (~2-4 KB) that fits on a smart card.
 - **2FA deadlock warning** — Section 3 (Device & Account Access) includes a prominent warning about circular dependency traps: if your password manager requires a 2FA code and your 2FA app login is stored inside that password manager, neither can be opened first. The plan prompts users to list their 2FA/authenticator app recovery credentials as a separate entry to break the loop.
+- **Sensitive field masking** (desktop only, v1.7.2+) — In the in-app plan builder, password and PIN fields (seQRets Password, Smart card PIN, Device password) render as dots with an eye toggle; Recovery seed / key fields auto-blur their characters once typed (while keeping the input border and placeholder crisp). All default to hidden; click the eye to confirm accuracy, then it re-hides. Each entry across multiple Secret Sets, Device Accounts, and Digital Assets has its own independent toggle.
 - **File upload** — alternatively, encrypt any file (PDF, DOCX, ODT, TXT — up to 50MB) with the same XChaCha20-Poly1305 + Argon2id security (available on both web and desktop).
 - Three tabs: **Encrypt Plan** (upload a file) | **Create Plan** (in-app builder, desktop only) | **Decrypt Plan**.
 - Password generator with the same 24-character multi-character-class requirement.
