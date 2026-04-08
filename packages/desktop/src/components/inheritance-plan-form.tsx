@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, Plus, Trash2, ShieldCheck, AlertTriangle, Info, KeyRound } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, ShieldCheck, AlertTriangle, Info, KeyRound, Eye, EyeOff } from 'lucide-react';
 import type {
   InheritancePlan,
   PlanInfo,
@@ -69,6 +69,84 @@ function Section({
           {children}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Sensitive field wrappers ────────────────────────────────────────
+// Each instance holds its own visibility state, so entries rendered inside
+// .map() (multiple Secret Sets, Devices, Assets) get independent toggles.
+
+interface SensitiveFieldProps {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  className?: string;
+}
+
+/** Single-line input that renders as dots (type="password") until toggled. */
+function SensitiveInput({ value, onChange, disabled, placeholder, className }: SensitiveFieldProps) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={cn('pr-10', className)}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground"
+        aria-label={visible ? 'Hide value' : 'Show value'}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Single-line input whose text (not the border or placeholder) blurs once
+ * there's a value to hide. Implemented with `color: transparent` +
+ * `text-shadow` so only the characters are obscured — the input chrome and
+ * the placeholder stay crisp. Blur auto-activates the moment the user types
+ * or pastes; the eye button reveals for a quick accuracy check.
+ */
+function BlurInput({ value, onChange, disabled, placeholder, className }: SensitiveFieldProps) {
+  const [visible, setVisible] = useState(false);
+  const shouldBlur = !visible && value.length > 0;
+  return (
+    <div className="relative">
+      <Input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={cn('pr-10', className)}
+        style={
+          shouldBlur
+            ? {
+                color: 'transparent',
+                textShadow: '0 0 8px hsl(var(--foreground) / 0.6)',
+                caretColor: 'hsl(var(--foreground))',
+              }
+            : undefined
+        }
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground"
+        aria-label={visible ? 'Hide value' : 'Show value'}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   );
 }
@@ -366,7 +444,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>seQRets Password</Label>
-                  <Input value={secret.password} onChange={(e) => updateSecretSet(secret.id, 'password', e.target.value)} disabled={readOnly} placeholder="The exact password used when encrypting this secret" />
+                  <SensitiveInput value={secret.password} onChange={(v) => updateSecretSet(secret.id, 'password', v)} disabled={readOnly} placeholder="The exact password used when encrypting this secret" />
                   <p className="text-xs text-muted-foreground">Every character matters. Copy-paste recommended.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -431,7 +509,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Smart card PIN</Label>
-                    <Input value={secret.smartCardPin} onChange={(e) => updateSecretSet(secret.id, 'smartCardPin', e.target.value)} disabled={readOnly} placeholder="Card PIN" className="text-sm" />
+                    <SensitiveInput value={secret.smartCardPin} onChange={(v) => updateSecretSet(secret.id, 'smartCardPin', v)} disabled={readOnly} placeholder="Card PIN" className="text-sm" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Card reader model</Label>
@@ -493,7 +571,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Password / PIN / encryption key</Label>
-                <Input value={device.password} onChange={(e) => updateDeviceAccount(device.id, 'password', e.target.value)} disabled={readOnly} placeholder="The exact password or PIN needed to unlock" className="text-sm" />
+                <SensitiveInput value={device.password} onChange={(v) => updateDeviceAccount(device.id, 'password', v)} disabled={readOnly} placeholder="The exact password or PIN needed to unlock" className="text-sm" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Notes</Label>
@@ -551,7 +629,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Recovery seed / key</Label>
-                <Input value={asset.recoverySeed} onChange={(e) => updateAsset(asset.id, 'recoverySeed', e.target.value)} disabled={readOnly} placeholder='If protected by seQRets, write "Protected by seQRets — see Secret #__ above."' className="text-sm" />
+                <BlurInput value={asset.recoverySeed} onChange={(v) => updateAsset(asset.id, 'recoverySeed', v)} disabled={readOnly} placeholder='If protected by seQRets, reference the Secret Set number here (e.g., "Protected by seQRets — Secret 1")' className="text-sm" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Special instructions</Label>
