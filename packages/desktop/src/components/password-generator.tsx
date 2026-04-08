@@ -116,7 +116,7 @@ export function PasswordGenerator({ value, onValueChange, onValidationChange, pl
                     <li>Must include numbers.</li>
                     <li>Must include special symbols (e.g., !@#$%^&*).</li>
                 </ul>
-                <p className="mt-2 text-xs text-muted-foreground">Use the generator for a high-entropy, quantum-resistant password.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Use the generator for a high-entropy password that resists Grover-accelerated brute-force.</p>
             </PopoverContent>
         </Popover>
       </div>

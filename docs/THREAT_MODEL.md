@@ -31,6 +31,24 @@ Disconnecting from the network after the page has loaded provides limited but re
 - Clipboard and screen recording — OS-level, not network-dependent
 - Any malicious JS that was already loaded — it can queue exfiltration and fire it when connectivity is restored
 
+## Quantum Attacks
+
+The seQRets scheme is quantum-resistant under its own assumptions. The scheme's response to quantum attacks depends entirely on whether the share threshold has been breached.
+
+| Threat | Status | Notes |
+|---|---|---|
+| **Quantum attack, scheme intact (< K shares compromised)** | ✓ Fully mitigated | Shamir's Secret Sharing is information-theoretically secure. With fewer than K shares, an adversary has literally zero bits of information about the secret — not "hard to compute", but mathematically absent. No quantum (or classical) algorithm can attack what does not exist. Grover's doesn't apply. Shor's doesn't apply. The ciphertext is never reconstructed, so XChaCha20-Poly1305 is never attacked at all in this regime. |
+| **Quantum attack, scheme failed (≥ K shares compromised)** | ⚠️ Defense-in-depth | This scenario is a failure of share distribution, not of the cryptography, and lies outside the primary threat model. Even so, the cipher layer still provides post-quantum margin: XChaCha20-Poly1305's 256-bit key gives ~128-bit effective post-quantum security under Grover's algorithm, Argon2id (64 MB, 4 iterations) raises the brute-force cost, and the generator's 24+ character passwords (~10^62 combinations) put Grover-accelerated brute-force beyond any realistic attacker. |
+
+### Honest framing
+
+seQRets is not "fully post-quantum secure in all scenarios" — no honest scheme is. The correct framing:
+
+- **Under the primary threat model** (share distribution working as designed), the scheme is quantum-resistant by an information-theoretic argument that is independent of any computational assumption.
+- **Under scheme-failure conditions** (threshold compromised), XChaCha20-Poly1305 + Argon2id provide ~128-bit post-quantum defense-in-depth.
+
+For the cryptographic derivation of why this holds, see [ARCHITECTURE.md](ARCHITECTURE.md#quantum-resistance).
+
 ## Threats Mitigated by the Optional Keyfile
 
 A keyfile is a 32-byte random value that is concatenated with the password before key derivation (see [ARCHITECTURE.md](ARCHITECTURE.md#optional-keyfile-second-factor) for the cryptographic details). Both the password AND the keyfile are required — one without the other is useless. This section describes the attack vectors a keyfile meaningfully changes.

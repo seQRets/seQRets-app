@@ -93,12 +93,32 @@ These are **layered defenses** — both must be defeated. The alternative design
 
 ## Quantum Resistance
 
-The built-in password generator produces passwords with ~10^62 possible combinations. Even with Grover's algorithm (optimal quantum speedup), brute-forcing would take:
+**The seQRets scheme is quantum-resistant under its own assumptions.** While fewer than K shares are in an adversary's possession, the ciphertext is never reconstructed — so no quantum (or classical) attack has anything to attack in the first place.
 
-- **Optimistic estimate:** ~2 × 10^18 years (148 million × the age of the universe)
-- **Realistic estimate:** ~2 × 10^23 years (148 trillion × the age of the universe)
+### The scheme-level argument
 
-Argon2id's memory-hardness provides additional quantum resistance, and XChaCha20-Poly1305 maintains 128-bit effective quantum security as a defense-in-depth layer.
+Shamir's Secret Sharing is **information-theoretically secure**: with K-1 or fewer shares, an adversary has literally zero bits of information about the secret. This is not a computational assumption that a faster computer can break — it is a mathematical property of polynomial interpolation over finite fields. No quantum computer changes this. Grover's algorithm doesn't apply, Shor's algorithm doesn't apply, and no future quantum breakthrough can apply, because there is no hidden structure to exploit.
+
+Because the ciphertext is only reconstructable once the threshold is met, the XChaCha20-Poly1305 layer is never attacked at all under the primary threat model (< K shares compromised). Its quantum vulnerability is irrelevant in that regime.
+
+### XChaCha20-Poly1305 as defense-in-depth
+
+The only scenario in which the symmetric cipher's quantum resistance matters is **after scheme failure** — i.e., an attacker has already obtained ≥ K shares and can reconstruct the ciphertext. That scenario represents a failure of the share distribution, not a failure of the cryptography. Even in that failure mode, the cipher layer continues to provide post-quantum security margin:
+
+- **XChaCha20-Poly1305** — 256-bit key provides ~128-bit effective post-quantum security under Grover's algorithm
+- **Argon2id** — memory-hardness (64 MB, 4 iterations) further raises the cost of brute-forcing the password
+- **Password entropy** — the built-in generator produces passwords with ~10^62 possible combinations, putting Grover-accelerated brute-force beyond any realistic attacker:
+  - **Optimistic estimate:** ~2 × 10^18 years (148 million × the age of the universe)
+  - **Realistic estimate:** ~2 × 10^23 years (148 trillion × the age of the universe)
+
+### Honest framing
+
+seQRets is not "fully post-quantum secure in all scenarios." The honest framing is:
+
+- ✅ **Scheme intact (< K shares compromised)** → quantum-resistant by information-theoretic argument, independent of any computational assumption
+- ⚠️ **Scheme failed (≥ K shares compromised)** → falls back to XChaCha20-Poly1305 + Argon2id, which provides ~128-bit post-quantum security margin as defense-in-depth
+
+If the share distribution is designed correctly, the second scenario should never occur in practice.
 
 ## Random Number Generation (CSPRNG)
 

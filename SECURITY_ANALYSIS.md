@@ -114,7 +114,7 @@ The application demonstrates excellent cryptographic engineering with proper alg
 | **Nonce Size** | 192-bit (24 bytes) | Extended nonce, safe for random generation | ✅ Excellent |
 | **KDF** | Argon2id | Winner of Password Hashing Competition | ✅ Excellent |
 | **KDF Memory** | 64 MB | OWASP recommends 19–64 MB | ✅ Strong |
-| **KDF Iterations** | 4 | OWASP minimum: 2–3 | ✅ Above minimum |
+| **KDF Iterations** | 4 | OWASP recommends t=3 at m=64 MB | ✅ Above recommendation |
 | **KDF Parallelism** | 1 | Standard single-thread | ✅ Standard |
 | **Salt Size** | 128-bit (16 bytes) | NIST minimum: 128-bit | ✅ Standard |
 | **Secret Sharing** | Shamir's SSS | Information-theoretically secure | ✅ Excellent |
@@ -303,8 +303,10 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 │     failure               risk across N locations         │
 │  ✅ Brute-force attack    Argon2id (64MB) + 256-bit key  │
 │  ✅ Nonce reuse           192-bit random nonce per op     │
-│  ✅ Quantum computing     Shamir is information-theoretic │
-│     (on secret sharing)   — no quantum speedup possible   │
+│  ✅ Quantum (scheme       Shamir is information-theoretic │
+│     intact, <K shares)    — <K shares reveal zero info    │
+│  ✅ Quantum (≥K shares,   XChaCha20-256 + Argon2id give   │
+│     scheme failure)       ~128-bit post-quantum margin    │
 │  ✅ Extension spying      Desktop uses isolated WebView   │
 │     (desktop)                                             │
 │  ✅ Binary tampering      Code-signed + Minisign updates  │

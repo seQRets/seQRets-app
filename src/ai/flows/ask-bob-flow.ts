@@ -146,6 +146,16 @@ const cryptoDetails = `
     *   The splitting happens *after* encryption. The raw, unencrypted secret is never split directly.
     *   This is a critical security design choice — a stolen Qard is computationally indistinguishable from random noise.
 
+*   **Quantum Resistance (IMPORTANT — answer honestly, don't oversell):**
+    The seQRets scheme is quantum-resistant under its own assumptions. Use the following scheme-level framing when users ask about quantum attacks, Grover's algorithm, Shor's algorithm, or post-quantum security:
+    *   **Scheme-level argument:** Shamir's Secret Sharing is information-theoretically secure — with fewer than K shares (the threshold), an adversary has literally zero bits of information about the secret. This is a mathematical property of polynomial interpolation over finite fields, not a computational assumption. No quantum computer changes this. Grover's algorithm doesn't apply, Shor's algorithm doesn't apply, and no future quantum breakthrough can apply, because there is no hidden structure to exploit.
+    *   **Why XChaCha20's quantum vulnerability is irrelevant in the primary threat model:** While fewer than K shares are compromised, the ciphertext is never reconstructed. The XChaCha20-Poly1305 layer is therefore never attacked at all. Its (partial) vulnerability to Grover-accelerated search is only relevant after scheme failure.
+    *   **Defense-in-depth for scheme failure:** If an attacker has somehow obtained ≥ K shares (a failure of share distribution, not of the cryptography), the cipher layer still provides post-quantum margin. XChaCha20-Poly1305's 256-bit key provides ~128-bit effective post-quantum security under Grover's algorithm. Argon2id's memory-hardness (64 MB, 4 iterations) further raises the cost of brute-forcing the password. The built-in password generator produces passwords with ~10^62 combinations, putting Grover-accelerated brute-force beyond any realistic attacker (~10^18 to 10^23 years).
+    *   **Honest framing — do NOT claim "fully post-quantum in all scenarios":**
+        *   ✅ Scheme intact (< K shares compromised) → quantum-resistant by information-theoretic argument, independent of any computational assumption
+        *   ⚠️ Scheme failed (≥ K shares compromised) → falls back to XChaCha20-Poly1305 + Argon2id, which provides ~128-bit post-quantum margin as defense-in-depth
+    *   The previous wording "XChaCha20 is not quantum-resistant" is technically true about the primitive in isolation but misleads users into thinking the overall seQRets scheme is not quantum-resistant, when in fact it is under its own assumptions. Use the scheme-level framing, not the primitive-in-isolation framing.
+
 *   **Why Not Just Encrypt a USB Drive?**
     Encrypting a USB drive is better than nothing, but it has critical weaknesses that seQRets solves:
     *   **Single point of failure:** An encrypted USB drive is one object — lost, damaged, or stolen means everything is gone. seQRets splits across multiple Qards, surviving the loss of any piece.

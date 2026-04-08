@@ -12,7 +12,7 @@ import { AppFooter } from "../components/app-footer";
 const features = [
     { name: 'XChaCha20-Poly1305 encryption', web: true, desktop: true },
     { name: "Shamir's Secret Sharing", web: true, desktop: true },
-    { name: 'Argon2id key derivation (64MB, 3 iter)', web: true, desktop: true },
+    { name: 'Argon2id key derivation (64MB, 4 iter)', web: true, desktop: true },
     { name: 'BIP-39 seed phrase support', web: true, desktop: true },
     { name: 'Inheritance Plan (file upload)', web: true, desktop: true },
     { name: 'Camera QR scanning', web: true, desktop: true },
