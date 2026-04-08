@@ -87,16 +87,18 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                             <Lock className="h-5 w-5" />
                             <span>Secure Secret</span>
                         </Link>
-                         <Link to="/?tab=restore" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                            <Combine className="h-5 w-5" />
-                            <span>Restore Secret</span>
-                        </Link>
                     </>
                 )}
                 {pathname !== '/inheritance' && (
                 <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
                     <FileText className="h-5 w-5" />
                     <span>Inheritance Plan</span>
+                </Link>
+                )}
+                {!isHomePage && (
+                <Link to="/?tab=restore" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                    <Combine className="h-5 w-5" />
+                    <span>Restore Secret</span>
                 </Link>
                 )}
                 <div className="border-t mt-2 pt-2">
@@ -209,12 +211,6 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                             <span>Secure Secret</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link to="/?tab=restore">
-                            <Combine className="mr-2 h-4 w-4" />
-                            <span>Restore Secret</span>
-                        </Link>
-                    </DropdownMenuItem>
                 </>
             )}
           {pathname !== '/inheritance' && (
@@ -222,6 +218,14 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
             <Link to="/inheritance">
               <FileText className="mr-2 h-4 w-4" />
               <span>Inheritance Plan</span>
+            </Link>
+          </DropdownMenuItem>
+          )}
+          {!isHomePage && (
+          <DropdownMenuItem asChild>
+            <Link to="/?tab=restore">
+              <Combine className="mr-2 h-4 w-4" />
+              <span>Restore Secret</span>
             </Link>
           </DropdownMenuItem>
           )}
