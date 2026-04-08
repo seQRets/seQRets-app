@@ -52,4 +52,4 @@ seQRets has **not undergone a formal third-party security audit**. However, an i
 
 ## Security Design
 
-For details on the cryptographic architecture, threat model, and security trade-offs, see the [Security Architecture](README.md#-security-architecture) and [App Security](README.md#%EF%B8%8F-app-security) sections of the README.
+For details on the cryptographic architecture, threat model, and security trade-offs, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
