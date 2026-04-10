@@ -67,15 +67,27 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
             <nav className="flex-grow p-4 space-y-2">
                 {isHomePage ? (
                      activeTab === 'create' ? (
+                        <>
+                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FileText className="h-5 w-5" />
+                            <span>Inheritance Plan</span>
+                        </Link>
                         <Button variant="ghost" className="w-full justify-start gap-3 p-2" onClick={() => handleLinkClick('restore')}>
                             <Combine className="h-5 w-5" />
                             <span>Restore Secret</span>
                         </Button>
+                        </>
                     ) : (
+                        <>
                         <Button variant="ghost" className="w-full justify-start gap-3 p-2" onClick={() => handleLinkClick('create')}>
                             <Lock className="h-5 w-5" />
                             <span>Secure Secret</span>
                         </Button>
+                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FileText className="h-5 w-5" />
+                            <span>Inheritance Plan</span>
+                        </Link>
+                        </>
                     )
                 ) : (
                     <>
@@ -87,19 +99,17 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                             <Lock className="h-5 w-5" />
                             <span>Secure Secret</span>
                         </Link>
+                        {pathname !== '/inheritance' && (
+                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FileText className="h-5 w-5" />
+                            <span>Inheritance Plan</span>
+                        </Link>
+                        )}
+                        <Link to="/?tab=restore" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <Combine className="h-5 w-5" />
+                            <span>Restore Secret</span>
+                        </Link>
                     </>
-                )}
-                {pathname !== '/inheritance' && (
-                <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                    <FileText className="h-5 w-5" />
-                    <span>Inheritance Plan</span>
-                </Link>
-                )}
-                {!isHomePage && (
-                <Link to="/?tab=restore" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                    <Combine className="h-5 w-5" />
-                    <span>Restore Secret</span>
-                </Link>
                 )}
                 <div className="border-t mt-2 pt-2">
                 {pathname !== '/support' && (
@@ -187,15 +197,31 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
         <DropdownMenuContent align="end">
           {isHomePage ? (
                 activeTab === 'create' ? (
+                    <>
+                    <DropdownMenuItem asChild>
+                        <Link to="/inheritance">
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>Inheritance Plan</span>
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleLinkClick('restore')}>
                         <Combine className="mr-2 h-4 w-4" />
                         <span>Restore Secret</span>
                     </DropdownMenuItem>
+                    </>
                 ) : (
+                    <>
                     <DropdownMenuItem onClick={() => handleLinkClick('create')}>
                         <Lock className="mr-2 h-4 w-4" />
                         <span>Secure Secret</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link to="/inheritance">
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>Inheritance Plan</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    </>
                 )
             ) : (
                 <>
@@ -211,24 +237,22 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                             <span>Secure Secret</span>
                         </Link>
                     </DropdownMenuItem>
+                    {pathname !== '/inheritance' && (
+                    <DropdownMenuItem asChild>
+                        <Link to="/inheritance">
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>Inheritance Plan</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                        <Link to="/?tab=restore">
+                            <Combine className="mr-2 h-4 w-4" />
+                            <span>Restore Secret</span>
+                        </Link>
+                    </DropdownMenuItem>
                 </>
             )}
-          {pathname !== '/inheritance' && (
-          <DropdownMenuItem asChild>
-            <Link to="/inheritance">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Inheritance Plan</span>
-            </Link>
-          </DropdownMenuItem>
-          )}
-          {!isHomePage && (
-          <DropdownMenuItem asChild>
-            <Link to="/?tab=restore">
-              <Combine className="mr-2 h-4 w-4" />
-              <span>Restore Secret</span>
-            </Link>
-          </DropdownMenuItem>
-          )}
           <DropdownMenuSeparator />
           {pathname !== '/support' && (
           <DropdownMenuItem asChild>
