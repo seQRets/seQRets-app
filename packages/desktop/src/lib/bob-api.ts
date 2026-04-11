@@ -87,8 +87,8 @@ The app guides you through a simple, step-by-step process.
 ### Decrypting a Secret (The "Restore Secret" Tab)
 1.  **Step 1: Add Your Qards.** Add the required number of shares using one of these methods:
     *   **Upload Images:** Drag and drop the Qard images.
-    *   **Scan with Camera:** Scan the Qards one by one.
-    *   **Manual Entry:** Paste the raw text of each share.
+    *   **Scan QR:** Scan the Qards one by one with your camera.
+    *   **Paste Text:** Paste the raw text of each share.
     *   **Import Vault File:** Load shares from a previously exported .seqrets file. If the vault was password-protected, you will need the vault password to import.
     *   **Read from Smartcard:** Load a share or vault from a JavaCard (desktop only).
     Once you've added enough shares, click **Next Step**.
