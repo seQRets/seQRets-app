@@ -86,7 +86,7 @@ export function PwaInstallBanner() {
   if (!show || !mode) return null;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-[#827b6f]/40 bg-[#cbc5ba] dark:bg-[#d3cdc1] px-4 py-2 text-sm animate-in slide-in-from-top duration-300">
+    <div className="sticky top-0 z-[60] flex items-center justify-between gap-3 border-b border-[#827b6f]/40 bg-[#cbc5ba] dark:bg-[#d3cdc1] px-4 py-2 text-sm animate-in slide-in-from-top duration-300">
       <div className="flex items-center gap-2 text-[#4a4540] dark:text-[#3a3530]">
         {mode === 'native' && (
           <>
