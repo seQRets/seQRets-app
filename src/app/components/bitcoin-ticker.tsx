@@ -88,7 +88,7 @@ export function BitcoinTicker() {
   }
 
   return (
-    <div className="flex justify-center items-center gap-3 p-2 rounded-lg bg-white/60 dark:bg-muted/50 border border-border/50 w-64 mx-auto shadow-sm">
+    <div className="flex justify-center items-center gap-3 p-2 rounded-lg bg-white/60 dark:bg-muted/50 border border-border/50 dark:border-transparent w-64 mx-auto shadow-sm">
       <Image src="/icons/Bitcoin Logo.png" alt="Bitcoin Logo" width={40} height={40} data-ai-hint="bitcoin logo" />
       <div className="text-center">
         <p className="text-sm text-muted-foreground">Bitcoin Price</p>

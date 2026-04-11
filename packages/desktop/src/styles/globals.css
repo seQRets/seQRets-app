@@ -28,9 +28,9 @@
   .dark {
     --background: 0 5% 8%;              /* #151314 soft dark */
     --foreground: 37 10% 89%;           /* #e8e5df warm off-white */
-    --card: 0 0% 21%;                    /* #353535 neutral gray */
+    --card: 20 5% 23%;                    /* #3d3937 warm dark gray */
     --card-foreground: 37 10% 89%;      /* #e8e5df */
-    --popover: 0 0% 21%;                /* #353535 */
+    --popover: 20 5% 23%;               /* #3d3937 */
     --popover-foreground: 37 10% 89%;   /* #e8e5df */
     --primary: 37 10% 89%;             /* #e8e5df — light buttons on dark bg */
     --primary-foreground: 0 7% 3%;      /* #080707 — dark text on light buttons */

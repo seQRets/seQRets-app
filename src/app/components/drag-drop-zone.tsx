@@ -86,7 +86,7 @@ export function DragDropZone({
         paddingClassName,
         isDragging
           ? 'bg-[#cbc5ba] border-black dark:bg-black dark:border-[#827b6f]'
-          : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
+          : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-[#2a2827] dark:hover:bg-black dark:hover:border-[#827b6f]'
       )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
