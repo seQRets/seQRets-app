@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bot, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Lock, Download, TriangleAlert } from 'lucide-react';
+import { Bot, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, FileUp, ArrowDown, ShieldCheck, Lock, Download, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Header } from '../components/header';
@@ -430,9 +430,10 @@ export default function InstructionsPage() {
                         </Button>
                       </div>
                     ) : (
+                      <>
                       <div
                         className={cn(
-                          'group relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
+                          'hidden sm:flex group relative flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
                           isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-[#2a2827] dark:hover:bg-black dark:hover:border-[#827b6f]'
                         )}
                         onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
@@ -452,6 +453,25 @@ export default function InstructionsPage() {
                           onChange={(e) => e.target.files && handleDecryptFileSelect(e.target.files[0])}
                         />
                       </div>
+                      {/* Mobile: browse button */}
+                      <div className="sm:hidden">
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('decrypt-instructions-input-mobile')?.click()}
+                          className="w-full h-12 text-sm dark-thin-border dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black"
+                        >
+                          <FileUp className="mr-2 h-5 w-5 shrink-0" />
+                          Browse Encrypted Plan
+                        </Button>
+                        <input
+                          id="decrypt-instructions-input-mobile"
+                          type="file"
+                          accept=".json"
+                          className="hidden"
+                          onChange={(e) => e.target.files && handleDecryptFileSelect(e.target.files[0])}
+                        />
+                      </div>
+                      </>
                     )}
                     {decryptStep === 1 && (
                       <div className="flex justify-end pt-2">

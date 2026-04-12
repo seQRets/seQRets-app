@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useCallback } from 'react';
-import { File, X } from 'lucide-react';
+import { useCallback, useRef } from 'react';
+import { File, FileUp, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { DragDropZone } from './drag-drop-zone';
@@ -15,6 +15,7 @@ interface KeyfileUploadProps {
 
 export function KeyfileUpload({ onFileRead, onFileNameChange, fileName }: KeyfileUploadProps) {
   const { toast } = useToast();
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback((files: File[]) => {
     const file = files[0];
@@ -86,11 +87,36 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName }: Keyfil
   }
 
   return (
-    <DragDropZone
-      onFiles={handleFiles}
-      accept=".bin,.key"
-      label="Drag & drop your keyfile here"
-      hint="or click to select a file (2MB limit)"
-    />
+    <>
+      <div className="hidden sm:block">
+        <DragDropZone
+          onFiles={handleFiles}
+          accept=".bin,.key"
+          label="Drag & drop your keyfile here"
+          hint="or click to select a file (2MB limit)"
+        />
+      </div>
+      <div className="sm:hidden">
+        <Button
+          variant="outline"
+          onClick={() => mobileFileInputRef.current?.click()}
+          className="w-full h-12 text-sm dark-thin-border dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black"
+        >
+          <FileUp className="mr-2 h-5 w-5 shrink-0" />
+          Browse Keyfile
+        </Button>
+        <input
+          ref={mobileFileInputRef}
+          type="file"
+          accept=".bin,.key"
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length > 0) { handleFiles(files); if (mobileFileInputRef.current) mobileFileInputRef.current.value = ''; }
+          }}
+          aria-label="Select keyfile"
+        />
+      </div>
+    </>
   );
 }
