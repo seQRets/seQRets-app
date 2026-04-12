@@ -471,7 +471,7 @@ export function RestoreSecretForm() {
 
 
   return (
-    <Card className="relative shadow-lg dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] dark:border-2">
+    <Card className="relative shadow-lg dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] dark:border-0">
       {isRestoring && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 rounded-lg backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
