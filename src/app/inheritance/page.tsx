@@ -267,7 +267,7 @@ export default function InstructionsPage() {
               Encrypt a document with instructions for your heirs, or decrypt a previously encrypted file.
             </p>
             <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); handleEncryptReset(); handleDecryptReset(); }}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-2 mb-6 dark:shadow-[0_0_8px_rgba(0,0,0,0.5)]">
                 <TabsTrigger value="encrypt"><Lock className="mr-2 h-4 w-4" /> Encrypt Plan</TabsTrigger>
                 <TabsTrigger value="decrypt"><Download className="mr-2 h-4 w-4" /> Decrypt Plan</TabsTrigger>
               </TabsList>

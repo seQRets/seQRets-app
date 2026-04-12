@@ -390,7 +390,7 @@ export default function InstructionsPage() {
 
         <AppNavTabs activePage="plan" />
 
-        <Card className="relative mt-6 mb-8">
+        <Card className="relative mt-6 mb-8 shadow-lg dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] dark:border-0">
           {(isEncrypting || isDecrypting) && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 rounded-lg backdrop-blur-sm">
               <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
@@ -403,7 +403,7 @@ export default function InstructionsPage() {
               Create an inheritance plan or encrypt a document for your heirs. Decrypt and view previously encrypted plans.
             </p>
             <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); handleEncryptReset(); handleDecryptReset(); }}>
-              <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6 dark:shadow-[0_0_8px_rgba(0,0,0,0.5)]">
                 <TabsTrigger value="encrypt"><Lock className="mr-2 h-4 w-4" /> Encrypt Plan</TabsTrigger>
                 <TabsTrigger value="create"><FilePenLine className="mr-2 h-4 w-4" /> Create Plan</TabsTrigger>
                 <TabsTrigger value="decrypt"><Download className="mr-2 h-4 w-4" /> Decrypt / Edit Plan</TabsTrigger>
@@ -788,7 +788,7 @@ export default function InstructionsPage() {
                         <div
                           className={cn(
                             'group relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                            isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-muted dark:hover:bg-black dark:hover:border-[#827b6f]'
+                            isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-[#2a2827] dark:hover:bg-black dark:hover:border-[#827b6f]'
                           )}
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
