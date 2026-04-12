@@ -16,7 +16,7 @@ seQRets encrypts your most sensitive secrets — seed phrases, private keys, pas
 
 ## ⚠️ Warning
 
-> 🚧 **Beta Software — No Independent Security Audit.** seQRets v1.8.0 has not undergone a formal third-party security audit. Do not use seQRets as your only backup for high-value secrets. Always maintain independent backups (hardware wallet, paper backup in a fireproof safe, etc.) until a formal audit has been completed.
+> 🚧 **Beta Software — No Independent Security Audit.** seQRets v1.8.3 has not undergone a formal third-party security audit. Do not use seQRets as your only backup for high-value secrets. Always maintain independent backups (hardware wallet, paper backup in a fireproof safe, etc.) until a formal audit has been completed.
 
 **Your security is your responsibility.** Misplacing your password or the required number of Qards can result in the **permanent loss** of your secret. The developers have no access to your data.
 
