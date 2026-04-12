@@ -48,7 +48,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
   };
 
   return (
-    <div className="grid w-full grid-cols-3 h-12 items-center justify-center rounded-md bg-accent p-1 text-muted-foreground">
+    <div className="grid w-full grid-cols-3 h-12 items-center justify-center rounded-lg bg-accent p-1.5 text-muted-foreground">
       {tabs.map((tab) => (
         <button
           key={tab.value}
