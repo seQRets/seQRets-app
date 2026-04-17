@@ -347,6 +347,54 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 
 ---
 
+## Vendor Independence — The Lifeboat
+
+A class of risk not covered by the standard threat matrix above is **vendor disappearance**: the scenario where the seQRets project is abandoned, seqrets.app goes offline, the company dissolves, or the desktop app stops being updated and eventually won't run on a future OS. For an inheritance tool where recovery may happen 20–50 years after the plan is created, this is a material risk that cryptographic design alone cannot mitigate.
+
+### Mitigation: seQRets Recover
+
+**seQRets Recover** (repository: https://github.com/seQRets/seQRets-Recover), nicknamed "the Lifeboat," is an independent reference implementation of the seQRets share format, published as a single `recover.html` file. It is:
+
+- **Self-contained** — one HTML file with all dependencies (Argon2id, XChaCha20-Poly1305, Shamir SSS, pako, @scure/bip39) inlined. No CDN references, no runtime network calls.
+- **Dependency-free at runtime** — requires only a modern web browser. No Node.js, no installer, no OS compatibility layer. Any machine that can render HTML and run JavaScript can run the Lifeboat.
+- **Independently auditable** — ~200 lines of TypeScript implementing the documented share format (`seQRets|<base64 salt>|<base64 nonce+ciphertext>|sha256:<hex>`). The format is plaintext, self-describing, and could be reimplemented from scratch in any language in an afternoon.
+- **Integrity-verifiable** — every GitHub release publishes the SHA-256 hash of `recover.html`, allowing holders to verify copies handed to heirs before trusting them with real credentials.
+- **Offline-first by design** — the release instructions explicitly direct users to disconnect from the network before opening the file, and the HTML ships with a Content-Security-Policy that refuses network requests.
+
+### Threat Eliminated
+
+```
+┌──────────────────────────────────────────────────────────┐
+│              THREAT ELIMINATED ✅                         │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  ✅ Vendor disappearance   Recover is a separate repo    │
+│                            with a separate release       │
+│                            chain; users archive the      │
+│                            .html file alongside their    │
+│                            inheritance packet. Works     │
+│                            with zero dependencies on     │
+│                            seqrets.app being online.     │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Trust Model Implications
+
+The existence of the Lifeboat changes the seQRets trust model in a specific way: **users do not need to trust that the seQRets project will exist in the future.** The cryptographic scheme, the share format, and the primitives are all documented; a working reference implementation is archived; and any motivated third party can verify the Lifeboat's source and rebuild it from first principles. The main app's value is ergonomics (UI, smart cards, inheritance-plan forms) — the *recovery guarantee* does not depend on the main app continuing to exist.
+
+This is reflected in the user-facing materials: the inheritance plan PDF generator embeds the Lifeboat download URL and SHA-256 verification guidance as section 1 of every exported plan, ensuring heirs who open the document decades later have a clear recovery path even if seqrets.app is unreachable.
+
+### Residual Risk
+
+The Lifeboat mitigates but does not eliminate long-horizon risk. Users are still responsible for:
+
+- **Archiving `recover.html`** — the GitHub release URL could change; users should include the file itself in their inheritance packet, not just a link.
+- **Recording the verification hash** — the SHA-256 published at release time should be recorded separately (e.g., in the paper inheritance document) so heirs can verify a file received through an untrusted channel.
+- **Browser longevity** — the Lifeboat depends on the continued existence of web browsers capable of running modern JavaScript. This is a weaker assumption than the continued existence of any specific project.
+
+---
+
 ## Dependency Security
 
 ### Rust Dependencies (Desktop Backend)
