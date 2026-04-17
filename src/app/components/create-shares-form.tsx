@@ -485,7 +485,9 @@ export function CreateSharesForm() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <Slider id="total-shares" min={1} max={10} step={1} value={[totalShares]} onValueChange={([val]) => setTotalShares(val)} />
+                                <div className="flex h-10 items-center">
+                                  <Slider id="total-shares" min={1} max={10} step={1} value={[totalShares]} onValueChange={([val]) => setTotalShares(val)} />
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
@@ -501,7 +503,9 @@ export function CreateSharesForm() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <Slider id="required-shares" min={totalShares === 1 ? 1 : 2} max={totalShares} step={1} value={[requiredShares]} onValueChange={([val]) => setRequiredShares(val)} />
+                                <div className="flex h-10 items-center">
+                                  <Slider id="required-shares" min={totalShares === 1 ? 1 : 2} max={totalShares} step={1} value={[requiredShares]} onValueChange={([val]) => setRequiredShares(val)} />
+                                </div>
                             </div>
                         </div>
                       </div>
