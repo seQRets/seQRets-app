@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Lock, FileText, Combine, ShieldCheck, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
-import { ConnectionBanner } from "./connection-banner";
 
 const SKIP_WELCOME_KEY = 'seQRets_skipWelcome';
 
@@ -69,9 +68,6 @@ export function WelcomeCards({ onSelect }: WelcomeCardsProps) {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, ease: "easeIn" }}
     >
-      {/* ── Connectivity banner ── */}
-      <ConnectionBanner />
-
       {/* ── Action cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((card, i) => {

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Use Coinbase API (already in CSP connect-src, returns CORS headers)
 const PING_URL = 'https://api.coinbase.com/v2/prices/BTC-USD/buy';
-const PING_INTERVAL = 5_000; // 5 seconds
-const PING_TIMEOUT = 4_000; // 4 second fetch timeout
+const PING_INTERVAL = 5_000;
+const PING_TIMEOUT = 4_000;
 
 export function ConnectionStatus() {
   const [isOnline, setIsOnline] = useState(true);
@@ -30,14 +29,12 @@ export function ConnectionStatus() {
   }, []);
 
   useEffect(() => {
-    // Fast-path hints from browser events
     const handleOnline = () => { setIsOnline(true); checkConnectivity(); };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Periodic ping as source of truth
     checkConnectivity();
     const interval = setInterval(checkConnectivity, PING_INTERVAL);
 
@@ -50,14 +47,25 @@ export function ConnectionStatus() {
   }, [checkConnectivity]);
 
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className={`inline-block h-2 w-2 rounded-full ${
-          isOnline ? 'bg-red-500' : 'bg-green-500'
-        }`}
-      />
-      <span className={isOnline ? 'text-red-500' : 'text-green-500'}>
-        {isOnline ? 'Online' : 'Offline'}
+    <span
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+        isOnline
+          ? 'bg-red-500/10 border-red-500/30 text-red-500'
+          : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-500'
+      }`}
+    >
+      <span className="relative inline-flex h-2 w-2">
+        {isOnline && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
+        )}
+        <span
+          className={`relative inline-flex h-2 w-2 rounded-full ${
+            isOnline ? 'bg-red-500' : 'bg-green-500'
+          }`}
+        />
+      </span>
+      <span>
+        {isOnline ? 'Online — disconnect for safety' : 'Offline — safe to proceed'}
       </span>
     </span>
   );

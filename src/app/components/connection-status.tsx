@@ -33,14 +33,12 @@ export function ConnectionStatus() {
   useEffect(() => {
     setMounted(true);
 
-    // Fast-path hints from browser events
     const handleOnline = () => { setIsOnline(true); checkConnectivity(); };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Periodic ping as source of truth
     checkConnectivity();
     const interval = setInterval(checkConnectivity, PING_INTERVAL);
 
@@ -52,19 +50,30 @@ export function ConnectionStatus() {
     };
   }, [checkConnectivity]);
 
-  // Render consistent structure for SSR, update colors/text after mount
   const online = mounted ? isOnline : true;
 
   return (
-    <span className="inline-flex items-center gap-1.5" suppressHydrationWarning>
-      <span
-        suppressHydrationWarning
-        className={`inline-block h-2 w-2 rounded-full ${
-          online ? 'bg-red-500' : 'bg-green-500'
-        }`}
-      />
-      <span suppressHydrationWarning className={online ? 'text-red-500' : 'text-green-500'}>
-        {online ? 'Online' : 'Offline'}
+    <span
+      suppressHydrationWarning
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+        online
+          ? 'bg-red-500/10 border-red-500/30 text-red-500'
+          : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-500'
+      }`}
+    >
+      <span className="relative inline-flex h-2 w-2" suppressHydrationWarning>
+        {online && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
+        )}
+        <span
+          suppressHydrationWarning
+          className={`relative inline-flex h-2 w-2 rounded-full ${
+            online ? 'bg-red-500' : 'bg-green-500'
+          }`}
+        />
+      </span>
+      <span suppressHydrationWarning>
+        {online ? 'Online — disconnect for safety' : 'Offline — safe to proceed'}
       </span>
     </span>
   );
