@@ -790,7 +790,7 @@ export default function InstructionsPage() {
                         <div
                           className={cn(
                             'group relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                            isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-[#827b6f] dark:bg-[#2a2827] dark:hover:bg-black dark:hover:border-[#827b6f]'
+                            isDragging ? 'border-primary bg-primary/10' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-primary/60 dark:hover:bg-black dark:hover:border-primary/60'
                           )}
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}

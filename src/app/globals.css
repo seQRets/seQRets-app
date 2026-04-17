@@ -67,9 +67,10 @@
   border-width: 0.5px !important;
 }
 
-/* Step-indicator circle in forms: outlined gold (10% gold fill, gold text,
-   gold-dim border). Scoped to h-8 w-8 circles specifically so this doesn't
-   leak into switches, avatars, or other rounded-full elements. */
+/* Step-indicator circles in forms: outlined gold (10% gold fill, gold text,
+   gold-dim border). Scoped to h-7 w-7 and h-8 w-8 specifically so this
+   doesn't leak into switches, avatars, or other rounded-full elements. */
+.dark .h-7.w-7.rounded-full.bg-primary,
 .dark .h-8.w-8.rounded-full.bg-primary {
   background-color: hsla(38, 45%, 55%, 0.1);
   color: hsl(38, 48%, 62%);

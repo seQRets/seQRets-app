@@ -71,7 +71,7 @@ export default function ContactPage() {
                             <div className="flex items-center gap-2">
                                 <a
                                     href="mailto:hello@seqrets.app?subject=seQRets Support Request"
-                                    className="inline-flex items-center gap-2 rounded-md border px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted"
+                                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 font-medium bg-primary text-primary-foreground transition-colors hover:bg-primary/80 hover:shadow-md"
                                 >
                                     <Mail className="h-4 w-4" />
                                     hello@seqrets.app
@@ -102,7 +102,7 @@ export default function ContactPage() {
                             <div className="flex items-center gap-2 flex-wrap">
                                 <a
                                     href="mailto:seqrets@proton.me?subject=seQRets Support Request (Encrypted)"
-                                    className="inline-flex items-center gap-2 rounded-md border px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted"
+                                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 font-medium bg-primary text-primary-foreground transition-colors hover:bg-primary/80 hover:shadow-md"
                                 >
                                     <ShieldCheck className="h-4 w-4" />
                                     seqrets@proton.me
@@ -118,7 +118,7 @@ export default function ContactPage() {
                                     href="https://seqrets.app/pgp"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-md border px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted"
+                                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 font-medium bg-primary text-primary-foreground transition-colors hover:bg-primary/80 hover:shadow-md"
                                 >
                                     PGP Key
                                     <ExternalLink className="h-3 w-3" />
