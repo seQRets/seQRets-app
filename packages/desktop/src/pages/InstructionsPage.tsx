@@ -472,10 +472,10 @@ export default function InstructionsPage() {
                           </div>
                           {encryptUseKeyfile && (
                             <div className="pt-2">
-                              <Tabs className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 gap-2 bg-transparent p-0 h-auto">
-                                  <TabsTrigger value="generate" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Generate Keyfile</TabsTrigger>
-                                  <TabsTrigger value="upload" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Upload Keyfile</TabsTrigger>
+                              <Tabs defaultValue="generate" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="generate">Generate Keyfile</TabsTrigger>
+                                  <TabsTrigger value="upload">Upload Keyfile</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="generate" className="pt-4">
                                   <KeyfileGenerator onKeyfileGenerated={setEncryptKeyfile} onSmartCardSave={(label) => { setEncryptKeyfileWriteLabel(label); setShowEncryptKeyfileWriteSmartCard(true); }} />
@@ -658,10 +658,10 @@ export default function InstructionsPage() {
                           </div>
                           {encryptUseKeyfile && (
                             <div className="pt-2">
-                              <Tabs className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 gap-2 bg-transparent p-0 h-auto">
-                                  <TabsTrigger value="generate" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Generate Keyfile</TabsTrigger>
-                                  <TabsTrigger value="upload" className="bg-primary text-primary-foreground border border-primary rounded-md py-2 shadow-sm hover:bg-primary/80 hover:shadow-md transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md dark:bg-[#e8e1d5] dark:text-black dark:border-[#cbc5ba] dark:hover:bg-primary/80 dark:hover:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">Upload Keyfile</TabsTrigger>
+                              <Tabs defaultValue="generate" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="generate">Generate Keyfile</TabsTrigger>
+                                  <TabsTrigger value="upload">Upload Keyfile</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="generate" className="pt-4">
                                   <KeyfileGenerator onKeyfileGenerated={setEncryptKeyfile} onSmartCardSave={(label) => { setEncryptKeyfileWriteLabel(label); setShowEncryptKeyfileWriteSmartCard(true); }} />
