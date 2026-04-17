@@ -36,7 +36,7 @@ export default function AboutPage() {
                             </p>
                         </div>
                     </div>
-                    <p className="text-lg text-muted-foreground">v1.9.0 🚀 Liftoff</p>
+                    <p className="text-lg text-muted-foreground">v1.10.0 🕯️ Ember</p>
                     <p className="mt-1 text-muted-foreground max-w-xl mx-auto">
                         Encrypt, split, and secure your secrets with QR codes using Shamir's Secret Sharing.
                     </p>
@@ -46,21 +46,21 @@ export default function AboutPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <Shield className="h-6 w-6 text-primary" />
+                                <Shield className="h-6 w-6 text-[#fbbf24]" />
                                 <CardTitle>Security Architecture</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
                             <div className="flex items-start gap-2">
-                                <Lock className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                                <Lock className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#fbbf24]" />
                                 <p><span className="font-semibold text-foreground">XChaCha20-Poly1305</span> authenticated encryption (AEAD)</p>
                             </div>
                             <div className="flex items-start gap-2">
-                                <Key className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                                <Key className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#fbbf24]" />
                                 <p><span className="font-semibold text-foreground">Argon2id</span> key derivation (64MB memory, 4 iterations)</p>
                             </div>
                             <div className="flex items-start gap-2">
-                                <QrCode className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                                <QrCode className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#34d399]" />
                                 <p><span className="font-semibold text-foreground">Shamir's Secret Sharing</span> for threshold-based backup splitting</p>
                             </div>
                             <p className="pt-2 border-t text-xs">
@@ -72,7 +72,7 @@ export default function AboutPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <Github className="h-6 w-6 text-primary" />
+                                <Github className="h-6 w-6 text-[#38bdf8]" />
                                 <CardTitle>Open Source</CardTitle>
                             </div>
                         </CardHeader>
@@ -101,15 +101,15 @@ export default function AboutPage() {
                     <CardContent className="space-y-4 text-sm text-muted-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 rounded-lg border bg-muted/30 text-center">
-                                <p className="text-xl font-bold mb-2"><span className="text-primary">1.</span> <span className="text-foreground">Secure</span></p>
+                                <p className="text-xl font-bold mb-2"><span className="text-[#fbbf24]">1.</span> <span className="text-foreground">Secure</span></p>
                                 <p>Your secret is encrypted with a strong password (and optional keyfile) using military-grade cryptography.</p>
                             </div>
                             <div className="p-4 rounded-lg border bg-muted/30 text-center">
-                                <p className="text-xl font-bold mb-2"><span className="text-primary">2.</span> <span className="text-foreground">Split</span></p>
+                                <p className="text-xl font-bold mb-2"><span className="text-[#34d399]">2.</span> <span className="text-foreground">Split</span></p>
                                 <p>The encrypted data is split into multiple Qard backups using Shamir's Secret Sharing. No single Qard reveals anything.</p>
                             </div>
                             <div className="p-4 rounded-lg border bg-muted/30 text-center">
-                                <p className="text-xl font-bold mb-2"><span className="text-primary">3.</span> <span className="text-foreground">Share</span></p>
+                                <p className="text-xl font-bold mb-2"><span className="text-[#38bdf8]">3.</span> <span className="text-foreground">Share</span></p>
                                 <p>Print, download, or export your Qards. Give them to trusted family members, lawyers, or store in secure locations.</p>
                             </div>
                         </div>

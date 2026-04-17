@@ -59,7 +59,7 @@ export default function ContactPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <Mail className="h-6 w-6 text-primary" />
+                                <Mail className="h-6 w-6 text-[#34d399]" />
                                 <CardTitle>Send Email</CardTitle>
                             </div>
                             <CardDescription>General questions, feedback, and support</CardDescription>
@@ -90,7 +90,7 @@ export default function ContactPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <ShieldCheck className="h-6 w-6 text-primary" />
+                                <ShieldCheck className="h-6 w-6 text-[#fbbf24]" />
                                 <CardTitle>Send Encrypted Email</CardTitle>
                             </div>
                             <CardDescription>PGP-encrypted for sensitive inquiries</CardDescription>

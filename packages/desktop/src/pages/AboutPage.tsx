@@ -39,7 +39,7 @@ export default function AboutPage() {
                             </p>
                         </div>
                     </div>
-                    <p className="text-lg text-muted-foreground">v1.9.0 🚀 Liftoff</p>
+                    <p className="text-lg text-muted-foreground">v1.10.0 🕯️ Ember</p>
                     <p className="mt-1 text-muted-foreground max-w-xl mx-auto">
                         Encrypt, split, and secure your secrets with QR codes using Shamir's Secret Sharing.
                     </p>
