@@ -26,25 +26,28 @@
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 5% 8%;              /* #151314 soft dark */
-    --foreground: 37 10% 89%;           /* #e8e5df warm off-white */
-    --card: 20 5% 23%;                    /* #3d3937 warm dark gray */
-    --card-foreground: 37 10% 89%;      /* #e8e5df */
-    --popover: 20 5% 23%;               /* #3d3937 */
-    --popover-foreground: 37 10% 89%;   /* #e8e5df */
-    --primary: 37 10% 89%;             /* #e8e5df — light buttons on dark bg */
-    --primary-foreground: 0 7% 3%;      /* #080707 — dark text on light buttons */
-    --secondary: 340 4% 16%;           /* darker charcoal */
-    --secondary-foreground: 37 10% 89%;
-    --muted: 340 4% 25%;               /* dark warm gray — lightened for contrast */
-    --muted-foreground: 40 8% 55%;     /* warm medium gray */
-    --accent: 40 14% 79%;              /* #d3cdc1 warm tan accent */
-    --accent-foreground: 0 7% 3%;      /* #080707 */
-    --destructive: 0 62% 55%;          /* lighter red for dark bg legibility */
-    --destructive-foreground: 0 0% 98%;
-    --border: 348 3% 34%;               /* #5a5556 warm gray border */
-    --input: 348 3% 34%;               /* #5a5556 warm gray input border */
-    --ring: 37 10% 89%;                /* warm off-white ring */
+    /* Warm dark palette ported from the Recover app. See the Recover repo's
+       styles.css for the source values; we translate each hsl(H, S%, L%)
+       into Tailwind's space-separated "H S% L%" format. */
+    --background: 28 10% 8%;            /* warm near-black body */
+    --foreground: 30 15% 92%;           /* warm off-white text */
+    --card: 28 8% 12%;                  /* card surface */
+    --card-foreground: 30 15% 92%;
+    --popover: 28 8% 14%;
+    --popover-foreground: 30 15% 92%;
+    --primary: 38 48% 62%;              /* muted gold — buttons, highlights, active tabs */
+    --primary-foreground: 28 10% 8%;    /* near-black text on gold */
+    --secondary: 28 8% 16%;             /* subtle fill */
+    --secondary-foreground: 30 15% 92%;
+    --muted: 28 8% 14%;
+    --muted-foreground: 30 8% 62%;      /* readable muted gray */
+    --accent: 28 8% 16%;                /* surface-elevated, NOT gold — keeps TabsList subtle */
+    --accent-foreground: 30 15% 92%;
+    --destructive: 8 70% 55%;
+    --destructive-foreground: 28 10% 8%;
+    --border: 28 6% 22%;
+    --input: 28 6% 22%;
+    --ring: 38 48% 62%;
   }
 }
 
@@ -62,6 +65,22 @@
 
 .dark .dark-thin-border {
   border-width: 0.5px !important;
+}
+
+/* Step-indicator circle in forms: outlined gold (10% gold fill, gold text,
+   gold-dim border). Scoped to h-8 w-8 circles specifically so this doesn't
+   leak into switches, avatars, or other rounded-full elements. */
+.dark .h-8.w-8.rounded-full.bg-primary {
+  background-color: hsla(38, 45%, 55%, 0.1);
+  color: hsl(38, 48%, 62%);
+  border: 1px solid hsl(38, 35%, 45%);
+}
+
+/* Dropzone default: match Recover's surface-subtle + border-strong. Hover
+   stays driven by the component's existing `dark:hover:bg-black` utility. */
+.dark .border-dashed {
+  background-color: hsl(28 8% 14%);
+  border-color: hsl(28 6% 32%);
 }
 
 @media print {
