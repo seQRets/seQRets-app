@@ -54,6 +54,19 @@ Official release: **<a href="https://seqrets.app" target="_blank" rel="noopener 
 - **SHA-256 share integrity** (desktop only) — each Qard embeds a SHA-256 hash, verified automatically at generation and on restore. Printed cards display a truncated fingerprint for visual spot-checking.
 - **100% offline-capable** — the only optional network call is Bob
 
+## 🛟 The Lifeboat — Long-Term Recovery Guarantee
+
+Even if **seQRets disappears** — the website goes down, the company dissolves, the app stops being updated — your secrets are still recoverable.
+
+**[seQRets Recover](https://github.com/seQRets/seQRets-Recover)** is an independent, single-file recovery tool for the seQRets share format. One HTML file, ~200 lines of TypeScript, no install, no network. Open it in any browser on any machine, offline, and paste your Qards in.
+
+- 📥 **Download** `recover.html` from the [latest release](https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html)
+- 🔒 **Verify** — each release publishes a SHA-256 so you can confirm copies handed to heirs are untampered
+- 🏗️ **Build it yourself** from source — audit every line, archive it, mirror it, print it
+- 📜 **Open format** — `seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>` is plaintext, self-describing, and reimplementable in any language in an afternoon
+
+**Include a copy of `recover.html` in every inheritance packet you distribute.** Decades from now, your heirs don't need us — they just need any modern browser.
+
 ## 🔐 Security
 
 seQRets uses industry-standard primitives entirely client-side. **All cryptographic code lives in a single ~450-line file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts).** The desktop app additionally runs Argon2id + XChaCha20-Poly1305 natively in Rust via Tauri, so derived keys never enter the JS runtime.

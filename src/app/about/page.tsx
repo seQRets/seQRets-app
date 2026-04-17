@@ -4,7 +4,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Lock, Key, QrCode, Github } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Key, QrCode, Github, LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import { Header } from "../components/header";
 import { AppFooter } from "../components/app-footer";
@@ -113,6 +113,47 @@ export default function AboutPage() {
                                 <p>Print, download, or export your Qards. Give them to trusted family members, lawyers, or store in secure locations.</p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="mb-8">
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <LifeBuoy className="h-6 w-6 text-[#fbbf24]" />
+                            <CardTitle>The Lifeboat</CardTitle>
+                        </div>
+                        <CardDescription>Long-term recovery, even if seQRets disappears</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm text-muted-foreground">
+                        <p>
+                            <a href="https://github.com/seQRets/seQRets-Recover" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">seQRets Recover</a> is an independent, single-file recovery tool for the seQRets share format. One HTML file, ~200 lines of TypeScript, no install, no network. Open it in any modern browser, offline, and paste your Qards in.
+                        </p>
+                        <p>
+                            If this website goes down, the company dissolves, or the app stops being updated, the Lifeboat still works. Include a copy of <code className="text-xs px-1 py-0.5 rounded bg-muted">recover.html</code> in every inheritance packet you distribute — decades from now, your heirs don't need us.
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            <a
+                                href="https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground transition-all hover:bg-primary/80 hover:shadow-md"
+                            >
+                                <LifeBuoy className="h-3.5 w-3.5" />
+                                Download recover.html
+                            </a>
+                            <a
+                                href="https://github.com/seQRets/seQRets-Recover"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                            >
+                                <Github className="h-3.5 w-3.5" />
+                                View source
+                            </a>
+                        </div>
+                        <p className="pt-2 border-t text-xs">
+                            <em>Every release publishes a SHA-256 hash so you can verify the copy you hand to heirs is untampered.</em>
+                        </p>
                     </CardContent>
                 </Card>
 

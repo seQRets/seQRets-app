@@ -247,6 +247,52 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   let sectionNum = 1;
 
+  // ── The Lifeboat (Read This First) ──
+  addSectionHeader(`${sectionNum++}. How to Restore \u2014 Read This First`);
+
+  addTextBlock(
+    'This document contains credentials and instructions to restore the original secret(s). ' +
+    'To reassemble and decrypt the Qards listed below, you will need a recovery tool. ' +
+    'The recommended tool is seQRets Recover \u2014 nicknamed "the Lifeboat" \u2014 a single HTML file that works offline in any modern web browser. No install, no accounts, no network.'
+  );
+  currentY += 2;
+
+  doc.setFontSize(BODY_SIZE);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...PRIMARY_COLOR);
+  checkPageBreak(8);
+  doc.text('Download the Lifeboat:', MARGIN_L + 2, currentY);
+  currentY += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MUTED_COLOR);
+  checkPageBreak(6);
+  doc.text('https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html', MARGIN_L + 4, currentY);
+  currentY += 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...PRIMARY_COLOR);
+  checkPageBreak(8);
+  doc.text('Source code & verification hashes:', MARGIN_L + 2, currentY);
+  currentY += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MUTED_COLOR);
+  checkPageBreak(6);
+  doc.text('https://github.com/seQRets/seQRets-Recover', MARGIN_L + 4, currentY);
+  currentY += 8;
+
+  addTextBlock(
+    'Steps: (1) Download recover.html. (2) Turn off Wi-Fi and any other network connection. ' +
+    '(3) Open recover.html in a web browser by double-clicking it. (4) Paste or drag in the required number of Qards (the QR-code backups listed in this plan). ' +
+    '(5) Enter the password listed in this plan. (6) The original secret appears.'
+  );
+  currentY += 2;
+
+  addTextBlock(
+    'Verify before trusting: each recover.html release publishes a SHA-256 hash. Compare the hash of your downloaded file against the one on the release page before using it with real credentials. ' +
+    'Even if seqrets.app is no longer online when this plan is executed, the Lifeboat will still work \u2014 it has no dependencies beyond a web browser.'
+  );
+  currentY += 4;
+
   // ── Beneficiaries ──
   const beneficiaryRows = (plan.beneficiaries ?? []).map(b => [b.name, b.relationship, b.contactInfo, b.assignedAssets]);
   if (beneficiaryRows.some(rowHasData) || plan.distributionInstructions?.trim()) {
