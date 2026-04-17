@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { playChime } from '@/lib/chime';
 import type { RawInstruction, DecryptInstructionRequest, EncryptedInstruction } from '@/lib/types';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
 import { DEFAULT_CARD_CAPACITY, type CardItem } from '@/lib/smartcard';
@@ -229,6 +230,7 @@ export default function InstructionsPage() {
     if (file && file.type === 'application/json') {
       setDecryptFile(file);
       setDecryptFileName(file.name);
+      playChime();
     } else {
       toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .json instructions file.' });
     }
