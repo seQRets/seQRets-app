@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ConnectionStatus } from "./connection-status";
+import { ConnectionPill } from "./connection-status";
 
 export function AppFooter() {
     return (
@@ -13,7 +13,7 @@ export function AppFooter() {
                 <span className="text-muted-foreground">·</span>
                 <Link to="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
             </div>
-            <p className="mt-3"><ConnectionStatus /></p>
+            <p className="mt-3"><ConnectionPill /></p>
         </footer>
     );
 }

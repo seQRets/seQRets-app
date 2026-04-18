@@ -14,6 +14,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { UpdateChecker } from '@/components/update-checker';
+import { ConnectionDot } from '@/components/connection-status';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import {
@@ -53,10 +54,15 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Open main menu</span>
-        </Button>
+        <div className="relative md:hidden">
+          <Button variant="outline" size="icon" className="h-12 w-12">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Open main menu</span>
+          </Button>
+          <span className="absolute -top-0.5 -right-0.5 pointer-events-none">
+            <ConnectionDot />
+          </span>
+        </div>
       </SheetTrigger>
       <SheetContent side="right" className="w-64 p-0 flex flex-col">
           <SheetHeader className="p-4 border-b">
@@ -189,10 +195,15 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
     <div className="hidden md:flex items-center gap-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
-          </Button>
+          <div className="relative">
+            <Button variant="outline" size="icon" className="h-12 w-12">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+            <span className="absolute -top-1 -right-1 pointer-events-none">
+              <ConnectionDot />
+            </span>
+          </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {isHomePage ? (
@@ -334,7 +345,7 @@ export function Header(props: HeaderProps) {
     }, []);
 
     if (!isClient) {
-        return <div className="absolute top-4 right-4 z-50 h-10 w-10 md:h-auto md:w-auto" />;
+        return <div className="absolute top-4 right-4 z-50 h-12 w-12 md:h-auto md:w-auto" />;
     }
 
     return (
