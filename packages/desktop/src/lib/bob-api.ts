@@ -81,7 +81,9 @@ seQRets has no servers, no accounts, and no data collection. Nothing is ever sen
 **Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\`) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
 
 **How users get it:**
+- Overview page on the website: https://seqrets.app/recover
 - Download \`recover.html\` from the latest release: https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html
+- Hosted version (runs in any modern browser, no install): https://seqrets.github.io/seQRets-Recover/
 - Every release publishes a SHA-256 hash so the copy can be verified before being handed to heirs
 - Build it from source — \`npm install && npm run build\` produces the single HTML file
 

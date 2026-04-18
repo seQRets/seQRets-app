@@ -409,6 +409,22 @@ export default function InstructionsPage() {
             <p className="text-muted-foreground text-sm mb-4">
               Create an inheritance plan or encrypt a document for your heirs. Decrypt and view previously encrypted plans.
             </p>
+            <Alert className="mb-6 border-accent [&>svg]:text-primary">
+              <ShieldCheck className="h-4 w-4" />
+              <AlertTitle>Recovery tool available for heirs</AlertTitle>
+              <AlertDescription>
+                Your exported PDF includes instructions for a standalone recovery tool your heirs can use if this app is ever unavailable — a single HTML file that works offline in any browser. Consider saving a copy alongside your Qards.
+                <div className="mt-2 flex flex-col sm:flex-row gap-2 text-xs">
+                  <a href="https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    Download recover.html (latest release)
+                  </a>
+                  <span className="hidden sm:inline text-muted-foreground">·</span>
+                  <a href="https://seqrets.github.io/seQRets-Recover/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    Open hosted version
+                  </a>
+                </div>
+              </AlertDescription>
+            </Alert>
             <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); handleEncryptReset(); handleDecryptReset(); }}>
               <TabsList className="grid w-full grid-cols-3 mb-6 dark:shadow-[0_0_8px_rgba(0,0,0,0.5)]">
                 <TabsTrigger value="encrypt"><Lock className="mr-2 h-4 w-4" /> Encrypt Plan</TabsTrigger>
