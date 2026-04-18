@@ -54,7 +54,7 @@ Official release: **<a href="https://seqrets.app" target="_blank" rel="noopener 
 - **SHA-256 share integrity** (desktop only) — each Qard embeds a SHA-256 hash, verified automatically at generation and on restore. Printed cards display a truncated fingerprint for visual spot-checking.
 - **100% offline-capable** — the only optional network call is Bob
 
-## 🛟 The Lifeboat — Long-Term Recovery Guarantee
+## 🛟 seQRets Recover — Long-Term Recovery
 
 Even if **seQRets disappears** — the website goes down, the company dissolves, the app stops being updated — your secrets are still recoverable.
 
@@ -65,7 +65,7 @@ Even if **seQRets disappears** — the website goes down, the company dissolves,
 - 🏗️ **Build it yourself** from source — audit every line, archive it, mirror it, print it
 - 📜 **Open format** — `seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>` is plaintext, self-describing, and reimplementable in any language in an afternoon
 
-**Include a copy of `recover.html` in every inheritance packet you distribute.** Decades from now, your heirs don't need us — they just need any modern browser.
+**Save a copy of `recover.html` alongside your Qards.** Anyone holding the threshold of Qards plus the password can recover the secret with nothing but a web browser — no installation, no account, no dependency on this project still being around.
 
 ## 🔐 Security
 

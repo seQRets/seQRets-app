@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Lock, FileText, Combine, ShieldCheck, WifiOff, LifeBuoy } from "lucide-react";
+import { Lock, FileText, Combine, ShieldCheck, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SKIP_WELCOME_KEY = 'seQRets_skipWelcome';
@@ -131,13 +131,6 @@ export function WelcomeCards({ onSelect, variant = 'web' }: WelcomeCardsProps) {
               No accounts, no servers, no data collection. Lose your password or Qards, and it's gone forever.
             </p>
           </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-border/60 flex items-start gap-2.5 text-sm">
-          <LifeBuoy className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#fbbf24' }} />
-          <p className="text-muted-foreground">
-            <strong className="text-card-foreground">Long-term recovery.</strong>{' '}
-            Even if this app disappears, you can still restore with <a href="https://github.com/seQRets/seQRets-Recover" target="_blank" rel="noopener noreferrer" className="underline text-card-foreground hover:text-primary">seQRets Recover</a> — a single offline HTML file.
-          </p>
         </div>
       </motion.div>
 

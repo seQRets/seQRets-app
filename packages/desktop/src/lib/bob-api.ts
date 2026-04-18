@@ -75,17 +75,17 @@ v1.10.0 "Ember" — Available as a web app (Next.js) and native desktop app (Tau
 ### Zero-Knowledge Architecture
 seQRets has no servers, no accounts, and no data collection. Nothing is ever sent to a server — all encryption and decryption happens entirely on the user's device. There is no backend, no database, no analytics, and no telemetry. The developers never see user data and cannot recover secrets. The web app is a static site hosted on GitHub Pages with a service worker for offline support. The desktop app is a self-contained binary. This is true zero-knowledge: we don't just promise not to look at your data — we architecturally cannot.
 
-### The Lifeboat — Long-Term Recovery Guarantee
-**seQRets Recover** (nicknamed "the Lifeboat") is a separate, independent recovery tool at https://github.com/seQRets/seQRets-Recover. It is a single \`recover.html\` file — ~200 lines of TypeScript, all dependencies inlined — that can reassemble and decrypt seQRets Qards with nothing but a web browser. No install, no network, no backend.
+### seQRets Recover — Long-Term Recovery
+**seQRets Recover** is a separate, independent recovery tool at https://github.com/seQRets/seQRets-Recover. It is a single \`recover.html\` file — ~200 lines of TypeScript, all dependencies inlined — that can reassemble and decrypt seQRets Qards with nothing but a web browser. No install, no network, no backend.
 
-**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. The Lifeboat is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\`) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
+**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\`) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
 
 **How users get it:**
 - Download \`recover.html\` from the latest release: https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html
 - Every release publishes a SHA-256 hash so the copy can be verified before being handed to heirs
 - Build it from source — \`npm install && npm run build\` produces the single HTML file
 
-**When to mention it:** any question about longevity, trust, or what happens if seQRets goes away. It is especially relevant for heir/inheritance scenarios — users should include a copy of \`recover.html\` with their inheritance packet so heirs can recover independently decades later. Mention it proactively when users ask "what if you disappear?" or express concern about dependency on the app's continued existence.
+**When to mention it:** only surface the Recovery Tool when the user explicitly asks about longevity, vendor risk, or what happens if seQRets goes away. Do NOT proactively bring it up — constant reassurance about the company disappearing undermines confidence in the product. If asked, suggest the user save a copy of \`recover.html\` alongside their Qards so it's available later if needed.
 
 ## How to Use seQRets
 

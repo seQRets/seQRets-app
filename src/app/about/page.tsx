@@ -120,7 +120,7 @@ export default function AboutPage() {
                     <CardHeader>
                         <div className="flex items-center gap-3">
                             <LifeBuoy className="h-6 w-6 text-[#fbbf24]" />
-                            <CardTitle>The Lifeboat</CardTitle>
+                            <CardTitle>seQRets Recover</CardTitle>
                         </div>
                         <CardDescription>Long-term recovery, even if seQRets disappears</CardDescription>
                     </CardHeader>
@@ -129,7 +129,7 @@ export default function AboutPage() {
                             <a href="https://github.com/seQRets/seQRets-Recover" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">seQRets Recover</a> is an independent, single-file recovery tool for the seQRets share format. One HTML file, ~200 lines of TypeScript, no install, no network. Open it in any modern browser, offline, and paste your Qards in.
                         </p>
                         <p>
-                            If this website goes down, the company dissolves, or the app stops being updated, the Lifeboat still works. Include a copy of <code className="text-xs px-1 py-0.5 rounded bg-muted">recover.html</code> in every inheritance packet you distribute — decades from now, your heirs don't need us.
+                            Save a copy of <code className="text-xs px-1 py-0.5 rounded bg-muted">recover.html</code> alongside your Qards. Anyone holding the threshold of Qards plus the password can recover the secret with nothing but a web browser.
                         </p>
                         <div className="flex flex-wrap gap-2 pt-2">
                             <a

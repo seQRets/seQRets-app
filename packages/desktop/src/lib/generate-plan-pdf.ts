@@ -247,13 +247,13 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   let sectionNum = 1;
 
-  // ── The Lifeboat (Read This First) ──
+  // ── seQRets Recover (Read This First) ──
   addSectionHeader(`${sectionNum++}. How to Restore \u2014 Read This First`);
 
   addTextBlock(
     'This document contains credentials and instructions to restore the original secret(s). ' +
     'To reassemble and decrypt the Qards listed below, you will need a recovery tool. ' +
-    'The recommended tool is seQRets Recover \u2014 nicknamed "the Lifeboat" \u2014 a single HTML file that works offline in any modern web browser. No install, no accounts, no network.'
+    'The recommended tool is seQRets Recover \u2014 a single HTML file that works offline in any modern web browser. No install, no accounts, no network.'
   );
   currentY += 2;
 
@@ -261,7 +261,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...PRIMARY_COLOR);
   checkPageBreak(8);
-  doc.text('Download the Lifeboat:', MARGIN_L + 2, currentY);
+  doc.text('Download seQRets Recover:', MARGIN_L + 2, currentY);
   currentY += 5;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MUTED_COLOR);
@@ -289,7 +289,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   addTextBlock(
     'Verify before trusting: each recover.html release publishes a SHA-256 hash. Compare the hash of your downloaded file against the one on the release page before using it with real credentials. ' +
-    'Even if seqrets.app is no longer online when this plan is executed, the Lifeboat will still work \u2014 it has no dependencies beyond a web browser.'
+    'Even if seqrets.app is no longer online when this plan is executed, Recover will still work \u2014 it has no dependencies beyond a web browser.'
   );
   currentY += 4;
 
