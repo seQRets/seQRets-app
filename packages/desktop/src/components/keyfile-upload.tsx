@@ -171,7 +171,7 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName, onSmartC
             e.stopPropagation();
             onSmartCardLoad();
           }}
-          className="mt-3 text-xs px-2 bg-[#cbc5ba] border-[#cbc5ba] hover:bg-[#b5ad9f] hover:border-[#b5ad9f] dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black"
+          className="mt-3 text-xs px-2 dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black"
         >
           <CreditCard className="mr-1.5 h-3.5 w-3.5 shrink-0" />
           Smart Card

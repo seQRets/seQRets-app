@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePathname } from 'next/navigation';
+import { ConnectionDot } from '@/app/components/connection-status';
 
 interface HeaderProps {
     activeTab?: 'create' | 'restore';
@@ -54,10 +55,15 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Open main menu</span>
-        </Button>
+        <div className="relative md:hidden">
+          <Button variant="outline" size="icon">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Open main menu</span>
+          </Button>
+          <span className="absolute -top-0.5 -right-0.5 pointer-events-none">
+            <ConnectionDot />
+          </span>
+        </div>
       </SheetTrigger>
       <SheetContent side="right" className="w-64 p-0 flex flex-col">
           <SheetHeader className="p-4 border-b">
@@ -182,10 +188,15 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
     <div className="hidden md:flex items-center gap-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
-          </Button>
+          <div className="relative">
+            <Button variant="outline" size="icon">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+            <span className="absolute -top-0.5 -right-0.5 pointer-events-none">
+              <ConnectionDot />
+            </span>
+          </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {isHomePage ? (

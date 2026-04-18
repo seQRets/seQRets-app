@@ -112,7 +112,7 @@ export function KeyfileGenerator({ onKeyfileGenerated, onSmartCardSave }: Keyfil
                   variant="outline"
                   size="sm"
                   onClick={() => onSmartCardSave(keyfileLabel.trim() || 'seqrets-keyfile.bin')}
-                  className="bg-[#cbc5ba] border-[#cbc5ba] hover:bg-[#b5ad9f] hover:border-[#b5ad9f] dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black"
+                  className="dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black"
                 >
                   <CreditCard className="mr-2 h-4 w-4" /> Smart Card
                 </Button>

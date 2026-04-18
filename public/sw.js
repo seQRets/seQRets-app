@@ -1,7 +1,7 @@
-// seQRets Service Worker — v1.10.1
+// seQRets Service Worker — v1.10.2
 // Network-first for hashed assets & navigation, cache-first for stable assets
 
-const CACHE_VERSION = 'seqrets-v1.10.1';
+const CACHE_VERSION = 'seqrets-v1.10.2';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',

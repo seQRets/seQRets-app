@@ -104,7 +104,7 @@ export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen, onImportV
               </Button>
             )}
             {onSmartCardRead && (
-              <Button variant="outline" onClick={onSmartCardRead} className="w-full text-sm px-2 dark-thin-border bg-[#cbc5ba] border-[#cbc5ba] hover:bg-[#b5ad9f] hover:border-[#b5ad9f] dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black">
+              <Button variant="outline" onClick={onSmartCardRead} className="w-full text-sm px-2 dark-thin-border dark:bg-[#605c53] dark:text-white dark:border-black dark:hover:bg-[#232122] dark:hover:text-white dark:hover:border-black">
                   <CreditCard className="mr-1.5 h-4 w-4 shrink-0" />
                   Smart Card
               </Button>

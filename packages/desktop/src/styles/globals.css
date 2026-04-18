@@ -4,25 +4,29 @@
 
 @layer base {
   :root {
-    --background: 37 10% 89%;           /* #e8e5df warm beige */
-    --foreground: 350 5% 13%;           /* #231f20 near-black */
-    --card: 0 0% 99%;                   /* #fdfdfd almost white */
-    --card-foreground: 350 5% 13%;      /* #231f20 */
-    --popover: 0 0% 99%;               /* #fdfdfd */
-    --popover-foreground: 350 5% 13%;   /* #231f20 */
-    --primary: 350 5% 13%;             /* #231f20 near-black — dark elegant buttons */
-    --primary-foreground: 37 10% 89%;   /* #e8e5df — light text on dark buttons */
-    --secondary: 40 14% 85%;           /* lighter warm tan */
-    --secondary-foreground: 350 5% 13%; /* #231f20 */
-    --muted: 40 10% 90%;               /* warm light gray */
-    --muted-foreground: 340 4% 40%;    /* warm medium gray */
-    --accent: 40 14% 79%;              /* #d3cdc1 warm tan */
-    --accent-foreground: 350 5% 13%;   /* #231f20 */
-    --destructive: 0 72% 51%;          /* softened red */
+    /* Professional warm light palette — mirror to the dark theme's gold-on-black.
+       Body is a warm off-white (not pure white), cards lift slightly with a
+       subtle paper-like shadow, and a muted gold is reserved for step
+       indicators and other accent touches so the UI reads as mature and sober. */
+    --background: 37 14% 91%;           /* warm off-white, enough contrast from cards */
+    --foreground: 30 12% 14%;           /* warm near-black */
+    --card: 0 0% 100%;                  /* crisp white card */
+    --card-foreground: 30 12% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 12% 14%;
+    --primary: 30 12% 14%;              /* warm near-black — solid CTAs */
+    --primary-foreground: 40 14% 94%;
+    --secondary: 40 14% 88%;            /* warm tan surface */
+    --secondary-foreground: 30 12% 14%;
+    --muted: 40 12% 91%;                /* slightly lighter than body for subtle surfaces */
+    --muted-foreground: 30 6% 40%;      /* warm medium gray */
+    --accent: 40 14% 86%;               /* warm tan surface — subtle, mirrors dark theme's subtle accent */
+    --accent-foreground: 30 12% 14%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 99%;
-    --border: 40 12% 83%;              /* warm tan border */
-    --input: 40 12% 83%;               /* warm tan input border */
-    --ring: 350 5% 13%;                /* near-black ring */
+    --border: 40 14% 82%;               /* warm tan border, slightly deeper for definition */
+    --input: 40 14% 82%;
+    --ring: 38 42% 50%;                 /* muted gold focus ring */
     --radius: 0.5rem;
   }
   .dark {
@@ -65,9 +69,16 @@
   border-width: 0.5px !important;
 }
 
-/* Step-indicator circles in forms: outlined gold (10% gold fill, gold text,
-   gold-dim border). Scoped to h-7 w-7 and h-8 w-8 specifically so this
+/* Step-indicator circles in forms: outlined style in both themes.
+   Light theme uses warm charcoal on tinted charcoal; dark theme uses
+   outlined gold. Scoped to h-7 w-7 and h-8 w-8 specifically so this
    doesn't leak into switches, avatars, or other rounded-full elements. */
+.h-7.w-7.rounded-full.bg-primary,
+.h-8.w-8.rounded-full.bg-primary {
+  background-color: hsla(30, 12%, 14%, 0.06);
+  color: hsl(30, 12%, 18%);
+  border: 1px solid hsl(30, 10%, 35%);
+}
 .dark .h-7.w-7.rounded-full.bg-primary,
 .dark .h-8.w-8.rounded-full.bg-primary {
   background-color: hsla(38, 45%, 55%, 0.1);
@@ -75,8 +86,8 @@
   border: 1px solid hsl(38, 35%, 45%);
 }
 
-/* Dropzone default: match Recover's surface-subtle + border-strong. Hover
-   stays driven by the component's existing `dark:hover:bg-black` utility. */
+/* Dropzone dark-theme treatment retained; light theme uses the
+   component's inline bg-muted / hover:bg-[#cbc5ba] styling. */
 .dark .border-dashed {
   background-color: hsl(28 8% 14%);
   border-color: hsl(28 6% 32%);
