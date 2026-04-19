@@ -84,6 +84,7 @@ seQRets has no servers, no accounts, and no data collection. Nothing is ever sen
 - Overview page on the website: https://seqrets.app/recover
 - Download \`recover.html\` from the latest release: https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html
 - Hosted version (runs in any modern browser, no install): https://seqrets.github.io/seQRets-Recover/
+- **Referenced inside the Inheritance Plan itself (as of v1.10.3)** — Section 6 (default "How to Restore" steps) lists \`recover.html\` as a fallback under step 1, and Section 8 (Emergency Access procedure) pre-fills with a default that points back at Section 6. Heirs who open the decrypted plan PDF see the tool mentioned inline — no in-app alerts are used, because those surface in the wrong audience (the plan author, not the heir).
 - Every release publishes a SHA-256 hash so the copy can be verified before being handed to heirs
 - Build it from source — \`npm install && npm run build\` produces the single HTML file
 
