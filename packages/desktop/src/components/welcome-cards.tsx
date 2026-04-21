@@ -75,7 +75,7 @@ export function WelcomeCards({ onSelect }: WelcomeCardsProps) {
               transition={{ delay: i * 0.08, duration: 0.35, ease: "easeOut" }}
               whileHover={{ scale: 1.04, transition: { duration: 0.15 } }}
               whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
-              className="flex flex-col items-center justify-center aspect-square gap-4 rounded-xl border border-border bg-card p-6 sm:p-8 text-center cursor-pointer hover:shadow-xl hover:bg-accent transition-[background-color,box-shadow] shadow-md dark:shadow-[0_6px_20px_rgba(0,0,0,0.55)] dark:hover:shadow-[0_10px_28px_rgba(0,0,0,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex flex-col items-center justify-center aspect-square gap-4 rounded-xl border border-border/50 bg-card p-6 sm:p-8 text-center cursor-pointer hover:shadow-xl hover:bg-accent transition-[background-color,box-shadow] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.8)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div
                 className="flex h-14 w-14 items-center justify-center rounded-full"
