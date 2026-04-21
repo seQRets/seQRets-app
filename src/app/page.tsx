@@ -144,7 +144,7 @@ function App() {
           )}
         </AnimatePresence>
 
-        <AppFooter />
+        {!showWelcomeCards && <AppFooter />}
       </div>
     </main>
   );

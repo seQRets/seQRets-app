@@ -137,7 +137,7 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
-        <AppFooter />
+        {!showWelcomeCards && <AppFooter />}
       </div>
     </main>
   );
