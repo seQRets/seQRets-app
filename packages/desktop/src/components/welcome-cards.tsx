@@ -29,12 +29,12 @@ type CardDef = {
 // Dark: muted gold icon on a subtle gold-tinted badge, matching the rest of the dark theme.
 const LIGHT_PALETTE: CardPalette = {
   color: "hsl(45 90% 65%)",
-  bgColor: "hsl(var(--primary))",
+  bgColor: "#000",
 };
 
 const DARK_PALETTE: CardPalette = {
   color: "hsl(var(--primary))",
-  bgColor: "hsl(var(--primary) / 0.12)",
+  bgColor: "#000",
 };
 
 const cards: CardDef[] = [
