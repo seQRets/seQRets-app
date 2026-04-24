@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Header } from "../components/header";
 import { AppFooter } from "../components/app-footer";
 import Image from "next/image";
+import { VERSION_STRING } from "@/generated/version";
 export default function AboutPage() {
     return (
         <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12">
@@ -36,7 +37,7 @@ export default function AboutPage() {
                             </p>
                         </div>
                     </div>
-                    <p className="text-lg text-muted-foreground">v1.10.6 🔥 Ignition</p>
+                    <p className="text-lg text-muted-foreground">{VERSION_STRING}</p>
                     <p className="mt-1 text-muted-foreground max-w-xl mx-auto">
                         Encrypt, split, and secure your secrets with QR codes using Shamir's Secret Sharing.
                     </p>
