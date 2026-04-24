@@ -27,7 +27,7 @@ These files must stay in sync when modified:
 2. **Welcome cards** — `src/app/components/welcome-cards.tsx` ↔ `packages/desktop/src/components/welcome-cards.tsx`
    - Web has desktop app upsell; desktop says "Native Rust crypto" + smart card features
    - localStorage key: `seQRets_skipWelcome`
-3. **Version bumps touch 18 files** — see `memory.md` § Version Management for the full list. Don't blindly sed — dependency versions like `^1.4.1` will be corrupted.
+3. **Version bumps** — run `npm run bump -- <x.y.z> [codename]`. The script edits 5 mechanical files (root/workspace package.json × 3, Cargo.toml, tauri.conf.json) and regenerates lockfiles. UI footers, service worker, and Bob prompts read the version from `scripts/generate-version.mjs` output at build time — don't hand-edit. The bump script prints a stale-doc review checklist after running; eyeball those before tagging a release.
 
 ## Key Architecture Differences: Web vs Desktop
 

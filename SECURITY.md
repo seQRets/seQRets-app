@@ -4,8 +4,11 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.10.x  | Yes       |
-| < 1.10  | No        |
+| Latest minor release | ✓ Security fixes backported as needed |
+| Previous minor releases | Best-effort — please upgrade |
+| Anything older | ✗ Unsupported |
+
+The current release is listed in [`package.json`](package.json) (`version`) and on the in-app footer. Only the latest minor series receives guaranteed fixes; earlier releases may still work but will not receive security updates.
 
 ## Reporting a Vulnerability
 
