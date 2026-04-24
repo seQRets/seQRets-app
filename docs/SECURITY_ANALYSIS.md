@@ -1,6 +1,6 @@
 # seQRets Desktop App — Security Analysis
 
-> **Audit Date:** April 2026 · **App Version:** 1.10.6 · **Auditor:** Independent code review via Claude (Anthropic)
+> **Audit Date:** April 2026 · **App Version:** 1.10.7 · **Auditor:** Independent code review via Claude (Anthropic)
 > **Scope:** Full source audit of `packages/desktop/`, `packages/crypto/`, and `src-tauri/` (Rust backend)
 
 ---
