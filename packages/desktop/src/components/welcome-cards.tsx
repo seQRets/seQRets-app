@@ -142,7 +142,7 @@ export function WelcomeCards({ onSelect }: WelcomeCardsProps) {
             Don&rsquo;t show this screen on startup
           </span>
         </label>
-        <p className="text-xs text-muted-foreground">{VERSION_STRING}</p>
+        <p className="text-sm text-muted-foreground">{VERSION_STRING}</p>
       </motion.div>
     </motion.div>
   );
