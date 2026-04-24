@@ -24,9 +24,9 @@ npx tsc --noEmit -p packages/desktop/tsconfig.json  # Desktop type check
 These files must stay in sync when modified:
 
 1. **Bob AI system prompt** — `src/ai/flows/ask-bob-flow.ts` ↔ `packages/desktop/src/lib/bob-api.ts`
-2. **Welcome guide** — `src/app/components/welcome-guide.tsx` ↔ `packages/desktop/src/components/welcome-guide.tsx`
-   - Web has desktop app upsell; desktop has "zero knowledge" line + smart card features
-   - localStorage key: `seQRets_welcomeGuideShown_v2`
+2. **Welcome cards** — `src/app/components/welcome-cards.tsx` ↔ `packages/desktop/src/components/welcome-cards.tsx`
+   - Web has desktop app upsell; desktop says "Native Rust crypto" + smart card features
+   - localStorage key: `seQRets_skipWelcome`
 3. **Version bumps touch 18 files** — see `memory.md` § Version Management for the full list. Don't blindly sed — dependency versions like `^1.4.1` will be corrupted.
 
 ## Key Architecture Differences: Web vs Desktop
