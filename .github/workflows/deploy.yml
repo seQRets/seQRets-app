@@ -36,6 +36,9 @@ jobs:
       - name: Build crypto package
         run: npm run build:crypto
 
+      - name: Generate version module
+        run: npm run generate:version
+
       - name: Build Next.js static export
         run: npx next build
 
