@@ -111,7 +111,7 @@ export function WelcomeCards({ onSelect, variant = 'web' }: WelcomeCardsProps) {
             <p className="text-muted-foreground">
               <strong className="text-card-foreground">Runs locally</strong>
               {variant === 'web'
-                ? <> — consider the <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer" className="underline text-card-foreground hover:text-primary">desktop app</a> for max security.</>
+                ? <> — <a href="/go-pro" className="underline text-card-foreground hover:text-primary">desktop app coming soon</a> for max security.</>
                 : <> — Native Rust crypto, this machine only.</>}
             </p>
           </div>

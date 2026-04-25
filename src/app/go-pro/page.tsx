@@ -57,14 +57,13 @@ export default function GoProPage() {
                     <div className="flex items-center justify-center gap-2 mb-2">
                         <Rocket className="h-6 w-6 text-primary" />
                         <h2 className="text-2xl font-bold">Go Pro</h2>
+                        <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                            Coming Soon
+                        </span>
                     </div>
                     <p className="text-muted-foreground max-w-xl mx-auto">
                         Maximum security for your most valuable secrets.
                     </p>
-                    <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer"
-                       className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors">
-                        Browse the shop <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
                 </div>
 
                 {/* Why Upgrade */}
@@ -176,14 +175,12 @@ export default function GoProPage() {
 
                 {/* CTA */}
                 <div className="text-center mb-8">
-                    <a href="https://seqrets.app/shop" target="_blank" rel="noopener noreferrer">
-                        <Button size="lg" className="text-lg px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-lg transition-all">
-                            Get seQRets Desktop
-                            <ExternalLink className="ml-2 h-5 w-5" />
-                        </Button>
-                    </a>
+                    <Button size="lg" disabled className="text-lg px-8 py-6 bg-primary/60 text-primary-foreground cursor-not-allowed">
+                        Coming Soon — seQRets Desktop
+                        <Rocket className="ml-2 h-5 w-5" />
+                    </Button>
                     <p className="text-xs text-muted-foreground mt-3">
-                        Available for macOS, Windows, and Linux.
+                        Native Rust crypto, JavaCard smart cards, and more. Launching for macOS, Windows, and Linux — bundled with smart cards and a reader.
                     </p>
                 </div>
 
