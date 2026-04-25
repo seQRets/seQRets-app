@@ -51,7 +51,7 @@ Official release: **<a href="https://seqrets.app" target="_blank" rel="noopener 
 - **JavaCard smart card** storage (desktop only) — shares, vaults, keyfiles, or plans on JCOP3 hardware with optional PIN protection
 - **Optional keyfile** as a second factor in addition to the password
 - **Helper tools** — CSPRNG password generator, BIP-39 seed generator, Bitcoin ticker, Bob AI assistant (optional, user-provided Gemini key)
-- **SHA-256 share integrity** (desktop only) — each Qard embeds a SHA-256 hash, verified automatically at generation and on restore. Printed cards display a truncated fingerprint for visual spot-checking.
+- **SHA-256 share integrity** — every Qard (web and desktop) embeds a SHA-256 hash and validates it at generation and on restore; corrupted or tampered Qards are detected before decryption. Desktop additionally surfaces a green shield indicator at restore time and prints a truncated fingerprint on physical cards for visual spot-checking.
 - **100% offline-capable** — the only optional network call is Bob
 
 ## 🛟 seQRets Recover — Long-Term Recovery
