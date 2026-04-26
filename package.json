@@ -60,13 +60,14 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "npm:types-react@rc",
     "@types/react-dom": "npm:types-react-dom@rc",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.10",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.3.3"
   },
   "overrides": {
     "qs": "^6.14.1",
     "fast-xml-parser": "5.3.4",
-    "dompurify": "^3.4.0"
+    "dompurify": "^3.4.0",
+    "postcss": "^8.5.10"
   }
 }
