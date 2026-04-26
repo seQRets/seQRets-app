@@ -230,6 +230,8 @@ export function CreateSharesForm() {
   useEffect(() => {
     if (totalShares < requiredShares) {
         setRequiredShares(totalShares);
+    } else if (totalShares >= 2 && requiredShares < 2) {
+        setRequiredShares(2);
     }
   }, [totalShares, requiredShares]);
 
@@ -477,11 +479,25 @@ export function CreateSharesForm() {
                                     <Label htmlFor="total-shares">Total Qards ({totalShares})</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                        <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: total Qards</span></button>
+                                        <button>
+                                            {totalShares === 1
+                                                ? <TriangleAlert className="h-4 w-4 fill-red-500 text-white" />
+                                                : <HelpCircle className="h-4 w-4 text-primary" />}
+                                            <span className="sr-only">{totalShares === 1 ? 'Warning: single Qard' : 'Help: total Qards'}</span>
+                                        </button>
                                         </PopoverTrigger>
                                         <PopoverContent className="text-sm">
-                                        <p className="font-bold mb-2">Total Qards</p>
-                                        This is the total number of QR code backups (Qards) that will be created. You can distribute these among family members, lawyers, or secure physical locations.
+                                        {totalShares === 1 ? (
+                                            <>
+                                                <p className="font-bold mb-2 text-red-500">Single point of failure</p>
+                                                <p>One Qard, no backup. If it's damaged, lost, or fades, the secret is unrecoverable. Consider 2-of-3 for redundancy.</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p className="font-bold mb-2">Total Qards</p>
+                                                This is the total number of QR code backups (Qards) that will be created. You can distribute these among family members, lawyers, or secure physical locations.
+                                            </>
+                                        )}
                                         </PopoverContent>
                                     </Popover>
                                 </div>
