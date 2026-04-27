@@ -22,6 +22,7 @@ const features = [
     { name: 'Inheritance Plan (in-app builder)', web: false, desktop: true },
     { name: 'JavaCard smart card support', web: false, desktop: true },
     { name: 'Visible Qard integrity verification', web: false, desktop: true },
+    { name: 'Printed SHA-256 fingerprint on every Qard', web: false, desktop: true },
     { name: 'Encryption runs outside the browser', web: false, desktop: true },
     { name: 'Securely erases keys from memory', web: false, desktop: true },
     { name: 'Safe from malicious browser add-ons', web: false, desktop: true },

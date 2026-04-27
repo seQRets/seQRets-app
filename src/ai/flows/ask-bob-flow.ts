@@ -169,7 +169,13 @@ const cryptoDetails = `
     *   **At restore (web and desktop):** Shares are automatically verified when scanned or imported. If a hash mismatch is detected, an error is raised before decryption is attempted.
     *   **Visual indicator (desktop only):** Desktop surfaces a green shield icon at restore time confirming the validation result. The web app runs the same check but does not yet display a visible badge.
     *   **Backward compatible:** Legacy 3-part shares (without a hash) are still accepted on restore — they just skip verification.
-    *   **Printed Qards (desktop only):** Display a truncated fingerprint (first 8 + last 8 hex chars) for visual spot-checking.
+    *   **Printed SHA-256 fingerprint on Qards (desktop only):** Every desktop-printed Qard shows a truncated SHA-256 (first 8 + last 8 hex chars) on its face, e.g. "SHA-256: 3422d88d...e60442cc". This is the same hash embedded in the QR string, just printed in human-readable form. Practical uses, in order of usefulness:
+        *   **Catalog/audit fingerprint (primary use):** Users record each Qard's hash in a separate document — inheritance instructions, notary log, written ledger. Decades later an heir can pick up a Qard and confirm it matches what was originally generated, without scanning or trusting any device. The printed hash is the maker's "this is the Qard I created on <date>" commitment.
+        *   **Tampering detection (only with an external record):** If the heir's instructions list one hash and the printed Qard shows another, the Qard has been swapped. Without an external record this defense is weak — a forger could print a self-consistent hash on a substitute Qard.
+        *   **Print/scan corruption check:** If the printer streaked or paper faded, scanning the QR yields data whose computed hash won't match the printed one. Heir knows to grab a different Qard from the set rather than trust a damaged one.
+        *   **Recovery trust UX:** When the desktop app's restore flow shows the green verified shield, the heir can also visually compare the scanned hash to the printed hash for tangible confirmation.
+        *   **Visual disambiguation:** When multiple Qards are physically together, the truncated fingerprint distinguishes them at a glance without scanning.
+        *   **Honest framing:** The printed hash earns its keep when paired with an externally-recorded reference. On its own it's not tamper-evident. Encourage users who care about substitution protection to write their Qard hashes into a separate document (estate plan, notary log) at the time of generation.
     *   **Manual verification:** Users can verify a share's hash in a terminal: echo -n "seQRets|salt|data" | shasum -a 256
 
 *   **CRITICAL — Bob cannot perform cryptographic operations:**
