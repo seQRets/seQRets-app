@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Rocket, Shield, ShieldAlert, ShieldCheck, Check, Minus, ExternalLink } from "lucide-react";
+import { ArrowLeft, Rocket, Shield, ShieldCheck, AlertTriangle, Check, Minus, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "../components/header";
@@ -58,15 +58,16 @@ export default function GoProPage() {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                        <Rocket className="h-6 w-6 text-primary" />
-                        <h2 className="text-2xl font-bold">Go Pro</h2>
-                        <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    <div className="flex items-center justify-center gap-3 mb-3 flex-wrap">
+                        <Rocket className="h-10 w-10 md:h-12 md:w-12 text-primary" />
+                        <h2 className="text-4xl md:text-5xl font-bold">Go Pro</h2>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase text-red-500">
+                            <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
                             Coming Soon
                         </span>
                     </div>
                     <p className="text-muted-foreground max-w-xl mx-auto">
-                        Maximum security for your most valuable secrets.
+                        The seQRets desktop app — maximum security for your most valuable secrets.
                     </p>
                 </div>
 
@@ -74,7 +75,7 @@ export default function GoProPage() {
                 <Card className="mb-6">
                     <CardHeader className="md:px-8 md:pt-8">
                         <div className="flex items-center gap-3">
-                            <ShieldAlert className="h-6 w-6 text-destructive" />
+                            <AlertTriangle className="h-6 w-6 text-[hsl(42,85%,45%)] dark:text-primary" />
                             <CardTitle>Why the Desktop App?</CardTitle>
                         </div>
                     </CardHeader>
@@ -109,7 +110,7 @@ export default function GoProPage() {
                 <Card className="mb-6">
                     <CardHeader className="md:px-8 md:pt-10 md:pb-2">
                         <div className="flex items-center gap-3">
-                            <Shield className="h-6 w-6 text-primary" />
+                            <Shield className="h-6 w-6 text-[hsl(42,85%,45%)] dark:text-primary" />
                             <CardTitle>Feature Comparison</CardTitle>
                         </div>
                     </CardHeader>
@@ -151,7 +152,7 @@ export default function GoProPage() {
                 <Card className="mb-8">
                     <CardHeader className="md:px-8 md:pt-8">
                         <div className="flex items-center gap-3">
-                            <Rocket className="h-6 w-6 text-primary" />
+                            <Rocket className="h-6 w-6 text-[hsl(42,85%,45%)] dark:text-primary" />
                             <CardTitle>Desktop Exclusives</CardTitle>
                         </div>
                     </CardHeader>
