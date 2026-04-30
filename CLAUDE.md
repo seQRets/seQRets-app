@@ -1,10 +1,12 @@
-# CLAUDE.md — seQRets App
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project
 
 **seQRets** is a zero-knowledge crypto inheritance app. Users encrypt secrets client-side (XChaCha20-Poly1305 + Argon2id), split via Shamir SSS into QR "Qards," and distribute to heirs.
 
-- **Monorepo** (npm workspaces): `src/` (Next.js 16 web), `packages/desktop/` (Tauri 2.10), `packages/crypto/` (shared lib), `packages/javacard/` (smart card applet)
+- **Monorepo** (npm workspaces): `src/` (Next.js 16 web), `packages/desktop/` (Tauri 2.10), `packages/crypto/` (shared lib), `packages/shared-ui/` (shadcn primitives consumed by both web + desktop via `@/components/ui/*` path alias), `packages/javacard/` (smart card applet)
 - **License**: AGPL-3.0-or-later
 - **No test runner** — `npm test` is a no-op
 
@@ -48,6 +50,10 @@ These files must stay in sync when modified:
 - **PNG export**: Pure Canvas 2D (`renderCardToCanvas`), NOT html2canvas
 - **Tauri config**: Changes to `tauri.conf.json` require full restart (no HMR)
 - **Vite env vars**: `VITE_*` baked at startup — restart dev server after changes
+
+## Share Format
+
+Qards serialize as `seQRets|<salt>|<nonce+ciphertext>|sha256:<64hex>`. The 4th segment is optional for backward compat. Helpers in [packages/crypto/src/crypto.ts](packages/crypto/src/crypto.ts): `computeShareHash`, `appendShareHash`, `parseShare`, `truncateHash`. Hash is validated at generation and on restore; tampered Qards are rejected before decryption. Desktop surfaces a green shield indicator and prints a truncated fingerprint on physical cards for visual spot-checking (premium-only UI).
 
 ## Common Gotchas
 
