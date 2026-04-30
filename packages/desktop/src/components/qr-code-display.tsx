@@ -277,10 +277,31 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         ctx.fillText(`SHA-256: ${displayHash}`, W / 2, y);
         y += 28;
 
-        // Warning
-        ctx.fillStyle = '#DC2626';
-        ctx.font = '500 14px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText('\u26A0 Store securely and separately from other qards', W / 2, y);
+        // Warning \u2014 emoji rendered larger than the text
+        {
+          const emoji = '\u26A0\uFE0F';
+          const text = ' Store securely and separately from other qards';
+          const emojiFont = '20px Inter, system-ui, -apple-system, sans-serif';
+          const textFont = '500 14px Inter, system-ui, -apple-system, sans-serif';
+
+          ctx.font = emojiFont;
+          const emojiW = ctx.measureText(emoji).width;
+          ctx.font = textFont;
+          const textW = ctx.measureText(text).width;
+
+          const startX = (W - (emojiW + textW)) / 2;
+
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#DC2626';
+
+          ctx.font = emojiFont;
+          ctx.fillText(emoji, startX, y);
+
+          ctx.font = textFont;
+          ctx.fillText(text, startX + emojiW, y);
+
+          ctx.textAlign = 'center';
+        }
         y += 25;
 
         // Footer
