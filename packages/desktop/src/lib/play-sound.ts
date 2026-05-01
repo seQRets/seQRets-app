@@ -13,7 +13,7 @@
 import qardDropSound from '@/assets/sound.mp3';
 import fileDropSound from '@/assets/Alternate_sound.mp3';
 
-const ALT_SOUND_VOLUME = 0.7; // 30% softer than the QR Qard sound
+const ALT_SOUND_VOLUME = 0.5; // 50% softer than the QR Qard sound (~ -6 dB perceived)
 
 function playSound(src: string, volume = 1.0) {
   try {
