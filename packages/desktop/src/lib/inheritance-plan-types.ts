@@ -110,9 +110,9 @@ export interface InheritancePlan {
 const DEFAULT_RESTORE_STEPS = `1. Download seQRets from seqrets.app or use the web app.
    Fallback: if seQRets is unavailable, use the standalone recovery tool — a single offline HTML file that performs the same restore in any browser. Download recover.html from https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html, or use the hosted version at https://seqrets.github.io/seQRets-Recover/
 2. Open the app (or recover.html) and click "Restore Secret".
-3. Gather the required Qards from the locations listed in the Secret Sets section above.
+3. Gather the required Qards from the locations listed in the seQRet Sets section above.
 4. Import the Qards (scan QR, drag & drop, smart card, vault file, or paste text).
-5. Enter the password from the matching Secret Set in this plan.
+5. Enter the password from the matching seQRet Set in this plan.
 6. If a keyfile was used, toggle "Was a Keyfile used?" and load it from the location listed.
 7. Click "Restore Secret".
 8. Write down the restored secret on paper immediately. Do not save it digitally.

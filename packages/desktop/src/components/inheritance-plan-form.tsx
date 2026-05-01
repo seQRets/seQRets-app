@@ -413,7 +413,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 3. Secret Sets (Recovery Credentials + Qard Locations) ── */}
-      <Section id="secretSets" number={3} title="Secret Sets" description="Credentials, Qard locations, and smart card info for each secret protected by seQRets" expanded={expanded.has('secretSets')} onToggle={toggle}>
+      <Section id="secretSets" number={3} title="seQRet Sets" description="Credentials, Qard locations, and smart card info for each secret protected by seQRets" expanded={expanded.has('secretSets')} onToggle={toggle}>
         <div className="flex items-start gap-2 p-3 rounded-md bg-green-500/10 border border-green-500/20 text-xs text-green-400">
           <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
           <span>Safe to include here — this entire plan will be encrypted before saving.</span>
@@ -425,7 +425,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <KeyRound className="h-4 w-4 text-primary" />
-                  <h4 className="text-sm font-bold">Secret {idx + 1}</h4>
+                  <h4 className="text-sm font-bold">seQRet {idx + 1}</h4>
                 </div>
                 {!readOnly && plan.secretSets.length > 1 && (
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeSecretSet(secret.id)}>
@@ -444,7 +444,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>seQRets Password</Label>
-                  <SensitiveInput value={secret.password} onChange={(v) => updateSecretSet(secret.id, 'password', v)} disabled={readOnly} placeholder="The exact password used when encrypting this secret" />
+                  <SensitiveInput value={secret.password} onChange={(v) => updateSecretSet(secret.id, 'password', v)} disabled={readOnly} placeholder="The exact password used when encrypting this secret or password hint." />
                   <p className="text-xs text-muted-foreground">Every character matters. Copy-paste recommended.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -527,7 +527,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
 
         {!readOnly && (
           <Button variant="outline" size="sm" onClick={addSecretSet} className="w-full">
-            <Plus className="h-4 w-4 mr-1" /> Add Another Secret Set
+            <Plus className="h-4 w-4 mr-1" /> Add Another seQRet Set
           </Button>
         )}
       </Section>
@@ -629,7 +629,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Recovery seed / key</Label>
-                <BlurInput value={asset.recoverySeed} onChange={(v) => updateAsset(asset.id, 'recoverySeed', v)} disabled={readOnly} placeholder='If protected by seQRets, reference the Secret Set number here (e.g., "Protected by seQRets — Secret 1")' className="text-sm" />
+                <BlurInput value={asset.recoverySeed} onChange={(v) => updateAsset(asset.id, 'recoverySeed', v)} disabled={readOnly} placeholder='If protected by seQRets, reference the seQRet Set number here (e.g., "Protected by seQRets — seQRet 1")' className="text-sm" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Special instructions</Label>

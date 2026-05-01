@@ -316,7 +316,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
     s.smartCardPin || s.vaultFileLocation
   );
   if (hasSecretData) {
-    addSectionHeader(`${sectionNum++}. Secret Sets`);
+    addSectionHeader(`${sectionNum++}. seQRet Sets`);
 
     for (let i = 0; i < secretSets.length; i++) {
       const s = secretSets[i];
@@ -327,8 +327,8 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...PRIMARY_COLOR);
       const secretTitle = s.description
-        ? `Secret ${i + 1}: ${s.description}`
-        : `Secret ${i + 1}`;
+        ? `seQRet ${i + 1}: ${s.description}`
+        : `seQRet ${i + 1}`;
       doc.text(secretTitle, MARGIN_L + 2, currentY);
       currentY += 6;
 
