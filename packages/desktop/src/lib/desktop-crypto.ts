@@ -48,7 +48,7 @@ interface NativeCryptoResult {
  *   4. Format each share as `seQRets|<salt>|<shareData_base64>`
  */
 export async function createShares(request: CreateSharesRequest): Promise<CreateSharesResult> {
-    const { secret, password, totalShares, requiredShares, label, keyfile } = request;
+    const { secret, password, totalShares, requiredShares, label, keyfile, embedRecoveryInfo } = request;
 
     if (totalShares === 1 && requiredShares !== 1) {
         throw new Error('If total shares is 1, required shares must also be 1.');
@@ -73,9 +73,13 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
         : await split(encryptedBytes, totalShares, requiredShares);
 
     // Step 4: Format shares with SHA-256 integrity hash.
-    const formattedShares = encryptedShares.map(shareData => {
-        const threePartShare = `seQRets|${salt}|${Buffer.from(shareData).toString('base64')}`;
-        return appendShareHash(threePartShare);
+    const formattedShares = encryptedShares.map((shareData, idx) => {
+        let core = `seQRets|${salt}|${Buffer.from(shareData).toString('base64')}`;
+        if (embedRecoveryInfo) {
+            // 1-based index so it matches the visual "Qard #N" labelling.
+            core += `|t=${requiredShares}|n=${totalShares}|i=${idx + 1}`;
+        }
+        return appendShareHash(core);
     });
 
     // Round-trip integrity verification

@@ -26,6 +26,13 @@ export interface CreateSharesRequest {
     requiredShares: number;
     label?: string;
     keyfile?: string; // Base64 encoded keyfile content
+    /**
+     * If true, embed threshold/total/index metadata in each share string.
+     * Enables a "X more Qards required" countdown during restoration. The
+     * metadata is covered by the SHA-256 hash so it cannot be tampered
+     * with, but it IS visible to anyone who scans the QR. Off by default.
+     */
+    embedRecoveryInfo?: boolean;
 }
 
 export interface CreateSharesResult extends QrCodeData {
@@ -65,4 +72,10 @@ export interface ParsedShare {
     data: string;              // base64 share data
     hash: string | null;       // full 64-char hex, or null if legacy
     hashValid: boolean | null; // true = match, false = mismatch, null = legacy (no hash)
+    // Optional recovery metadata. Present only when the share was
+    // generated with `embedRecoveryInfo: true`. All three are tied to
+    // the same set and are covered by the SHA-256 hash.
+    threshold: number | null;  // K — minimum shares required to restore
+    total: number | null;      // N — total shares created in the set
+    index: number | null;      // I — 1-based position of this share in the set
 }

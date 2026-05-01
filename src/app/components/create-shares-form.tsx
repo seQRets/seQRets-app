@@ -36,6 +36,7 @@ export function CreateSharesForm() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [totalShares, setTotalShares] = useState(3);
   const [requiredShares, setRequiredShares] = useState(2);
+  const [embedRecoveryInfo, setEmbedRecoveryInfo] = useState(true);
   const [generatedQrData, setGeneratedQrData] = useState<CreateSharesResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -205,6 +206,7 @@ export function CreateSharesForm() {
             requiredShares,
             label,
             keyfile: useKeyfile ? (keyfile ?? undefined) : undefined,
+            embedRecoveryInfo,
         } satisfies CreateSharesRequest,
     });
   };
@@ -224,6 +226,7 @@ export function CreateSharesForm() {
     setShowSeedGenerator(false);
     setSeedValidationStatus('unchecked');
     setEstimatedShareSize(0);
+    setEmbedRecoveryInfo(true);
     setStep(1);
   }
 
@@ -524,6 +527,31 @@ export function CreateSharesForm() {
                                 </div>
                             </div>
                         </div>
+                        {totalShares > 1 && (
+                          <div className="flex items-center justify-between rounded-md border p-4">
+                            <div className="flex items-center space-x-2">
+                              <Label htmlFor="embed-recovery-info" className="text-base font-medium">Show recovery progress</Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: recovery progress</span></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="text-sm">
+                                  <p className="font-bold mb-2">Show recovery progress</p>
+                                  <p>
+                                    Embeds the threshold ({requiredShares}) and total ({totalShares}) inside each Qard's QR data.
+                                    During restoration, the app shows a live countdown — for example, "1 more Qard required".
+                                    Helpful for heirs decades from now.
+                                  </p>
+                                  <p className="mt-2 text-xs text-muted-foreground">
+                                    Trade-off: anyone who scans a Qard learns that you split your secret into {totalShares} parts and need {requiredShares} to restore it.
+                                    Without the password, that information is not enough to recover anything — but it does narrow what an attacker is searching for.
+                                  </p>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                            <Switch id="embed-recovery-info" checked={embedRecoveryInfo} onCheckedChange={setEmbedRecoveryInfo} />
+                          </div>
+                        )}
                       </div>
                     </div>
                 </>

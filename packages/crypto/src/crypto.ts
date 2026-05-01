@@ -111,21 +111,43 @@ export function masterFingerprint(mnemonic: string): string | null {
 
 // ── SHA-256 share integrity helpers ──
 
-export function computeShareHash(threePartShare: string): string {
-    const bytes = textEncoder.encode(threePartShare);
+export function computeShareHash(input: string): string {
+    const bytes = textEncoder.encode(input);
     const hashBytes = sha256(bytes);
     return Array.from(hashBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function appendShareHash(threePartShare: string): string {
-    const hash = computeShareHash(threePartShare);
-    return `${threePartShare}|sha256:${hash}`;
+/**
+ * Insert a SHA-256 segment after `salt|data` (position 3). Hash input
+ * covers everything except the hash itself — so any optional metadata
+ * passed in is bound by the hash and tamper-detectable.
+ *
+ *   "seQRets|salt|data"                       → "seQRets|salt|data|sha256:H"
+ *   "seQRets|salt|data|t=3|n=5|i=2"           → "seQRets|salt|data|sha256:H|t=3|n=5|i=2"
+ */
+export function appendShareHash(coreWithMaybeMeta: string): string {
+    const parts = coreWithMaybeMeta.split('|');
+    const hash = computeShareHash(coreWithMaybeMeta);
+    const head = parts.slice(0, 3); // seQRets, salt, data
+    const meta = parts.slice(3);    // 0+ optional segments
+    return [...head, `sha256:${hash}`, ...meta].join('|');
 }
 
 export function truncateHash(fullHex: string): string {
     return `${fullHex.slice(0, 8)}...${fullHex.slice(-8)}`;
 }
 
+/**
+ * Parse a share string in any of the three supported shapes:
+ *   • 3 segments (legacy, no hash):         seQRets|salt|data
+ *   • 4 segments (hash, no meta):           seQRets|salt|data|sha256:H
+ *   • 4+ segments (hash + recovery meta):   seQRets|salt|data|sha256:H|t=K|n=N|i=I
+ *
+ * The hash, when present, always sits at segment index 3. Anything after
+ * the hash is optional metadata of the form "key=value". The hash
+ * covers seQRets|salt|data + the meta segments (in their serialized
+ * order), so the meta is tamper-detectable.
+ */
 export function parseShare(shareString: string): ParsedShare {
     const parts = shareString.split('|');
 
@@ -133,19 +155,13 @@ export function parseShare(shareString: string): ParsedShare {
         throw new Error('Invalid or corrupted share format.');
     }
 
-    if (parts.length === 4 && parts[3].startsWith('sha256:')) {
-        const coreString = parts.slice(0, 3).join('|');
-        const embeddedHash = parts[3].slice(7); // strip "sha256:" prefix
-        const computedHash = computeShareHash(coreString);
-        return {
-            coreString,
-            salt: parts[1],
-            data: parts[2],
-            hash: embeddedHash,
-            hashValid: embeddedHash === computedHash,
-        };
-    }
+    const base: Pick<ParsedShare, 'threshold' | 'total' | 'index'> = {
+        threshold: null,
+        total: null,
+        index: null,
+    };
 
+    // Legacy 3-segment, no hash.
     if (parts.length === 3) {
         return {
             coreString: shareString,
@@ -153,6 +169,42 @@ export function parseShare(shareString: string): ParsedShare {
             data: parts[2],
             hash: null,
             hashValid: null,
+            ...base,
+        };
+    }
+
+    // 4+ segments, hash MUST sit at index 3.
+    if (parts.length >= 4 && parts[3].startsWith('sha256:')) {
+        const coreString = parts.slice(0, 3).join('|');
+        const embeddedHash = parts[3].slice(7);
+        const metaParts = parts.slice(4);
+
+        // Hash covers seQRets|salt|data plus the meta segments in order.
+        const hashInput = metaParts.length === 0
+            ? coreString
+            : `${coreString}|${metaParts.join('|')}`;
+        const computedHash = computeShareHash(hashInput);
+
+        const meta = { ...base };
+        for (const segment of metaParts) {
+            const eq = segment.indexOf('=');
+            if (eq <= 0) continue;
+            const key = segment.slice(0, eq);
+            const value = segment.slice(eq + 1);
+            const n = Number.parseInt(value, 10);
+            if (!Number.isFinite(n)) continue;
+            if (key === 't') meta.threshold = n;
+            else if (key === 'n') meta.total = n;
+            else if (key === 'i') meta.index = n;
+        }
+
+        return {
+            coreString,
+            salt: parts[1],
+            data: parts[2],
+            hash: embeddedHash,
+            hashValid: embeddedHash === computedHash,
+            ...meta,
         };
     }
 
@@ -160,7 +212,7 @@ export function parseShare(shareString: string): ParsedShare {
 }
 
 export async function createShares(request: CreateSharesRequest): Promise<CreateSharesResult> {
-    const { secret, password, totalShares, requiredShares, label, keyfile } = request;
+    const { secret, password, totalShares, requiredShares, label, keyfile, embedRecoveryInfo } = request;
 
     if (totalShares === 1 && requiredShares !== 1) {
         throw new Error('If total shares is 1, required shares must also be 1.');
@@ -210,10 +262,14 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
             : await split(combinedEncrypted, totalShares, requiredShares);
 
         const saltBase64 = Buffer.from(salt).toString('base64');
-        const formattedShares = encryptedShares.map(shareData => {
+        const formattedShares = encryptedShares.map((shareData, idx) => {
             const shareDataBase64 = Buffer.from(shareData).toString('base64');
-            const threePartShare = `seQRets|${saltBase64}|${shareDataBase64}`;
-            return appendShareHash(threePartShare);
+            let core = `seQRets|${saltBase64}|${shareDataBase64}`;
+            if (embedRecoveryInfo) {
+                // 1-based index so it matches the visual "Qard #N" labelling.
+                core += `|t=${requiredShares}|n=${totalShares}|i=${idx + 1}`;
+            }
+            return appendShareHash(core);
         });
 
         // Round-trip integrity verification

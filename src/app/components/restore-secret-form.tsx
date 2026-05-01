@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
-import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, QrCode, Sprout } from 'lucide-react';
+import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, QrCode, Sprout, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
-import { validateMnemonic, bip39Wordlist as wordlist } from '@seqrets/crypto';
+import { validateMnemonic, bip39Wordlist as wordlist, parseShare } from '@seqrets/crypto';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,24 @@ interface DecodedShare {
     data: string;
     fileName: string;
     success: boolean;
+    setId: string | null;     // 8-char base64 prefix of the salt — null only on parse failure
+    threshold: number | null; // K, if the share was generated with embedRecoveryInfo
+    total: number | null;     // N, if the share was generated with embedRecoveryInfo
+    index: number | null;     // 1-based card index, if embedRecoveryInfo
+}
+
+function parseShareMeta(data: string) {
+    try {
+        const parsed = parseShare(data);
+        return {
+            setId: parsed.salt.substring(0, 8),
+            threshold: parsed.threshold,
+            total: parsed.total,
+            index: parsed.index,
+        };
+    } catch {
+        return { setId: null, threshold: null, total: null, index: null };
+    }
 }
 
 export function RestoreSecretForm() {
@@ -159,7 +177,8 @@ export function RestoreSecretForm() {
       });
       return;
     }
-    const newShare: DecodedShare = { id: `${Date.now()}-${Math.random()}`, data, fileName, success };
+    const meta = success && data ? parseShareMeta(data) : { setId: null, threshold: null, total: null, index: null };
+    const newShare: DecodedShare = { id: `${Date.now()}-${Math.random()}`, data, fileName, success, ...meta };
     setDecodedShares(prev => [...prev, newShare]);
 
     if (success) {
@@ -286,11 +305,13 @@ export function RestoreSecretForm() {
     let addedCount = 0;
     vaultData.shares.forEach((shareData: string, index: number) => {
       if (shareData && typeof shareData === 'string') {
+        const meta = parseShareMeta(shareData);
         const newShare: DecodedShare = {
           id: `vault-${Date.now()}-${index}`,
           data: shareData,
           fileName: `${fileName} (Share ${index + 1})`,
           success: true,
+          ...meta,
         };
         setDecodedShares(prev => [...prev, newShare]);
         addedCount++;
@@ -477,6 +498,38 @@ export function RestoreSecretForm() {
   };
 
   const uniqueSharesCount = new Set(decodedShares.filter(s => s.success).map(s => s.data)).size;
+
+  // Per-set summary used for the recovery countdown UI. We group successful
+  // shares by setId, then read threshold/total from any share in the group
+  // that carries the optional recovery metadata.
+  const setSummaries = useMemo(() => {
+    const successful = decodedShares.filter(s => s.success);
+    if (successful.length === 0) return [] as Array<{
+      setId: string;
+      droppedCount: number;
+      threshold: number | null;
+      total: number | null;
+    }>;
+
+    const bySet = new Map<string, DecodedShare[]>();
+    for (const s of successful) {
+      const key = s.setId ?? '(unrecognized)';
+      const list = bySet.get(key) ?? [];
+      list.push(s);
+      bySet.set(key, list);
+    }
+
+    return Array.from(bySet.entries()).map(([setId, list]) => {
+      const droppedCount = new Set(list.map(s => s.data)).size;
+      const ref = list.find(s => s.threshold !== null);
+      return {
+        setId,
+        droppedCount,
+        threshold: ref?.threshold ?? null,
+        total: ref?.total ?? null,
+      };
+    });
+  }, [decodedShares]);
 
   const isRestoreButtonDisabled =
     isScanning ||
@@ -702,6 +755,39 @@ export function RestoreSecretForm() {
                     </p>
                     </>
                 )}
+
+                {setSummaries.length > 1 && (
+                    <Alert variant="destructive">
+                        <TriangleAlert className="h-4 w-4" />
+                        <AlertTitle>Multiple sets detected</AlertTitle>
+                        <AlertDescription>
+                            You&apos;ve added Qards from {setSummaries.length} different sets. Only Qards from the same set can decrypt together — remove the ones from any sets you don&apos;t want.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {setSummaries.map(s => {
+                    const isReady = s.threshold !== null && s.droppedCount >= s.threshold;
+                    const remaining = s.threshold !== null ? Math.max(0, s.threshold - s.droppedCount) : null;
+                    const tone = isReady
+                        ? 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400'
+                        : s.threshold !== null
+                            ? 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                            : 'border-border';
+                    return (
+                        <div key={s.setId} className={cn("rounded-md border p-3 text-sm flex items-center gap-2", tone)}>
+                            {isReady ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" /> : <KeyRound className="h-4 w-4 flex-shrink-0" />}
+                            <div className="flex-1 min-w-0">
+                                <span className="font-medium">Set {s.setId}</span>
+                                {s.threshold !== null && s.total !== null ? (
+                                    <span> — {s.droppedCount} of {s.threshold} added{s.total ? ` (${s.total} total)` : ''}{isReady ? ' · ready to restore' : ` · ${remaining} more ${remaining === 1 ? 'Qard' : 'Qards'} required`}</span>
+                                ) : (
+                                    <span> — {s.droppedCount} {s.droppedCount === 1 ? 'Qard' : 'Qards'} added</span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
 
                 {decodedShares.length > 0 && (
                     <div className="space-y-2">
