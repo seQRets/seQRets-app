@@ -528,26 +528,35 @@ export function CreateSharesForm() {
                             </div>
                         </div>
                         {totalShares > 1 && (
-                          <div className="flex items-center justify-between rounded-md border p-4">
-                            <div className="flex items-center space-x-2">
-                              <Label htmlFor="embed-recovery-info" className="text-base font-medium">Show recovery progress</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: recovery progress</span></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  <p className="font-bold mb-2">Show recovery progress</p>
-                                  <p>
-                                    Embeds the threshold ({requiredShares}) and total ({totalShares}) inside each Qard's QR data.
-                                    During restoration, the app shows a live countdown — for example, "1 more Qard required".
-                                    Helpful for heirs decades from now.
-                                  </p>
-                                  <p className="mt-2 text-xs text-muted-foreground">
-                                    Trade-off: anyone who scans a Qard learns that you split your secret into {totalShares} parts and need {requiredShares} to restore it.
-                                    Without the password, that information is not enough to recover anything — but it does narrow what an attacker is searching for.
-                                  </p>
-                                </PopoverContent>
-                              </Popover>
+                          <div className="flex items-center justify-between rounded-md border p-4 gap-3">
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <Label htmlFor="embed-recovery-info" className="text-base font-medium">
+                                  Include Qard Share Data ({requiredShares} of {totalShares}) in QR
+                                </Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: Qard share data</span></button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="text-sm">
+                                    <p className="font-bold mb-2">Qard Share Data</p>
+                                    <p>
+                                      Embeds the threshold ({requiredShares}) and total ({totalShares}) inside each Qard&apos;s QR data.
+                                      During restoration, the app shows a live countdown — for example, &quot;1 more Qard required&quot;.
+                                      Helpful for heirs decades from now.
+                                    </p>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                      Trade-off: anyone who scans a Qard learns that you split your secret into {totalShares} parts and need {requiredShares} to restore it.
+                                      Without the password, that information is not enough to recover anything — but it does narrow what an attacker is searching for.
+                                    </p>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {embedRecoveryInfo
+                                  ? 'On — heirs will see a countdown during restore'
+                                  : 'Off — QR data stays minimal'}
+                              </p>
                             </div>
                             <Switch id="embed-recovery-info" checked={embedRecoveryInfo} onCheckedChange={setEmbedRecoveryInfo} />
                           </div>
