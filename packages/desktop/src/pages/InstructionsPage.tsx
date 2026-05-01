@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import successSound from '@/assets/Alternate_sound.mp3';
+import { playFileDropSound } from '@/lib/play-sound';
 import type { RawInstruction, DecryptInstructionRequest, EncryptedInstruction } from '@/lib/types';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
 import { DEFAULT_CARD_CAPACITY, type CardItem } from '@/lib/smartcard';
@@ -230,13 +230,7 @@ export default function InstructionsPage() {
     if (file && file.type === 'application/json') {
       setDecryptFile(file);
       setDecryptFileName(file.name);
-      try {
-        const audio = new Audio(successSound);
-        audio.volume = 0.7; // 30% softer than the QR Qard sound
-        audio.play().catch(e => console.error('Audio playback failed:', e));
-      } catch (error) {
-        console.error('Error playing sound:', error);
-      }
+      playFileDropSound();
     } else {
       toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .json instructions file.' });
     }

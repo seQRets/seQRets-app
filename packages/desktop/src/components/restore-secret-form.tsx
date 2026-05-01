@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { KeyfileUpload } from './keyfile-upload';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import successSound from '@/assets/sound.mp3';
+import { playQardDropSound } from '@/lib/play-sound';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
 import type { CardItem } from '@/lib/smartcard';
 
@@ -49,7 +49,6 @@ export function RestoreSecretForm() {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isQrRevealed, setIsQrRevealed] = useState(false);
@@ -100,16 +99,6 @@ export function RestoreSecretForm() {
   };
 
 
-  const playSuccessSound = () => {
-    try {
-      // Create a fresh Audio instance each time to avoid browser/webview
-      // autoplay restrictions and stale reference issues.
-      const audio = new Audio(successSound);
-      audio.play().catch(e => console.error("Audio playback failed:", e));
-    } catch (error) {
-      console.error("Error playing sound:", error);
-    }
-  }
 
   const addShare = (data: string, fileName: string, success: boolean) => {
     // Prevent adding duplicate shares based on data
@@ -146,7 +135,7 @@ export function RestoreSecretForm() {
     setDecodedShares(prev => [...prev, newShare]);
 
     if (success) {
-      playSuccessSound();
+      playQardDropSound();
       toast({
         title: "Share Added!",
         description: `Share from ${fileName} has been added to the list.`,
@@ -301,7 +290,7 @@ export function RestoreSecretForm() {
     });
 
     if (addedCount > 0) {
-      playSuccessSound();
+      playQardDropSound();
       toast({
         title: 'Vault Imported!',
         description: `${addedCount} shares loaded from "${fileName}". ${vaultData.label ? `Label: ${vaultData.label}` : ''} You need ${vaultData.requiredShares} of ${vaultData.totalShares} to restore.`,

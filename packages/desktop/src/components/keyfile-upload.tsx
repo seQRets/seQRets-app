@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { FileUp, File, X, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import successSound from '@/assets/Alternate_sound.mp3';
+import { playFileDropSound } from '@/lib/play-sound';
 
 interface KeyfileUploadProps {
   onFileRead: (fileContent: string | null) => void;
@@ -41,13 +41,7 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName, onSmartC
 
       onFileRead(b64);
       onFileNameChange(file.name);
-      try {
-        const audio = new Audio(successSound);
-        audio.volume = 0.7; // 30% softer than the QR Qard sound
-        audio.play().catch(e => console.error('Audio playback failed:', e));
-      } catch (error) {
-        console.error('Error playing sound:', error);
-      }
+      playFileDropSound();
       toast({
         title: 'Keyfile Selected',
         description: `${file.name} has been loaded.`,

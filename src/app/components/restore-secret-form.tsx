@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { KeyfileUpload } from './keyfile-upload';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { playQardDropSound } from '@/lib/play-sound';
 
 interface DecodedShare {
     id: string; // Use a unique ID for each share for stable rendering and removal
@@ -59,7 +60,6 @@ export function RestoreSecretForm() {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const audioRef = useRef(typeof window !== 'undefined' ? new Audio('/sound.mp3') : null);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isQrRevealed, setIsQrRevealed] = useState(false);
@@ -156,16 +156,6 @@ export function RestoreSecretForm() {
   };
 
 
-  const playSuccessSound = () => {
-    if (audioRef.current) {
-        try {
-          audioRef.current.currentTime = 0;
-          audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
-        } catch (error) {
-            console.error("Error playing sound:", error);
-        }
-    }
-  }
 
   const addShare = (data: string, fileName: string, success: boolean) => {
     // Prevent adding duplicate shares based on data
@@ -182,7 +172,7 @@ export function RestoreSecretForm() {
     setDecodedShares(prev => [...prev, newShare]);
 
     if (success) {
-      playSuccessSound();
+      playQardDropSound();
       toast({
         title: "Share Added!",
         description: `Share from ${fileName} has been added to the list.`,
@@ -319,7 +309,7 @@ export function RestoreSecretForm() {
     });
 
     if (addedCount > 0) {
-      playSuccessSound();
+      playQardDropSound();
       toast({
         title: 'Vault Imported!',
         description: `${addedCount} shares loaded from "${fileName}". ${vaultData.label ? `Label: ${vaultData.label}` : ''} You need ${vaultData.requiredShares} of ${vaultData.totalShares} to restore.`,

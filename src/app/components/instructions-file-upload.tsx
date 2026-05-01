@@ -6,6 +6,7 @@ import { FileText, FileUp, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { DragDropZone } from './drag-drop-zone';
+import { playFileDropSound } from '@/lib/play-sound';
 
 interface InstructionsFileUploadProps {
   onFileSelected: (file: File | null) => void;
@@ -28,13 +29,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
         return;
     }
     onFileSelected(file);
-    try {
-      const audio = new Audio('/Alternate_sound.mp3');
-      audio.volume = 0.7; // 30% softer than the QR Qard sound
-      audio.play().catch(e => console.error('Audio playback failed:', e));
-    } catch (error) {
-      console.error('Error playing sound:', error);
-    }
+    playFileDropSound();
     toast({
       title: 'Instructions File Selected',
       description: `${file.name} has been loaded and is ready for encryption.`,

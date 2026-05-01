@@ -13,6 +13,7 @@ import { InstructionsFileUpload } from '../components/instructions-file-upload';
 import { KeyfileUpload } from '../components/keyfile-upload';
 import { KeyfileGenerator } from '../components/keyfile-generator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { playFileDropSound } from '@/lib/play-sound';
 import { PasswordGenerator } from '../components/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -169,13 +170,7 @@ export default function InstructionsPage() {
     if (file && file.type === 'application/json') {
       setDecryptFile(file);
       setDecryptFileName(file.name);
-      try {
-        const audio = new Audio('/Alternate_sound.mp3');
-        audio.volume = 0.7; // 30% softer than the QR Qard sound
-        audio.play().catch(e => console.error('Audio playback failed:', e));
-      } catch (error) {
-        console.error('Error playing sound:', error);
-      }
+      playFileDropSound();
     } else {
       toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .json instructions file.' });
     }
