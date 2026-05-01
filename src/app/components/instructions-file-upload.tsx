@@ -30,6 +30,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
     onFileSelected(file);
     try {
       const audio = new Audio('/Alternate_sound.mp3');
+      audio.volume = 0.7; // 30% softer than the QR Qard sound
       audio.play().catch(e => console.error('Audio playback failed:', e));
     } catch (error) {
       console.error('Error playing sound:', error);
