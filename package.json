@@ -8,9 +8,10 @@
   ],
   "scripts": {
     "generate:version": "node scripts/generate-version.mjs",
+    "sync:web-assets": "node scripts/sync-web-assets.mjs",
     "build:crypto": "npm run build --workspace=@seqrets/crypto",
-    "dev": "npm run generate:version && npm run build:crypto && next dev --port 9002",
-    "build": "npm run generate:version && npm run build:crypto && next build",
+    "dev": "npm run generate:version && npm run sync:web-assets && npm run build:crypto && next dev --port 9002",
+    "build": "npm run generate:version && npm run sync:web-assets && npm run build:crypto && next build",
     "start": "npm run generate:version && next start",
     "type-check": "npm run generate:version && tsc --noEmit",
     "test": "echo \"No test runner configured\" && exit 0",

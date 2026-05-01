@@ -36,6 +36,10 @@ src/generated/
 packages/desktop/src/generated/
 public/sw.js
 
+# Synced from packages/desktop/src/assets/ by scripts/sync-web-assets.mjs
+public/sound.mp3
+public/Alternate_sound.mp3
+
 # Tauri build output
 packages/desktop/src-tauri/target/
 

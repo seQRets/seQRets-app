@@ -29,7 +29,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
     }
     onFileSelected(file);
     try {
-      const audio = new Audio('/sound.mp3');
+      const audio = new Audio('/Alternate_sound.mp3');
       audio.play().catch(e => console.error('Audio playback failed:', e));
     } catch (error) {
       console.error('Error playing sound:', error);

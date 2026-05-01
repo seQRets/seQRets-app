@@ -43,7 +43,7 @@ export function KeyfileUpload({ onFileRead, onFileNameChange, fileName }: Keyfil
       onFileRead(b64);
       onFileNameChange(file.name);
       try {
-        const audio = new Audio('/sound.mp3');
+        const audio = new Audio('/Alternate_sound.mp3');
         audio.play().catch(e => console.error('Audio playback failed:', e));
       } catch (error) {
         console.error('Error playing sound:', error);

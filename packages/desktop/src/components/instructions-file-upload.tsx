@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { FileUp, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import successSound from '@/assets/sound.mp3';
+import successSound from '@/assets/Alternate_sound.mp3';
 
 interface InstructionsFileUploadProps {
   onFileSelected: (file: File | null) => void;

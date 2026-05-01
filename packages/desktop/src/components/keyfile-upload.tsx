@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { FileUp, File, X, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import successSound from '@/assets/sound.mp3';
+import successSound from '@/assets/Alternate_sound.mp3';
 
 interface KeyfileUploadProps {
   onFileRead: (fileContent: string | null) => void;
