@@ -17,6 +17,7 @@ seQRets is available as a web app (Next.js) and a native desktop app (Tauri).
 
 ### Secure Your Secret
 - **Shamir's Secret Sharing:** Split any text-based secret into a configurable number of Qards. You decide how many are needed for recovery (e.g., 2-of-3, 3-of-5 threshold).
+- **Optional Qard Share Data in QR (v1.11+):** A toggle on the create-shares form labeled "Include Qard Share Data (K of N) in QR" (default ON) embeds the threshold (K), total (N), and 1-based index (I) inside each Qard's QR data. The metadata is covered by the SHA-256 hash so it cannot be tampered with. During restoration, the app shows a live countdown — for example, "Set ABC12345 — 2 of 3 added · 1 more Qard required". Helpful for heirs decades from now who may not know how many Qards a set contains. Trade-off: anyone who scans a Qard learns K and N; without the password, that information cannot recover the secret but it does narrow what an attacker is searching for. Older Qards generated before this feature still work, just without the countdown.
 - **Strong Encryption:** Your secret is compressed (gzip level 9), then encrypted on the client-side using **XChaCha20-Poly1305** (AEAD). The encryption key is derived from your password and an optional keyfile using **Argon2id**, a memory-hard key derivation function.
 - **Client-Side Security:** All cryptographic operations happen on your device. Your raw secret and password are never sent to any server. This is a core principle of our zero-knowledge architecture.
 - **Password Generator:** A built-in tool to generate a high-entropy, 32-character password. Passwords must be at least 24 characters and include uppercase, lowercase, numbers, and special characters. The password field shows green when valid, red when not.
@@ -54,6 +55,7 @@ seQRets is available as a web app (Next.js) and a native desktop app (Tauri).
 - **Manual text entry** — paste raw share data.
 - **Import vault file** — load all shares at once from a .seqrets file.
 - **Read from smartcard** — load shares or vaults directly from a JavaCard (desktop only).
+- **Per-set recovery countdown (v1.11+):** Dropped Qards are grouped by their 8-character set ID. When the Qards carry the optional recovery metadata (see "Include Qard Share Data" feature), a live countdown shows progress: "Set ABC12345 — 2 of 3 added · 1 more Qard required" (amber while below threshold, green at threshold). For Qards without the metadata, just the count is shown. A warning appears if Qards from multiple distinct sets are dropped, since they cannot decrypt together.
 
 ### JavaCard Smartcard Support (Desktop Only)
 - Store Shamir shares, encrypted vaults, or inheritance plans on JCOP3 JavaCard smartcards (e.g., J3H145).
@@ -81,7 +83,7 @@ seQRets has no servers, no accounts, and no data collection. Nothing is ever sen
 ### seQRets Recover — Long-Term Recovery
 **seQRets Recover** is a separate, independent recovery tool at https://github.com/seQRets/seQRets-Recover. It is a single \`recover.html\` file — ~200 lines of TypeScript, all dependencies inlined — that can reassemble and decrypt seQRets Qards with nothing but a web browser. No install, no network, no backend.
 
-**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\`) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
+**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\` with optional \`|t=K|n=N|i=I\` recovery metadata segments after the hash, v1.11+) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
 
 **How users get it:**
 - Overview page on the website: https://seqrets.app/recover
