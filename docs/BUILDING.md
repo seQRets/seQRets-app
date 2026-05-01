@@ -40,7 +40,7 @@ npm run desktop:dev
 npm run desktop:build
 ```
 
-Produces `seQRets_1.11.0_aarch64.dmg` in `packages/desktop/src-tauri/target/release/bundle/dmg/`.
+Produces `seQRets_<version>_aarch64.dmg` (where `<version>` matches the `version` field in `package.json`) in `packages/desktop/src-tauri/target/release/bundle/dmg/`.
 
 ## 🤖 Optional: Bob AI Assistant
 

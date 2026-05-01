@@ -97,9 +97,6 @@ console.log(`
 Stale-doc review checklist — these aren't auto-updated, please eyeball
 before releasing:
 
-  [ ] README.md                  — "seQRets v${newVersion} has not undergone..."
-                                    (beta-audit note; update if wording shifts)
-  [ ] docs/BUILDING.md           — DMG filename example (cosmetic)
   [ ] docs/SECURITY_ANALYSIS.md  — Audit Date header + "App Version" line
   [ ] docs/ARCHITECTURE.md       — any version-tied claims still accurate?
   [ ] SECURITY.md                — Supported Versions table — any rows to retire?
