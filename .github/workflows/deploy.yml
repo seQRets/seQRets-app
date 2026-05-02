@@ -39,6 +39,9 @@ jobs:
       - name: Generate version module
         run: npm run generate:version
 
+      - name: Sync web assets (mp3 audio from desktop assets dir)
+        run: npm run sync:web-assets
+
       - name: Build Next.js static export
         run: npx next build
 
