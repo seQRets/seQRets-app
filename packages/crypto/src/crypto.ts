@@ -118,19 +118,23 @@ export function computeShareHash(input: string): string {
 }
 
 /**
- * Insert a SHA-256 segment after `salt|data` (position 3). Hash input
- * covers everything except the hash itself — so any optional metadata
- * passed in is bound by the hash and tamper-detectable.
+ * Append a SHA-256 segment to the END of the share string. The hash
+ * input is everything before the appended segment, so any optional
+ * metadata passed in is bound by the hash and tamper-detectable.
  *
  *   "seQRets|salt|data"                       → "seQRets|salt|data|sha256:H"
- *   "seQRets|salt|data|t=3|n=5|i=2"           → "seQRets|salt|data|sha256:H|t=3|n=5|i=2"
+ *   "seQRets|salt|data|t=3|n=5|i=2"           → "seQRets|salt|data|t=3|n=5|i=2|sha256:H"
+ *
+ * Putting the hash last means manual verification is trivial:
+ *   echo -n "<everything before |sha256:>" | shasum -a 256
+ *
+ * `parseShare` still accepts the legacy v1.11.0 layout where `sha256:`
+ * sat at index 3 between data and metadata, so existing test Qards
+ * continue to verify.
  */
 export function appendShareHash(coreWithMaybeMeta: string): string {
-    const parts = coreWithMaybeMeta.split('|');
     const hash = computeShareHash(coreWithMaybeMeta);
-    const head = parts.slice(0, 3); // seQRets, salt, data
-    const meta = parts.slice(3);    // 0+ optional segments
-    return [...head, `sha256:${hash}`, ...meta].join('|');
+    return `${coreWithMaybeMeta}|sha256:${hash}`;
 }
 
 export function truncateHash(fullHex: string): string {
@@ -138,15 +142,20 @@ export function truncateHash(fullHex: string): string {
 }
 
 /**
- * Parse a share string in any of the three supported shapes:
- *   • 3 segments (legacy, no hash):         seQRets|salt|data
- *   • 4 segments (hash, no meta):           seQRets|salt|data|sha256:H
- *   • 4+ segments (hash + recovery meta):   seQRets|salt|data|sha256:H|t=K|n=N|i=I
+ * Parse a share string in any supported shape:
+ *   • 3 segments (legacy, no hash):                  seQRets|salt|data
+ *   • 4 segments (hash, no meta):                    seQRets|salt|data|sha256:H
+ *   • 4+ segments (current layout, hash last):       seQRets|salt|data|t=K|n=N|i=I|sha256:H
+ *   • 4+ segments (legacy v1.11.0, hash before meta): seQRets|salt|data|sha256:H|t=K|n=N|i=I
  *
- * The hash, when present, always sits at segment index 3. Anything after
- * the hash is optional metadata of the form "key=value". The hash
- * covers seQRets|salt|data + the meta segments (in their serialized
- * order), so the meta is tamper-detectable.
+ * The hash, when present, lives in the `sha256:` segment which can sit
+ * at index 3 (legacy) or at the last index (current). Everything else
+ * past index 2 is optional metadata of the form "key=value".
+ *
+ * The hash covers seQRets|salt|data + the meta segments (in their
+ * serialized order, with the sha256 segment removed). Both layouts
+ * produce the same hash input, so a Qard generated under either layout
+ * verifies correctly here.
  */
 export function parseShare(shareString: string): ParsedShare {
     const parts = shareString.split('|');
@@ -173,42 +182,46 @@ export function parseShare(shareString: string): ParsedShare {
         };
     }
 
-    // 4+ segments, hash MUST sit at index 3.
-    if (parts.length >= 4 && parts[3].startsWith('sha256:')) {
-        const coreString = parts.slice(0, 3).join('|');
-        const embeddedHash = parts[3].slice(7);
-        const metaParts = parts.slice(4);
-
-        // Hash covers seQRets|salt|data plus the meta segments in order.
-        const hashInput = metaParts.length === 0
-            ? coreString
-            : `${coreString}|${metaParts.join('|')}`;
-        const computedHash = computeShareHash(hashInput);
-
-        const meta = { ...base };
-        for (const segment of metaParts) {
-            const eq = segment.indexOf('=');
-            if (eq <= 0) continue;
-            const key = segment.slice(0, eq);
-            const value = segment.slice(eq + 1);
-            const n = Number.parseInt(value, 10);
-            if (!Number.isFinite(n)) continue;
-            if (key === 't') meta.threshold = n;
-            else if (key === 'n') meta.total = n;
-            else if (key === 'i') meta.index = n;
-        }
-
-        return {
-            coreString,
-            salt: parts[1],
-            data: parts[2],
-            hash: embeddedHash,
-            hashValid: embeddedHash === computedHash,
-            ...meta,
-        };
+    // 4+ segments: the sha256 segment can sit at index 3 (legacy v1.11.0)
+    // or at the final index (current layout). Locate it anywhere from
+    // index 3 onwards.
+    const hashIdx = parts.findIndex((p, i) => i >= 3 && p.startsWith('sha256:'));
+    if (hashIdx === -1) {
+        throw new Error('Invalid or corrupted share format.');
     }
 
-    throw new Error('Invalid or corrupted share format.');
+    const coreString = parts.slice(0, 3).join('|');
+    const embeddedHash = parts[hashIdx].slice(7);
+    // All non-hash segments past index 2, in their original order.
+    const metaParts = [...parts.slice(3, hashIdx), ...parts.slice(hashIdx + 1)];
+
+    // Hash covers seQRets|salt|data plus the meta segments in order.
+    const hashInput = metaParts.length === 0
+        ? coreString
+        : `${coreString}|${metaParts.join('|')}`;
+    const computedHash = computeShareHash(hashInput);
+
+    const meta = { ...base };
+    for (const segment of metaParts) {
+        const eq = segment.indexOf('=');
+        if (eq <= 0) continue;
+        const key = segment.slice(0, eq);
+        const value = segment.slice(eq + 1);
+        const n = Number.parseInt(value, 10);
+        if (!Number.isFinite(n)) continue;
+        if (key === 't') meta.threshold = n;
+        else if (key === 'n') meta.total = n;
+        else if (key === 'i') meta.index = n;
+    }
+
+    return {
+        coreString,
+        salt: parts[1],
+        data: parts[2],
+        hash: embeddedHash,
+        hashValid: embeddedHash === computedHash,
+        ...meta,
+    };
 }
 
 export async function createShares(request: CreateSharesRequest): Promise<CreateSharesResult> {

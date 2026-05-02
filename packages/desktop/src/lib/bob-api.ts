@@ -80,7 +80,7 @@ seQRets has no servers, no accounts, and no data collection. Nothing is ever sen
 ### seQRets Recover — Long-Term Recovery
 **seQRets Recover** is a separate, independent recovery tool at https://github.com/seQRets/seQRets-Recover. It is a single \`recover.html\` file — ~200 lines of TypeScript, all dependencies inlined — that can reassemble and decrypt seQRets Qards with nothing but a web browser. No install, no network, no backend.
 
-**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>|sha256:<hex>\` with optional \`|t=K|n=N|i=I\` recovery metadata segments after the hash, v1.11+) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
+**Why it matters:** if seqrets.app ever goes offline, the company dissolves, or the main app stops being updated, users can still recover their secrets. Recover is a hedge against developer risk. It uses the same audited cryptographic primitives as the main app (Argon2id, XChaCha20-Poly1305, Shamir's Secret Sharing, @scure/bip39). The seQRets share format (\`seQRets|<salt>|<nonce+ciphertext>\` with optional \`|t=K|n=N|i=I\` recovery metadata and a trailing \`|sha256:<hex>\` integrity hash, v1.11+) is plaintext, self-describing, and documented — anyone could write their own recovery tool in an afternoon.
 
 **How users get it:**
 - Overview page on the website: https://seqrets.app/recover
@@ -162,7 +162,7 @@ const cryptoDetails = `
     *   This is a critical security design choice — a stolen Qard is computationally indistinguishable from random noise.
 
 *   **SHA-256 Integrity Hash (v1.9.0+):**
-    *   Each share embeds a SHA-256 hash as an optional 4th pipe-delimited segment: seQRets|salt|data|sha256:<64hex>
+    *   Each share embeds a SHA-256 hash as an optional trailing pipe-delimited segment: seQRets|salt|data[|t=K|n=N|i=I]|sha256:<64hex>. The hash is always the LAST segment when present, so the hash input is simply "everything before |sha256:". (Some Qards generated under v1.11.0 placed the sha256 segment between data and the metadata; the parser still accepts that older layout for backward compatibility.)
     *   The hash covers the first 3 segments (the share data itself). It cannot be reversed to recover the share.
     *   **At generation (web and desktop):** All shares are hashed and verified round-trip before being presented to the user. The hash is embedded in every Qard regardless of platform.
     *   **At restore (web and desktop):** Shares are automatically verified when scanned or imported. If a hash mismatch is detected, an error is raised before decryption is attempted.
@@ -175,11 +175,11 @@ const cryptoDetails = `
         *   **Recovery trust UX:** When the desktop app's restore flow shows the green verified shield, the heir can also visually compare the scanned hash to the printed hash for tangible confirmation.
         *   **Visual disambiguation:** When multiple Qards are physically together, the truncated fingerprint distinguishes them at a glance without scanning.
         *   **Honest framing:** The printed hash earns its keep when paired with an externally-recorded reference. On its own it's not tamper-evident. Encourage users who care about substitution protection to write their Qard hashes into a separate document (estate plan, notary log) at the time of generation.
-    *   **Manual verification:** Users can verify a share's hash in a terminal: echo -n "seQRets|salt|data" | shasum -a 256
+    *   **Manual verification:** Users can verify a share's hash in a terminal by hashing everything before the trailing |sha256: segment. For a Qard with no metadata: echo -n "seQRets|salt|data" | shasum -a 256. For a Qard with recovery metadata: echo -n "seQRets|salt|data|t=K|n=N|i=I" | shasum -a 256. The output should match the 64-hex value after sha256:.
 
 *   **CRITICAL — Bob cannot perform cryptographic operations:**
     *   You are a text-only assistant. You cannot compute SHA-256 hashes, verify shares, encrypt or decrypt data, generate random values, or perform ANY cryptographic operation. Do not invent hex strings, hashes, or ciphertext — fabricated cryptographic output in a security-critical context is dangerous.
-    *   If a user asks you to hash, verify, decrypt, or compute anything cryptographic, politely explain that you cannot do that and direct them to either: (a) the app's built-in auto-verification (runs on web and desktop — desktop additionally shows a green shield icon when integrity passes), or (b) the terminal command for manual SHA-256 verification: echo -n "seQRets|salt|data" | shasum -a 256
+    *   If a user asks you to hash, verify, decrypt, or compute anything cryptographic, politely explain that you cannot do that and direct them to either: (a) the app's built-in auto-verification (runs on web and desktop — desktop additionally shows a green shield icon when integrity passes), or (b) the terminal command for manual SHA-256 verification — hash everything before the trailing |sha256: segment, e.g. echo -n "seQRets|salt|data|t=K|n=N|i=I" | shasum -a 256.
     *   Never pretend to compute something you cannot actually compute.
 
 *   **Quantum Resistance (IMPORTANT — answer honestly, don't oversell):**
