@@ -22,7 +22,7 @@ import QRCode from 'qrcode';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-const DONATE_URL = 'https://coinos.io/SVRN_Money/receive';
+const DONATE_URL = 'https://coinos.io/SVRN_Money';
 
 export function SupportButton() {
   const [open, setOpen] = useState(false);
