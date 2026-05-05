@@ -62,7 +62,13 @@ export function RestoreSecretForm() {
   const { toast } = useToast();
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [isQrRevealed, setIsQrRevealed] = useState(false);
+  const [revealedQrs, setRevealedQrs] = useState<Set<string>>(new Set());
+  const toggleQrReveal = (key: string) =>
+    setRevealedQrs(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   const [qrTab, setQrTab] = useState<'data' | 'seed'>('data');
   const [qrDataUri, setQrDataUri] = useState<string | null>(null);
   const [seedQrUris, setSeedQrUris] = useState<string[]>([]);
@@ -425,7 +431,7 @@ export function RestoreSecretForm() {
     setKeyfile(null);
     setKeyfileName(null);
     setIsQrDialogOpen(false);
-    setIsQrRevealed(false);
+    setRevealedQrs(new Set());
     setQrTab('data');
     setQrDataUri(null);
     setSeedQrUris([]);
@@ -467,7 +473,7 @@ export function RestoreSecretForm() {
   const openQrDialog = () => {
     const initial: 'data' | 'seed' = isMnemonic ? 'seed' : 'data';
     setQrTab(initial);
-    setIsQrRevealed(false);
+    setRevealedQrs(new Set());
     setIsQrDialogOpen(true);
     if (initial === 'data') ensureDataQr(); else ensureSeedQr();
   };
@@ -592,10 +598,10 @@ export function RestoreSecretForm() {
                   open={isQrDialogOpen}
                   onOpenChange={(open) => {
                     setIsQrDialogOpen(open);
-                    if (!open) setIsQrRevealed(false);
+                    if (!open) setRevealedQrs(new Set());
                   }}
                 >
-                  <DialogContent className="max-w-sm">
+                  <DialogContent className="max-w-sm top-[5vh] translate-y-0 max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {qrTab === 'seed' ? 'SeedQR' : 'QR Code'}
@@ -626,55 +632,78 @@ export function RestoreSecretForm() {
                         </Button>
                       </div>
                     )}
-                    <div className="relative py-2">
+                    <div className="py-2">
                       {qrTab === 'data' && (
                         qrDataUri
-                          ? <img
-                              src={qrDataUri}
-                              alt="QR Code"
-                              className={cn(
-                                "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
-                                !isQrRevealed && "blur-lg"
-                              )}
-                            />
+                          ? (() => {
+                              const key = 'data';
+                              const revealed = revealedQrs.has(key);
+                              return (
+                                <div className="relative">
+                                  <img
+                                    src={qrDataUri}
+                                    alt="QR Code"
+                                    className={cn(
+                                      "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
+                                      !revealed && "blur-lg"
+                                    )}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-2 right-2 z-10 h-8 w-8 text-foreground bg-background/80 hover:bg-background shadow-sm"
+                                    onClick={() => toggleQrReveal(key)}
+                                    aria-label={revealed ? 'Hide QR code' : 'Show QR code'}
+                                  >
+                                    {revealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                  </Button>
+                                </div>
+                              );
+                            })()
                           : <div className="flex h-[280px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                       )}
                       {qrTab === 'seed' && (
                         seedQrUris.length > 0
                           ? <div className="space-y-3">
-                              {seedQrUris.map((uri, i) => (
-                                <div key={i}>
-                                  <img
-                                    src={uri}
-                                    alt={`SeedQR ${i + 1}`}
-                                    className={cn(
-                                      "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
-                                      !isQrRevealed && "blur-lg"
+                              {seedQrUris.map((uri, i) => {
+                                const key = `seed-${i}`;
+                                const revealed = revealedQrs.has(key);
+                                return (
+                                  <div key={i}>
+                                    <div className="relative">
+                                      <img
+                                        src={uri}
+                                        alt={`SeedQR ${i + 1}`}
+                                        className={cn(
+                                          "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
+                                          !revealed && "blur-lg"
+                                        )}
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute top-2 right-2 z-10 h-8 w-8 text-foreground bg-background/80 hover:bg-background shadow-sm"
+                                        onClick={() => toggleQrReveal(key)}
+                                        aria-label={revealed ? `Hide SeedQR ${i + 1}` : `Show SeedQR ${i + 1}`}
+                                      >
+                                        {revealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                      </Button>
+                                    </div>
+                                    {fingerprints[i] && (
+                                      <p
+                                        className="mt-2 text-center text-xs text-muted-foreground"
+                                        title="BIP-32 master fingerprint with no BIP-39 passphrase. Most hardware wallets display this after import — it should match. Adding a BIP-39 passphrase at import time will produce a different fingerprint."
+                                      >
+                                        Fingerprint: <span className="font-mono font-semibold text-foreground">{fingerprints[i]}</span>
+                                        {seedQrUris.length > 1 && <span className="ml-2">· {i + 1} of {seedQrUris.length}</span>}
+                                      </p>
                                     )}
-                                  />
-                                  {fingerprints[i] && (
-                                    <p
-                                      className="mt-2 text-center text-xs text-muted-foreground"
-                                      title="BIP-32 master fingerprint with no BIP-39 passphrase. Most hardware wallets display this after import — it should match. Adding a BIP-39 passphrase at import time will produce a different fingerprint."
-                                    >
-                                      Fingerprint: <span className="font-mono font-semibold text-foreground">{fingerprints[i]}</span>
-                                      {seedQrUris.length > 1 && <span className="ml-2">· {i + 1} of {seedQrUris.length}</span>}
-                                    </p>
-                                  )}
-                                </div>
-                              ))}
+                                  </div>
+                                );
+                              })}
                             </div>
                           : <div className="flex h-[280px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-4 right-2 z-10 h-8 w-8 text-foreground bg-background/80 hover:bg-background shadow-sm"
-                        onClick={() => setIsQrRevealed(v => !v)}
-                        aria-label={isQrRevealed ? 'Hide QR code' : 'Show QR code'}
-                      >
-                        {isQrRevealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
