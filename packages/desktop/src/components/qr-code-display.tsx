@@ -111,7 +111,16 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
 
                 <p style="font-size: 14px; color: #3e3739; margin: 0 0 6px 0;">Set: ${escapeHtml(setId)}  &middot;  ${createdDate}</p>
 
-                <p style="font-size: 12px; color: #3e3739; margin: 0 0 16px 0;">SHA-256: ${(() => { const core = shares[index].split('|').slice(0, 3).join('|'); const h = computeShareHash(core); return truncateHash(h); })()}</p>
+                <p style="font-size: 12px; color: #3e3739; margin: 0 0 16px 0;">SHA-256: ${(() => {
+                    // Read the hash already embedded in the share (computed at generation
+                    // time over the FULL hash input, including any recovery metadata) so
+                    // the printed fingerprint always matches the QR's contents byte-for-byte.
+                    // Falls back to recomputing for legacy hashless Qards.
+                    const parts = shares[index].split('|');
+                    const embedded = parts.find(p => p.startsWith('sha256:'))?.slice(7);
+                    const fullHash = embedded ?? computeShareHash(parts.slice(0, 3).join('|'));
+                    return truncateHash(fullHash);
+                })()}</p>
 
                 <div style="display: flex; align-items: center; justify-content: center; color: #DC2626; font-weight: 500; font-size: 14px; margin-bottom: 10px;">
                     <span style="margin-right: 6px; font-size: 16px;">⚠️</span>
@@ -268,9 +277,14 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         ctx.fillText(`Set: ${setId}  \u00B7  ${dateStr}`, W / 2, y);
         y += 24;
 
-        // SHA-256 fingerprint
-        const coreShare = shares[index].split('|').slice(0, 3).join('|');
-        const fullHash = computeShareHash(coreShare);
+        // SHA-256 fingerprint — read from the share's embedded sha256 segment
+        // (computed at generation over the FULL hash input, including any
+        // recovery metadata), falling back to recompute over salt|data for
+        // legacy hashless Qards. Guarantees the printed fingerprint matches
+        // the QR's contents byte-for-byte.
+        const shareParts = shares[index].split('|');
+        const embeddedHash = shareParts.find(p => p.startsWith('sha256:'))?.slice(7);
+        const fullHash = embeddedHash ?? computeShareHash(shareParts.slice(0, 3).join('|'));
         const displayHash = truncateHash(fullHash);
         ctx.fillStyle = '#3e3739';
         ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
