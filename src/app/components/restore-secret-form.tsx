@@ -641,24 +641,28 @@ export function RestoreSecretForm() {
                               const key = 'data';
                               const revealed = revealedQrs.has(key);
                               return (
-                                <div className="relative">
-                                  <img
-                                    src={qrDataUri}
-                                    alt="QR Code"
-                                    className={cn(
-                                      "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
-                                      !revealed && "blur-lg"
-                                    )}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-2 right-2 z-10 h-8 w-8 text-foreground bg-background/80 hover:bg-background shadow-sm"
-                                    onClick={() => toggleQrReveal(key)}
-                                    aria-label={revealed ? 'Hide QR code' : 'Show QR code'}
-                                  >
-                                    {revealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                  </Button>
+                                <div>
+                                  <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded">
+                                    <img
+                                      src={qrDataUri}
+                                      alt="QR Code"
+                                      className={cn(
+                                        "block w-full bg-white p-2 transition-all duration-300",
+                                        !revealed && "blur-lg"
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="mt-3 flex justify-center">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleQrReveal(key)}
+                                      aria-label={revealed ? 'Hide QR code' : 'Show QR code'}
+                                    >
+                                      {revealed ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                                      {revealed ? 'Hide' : 'Reveal'}
+                                    </Button>
+                                  </div>
                                 </div>
                               );
                             })()
@@ -666,29 +670,31 @@ export function RestoreSecretForm() {
                       )}
                       {qrTab === 'seed' && (
                         seedQrUris.length > 0
-                          ? <div className="space-y-3">
+                          ? <div className="space-y-6">
                               {seedQrUris.map((uri, i) => {
                                 const key = `seed-${i}`;
                                 const revealed = revealedQrs.has(key);
                                 return (
                                   <div key={i}>
-                                    <div className="relative">
+                                    <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded">
                                       <img
                                         src={uri}
                                         alt={`SeedQR ${i + 1}`}
                                         className={cn(
-                                          "mx-auto w-full max-w-[280px] rounded bg-white p-2 transition-all duration-300",
+                                          "block w-full bg-white p-2 transition-all duration-300",
                                           !revealed && "blur-lg"
                                         )}
                                       />
+                                    </div>
+                                    <div className="mt-3 flex justify-center">
                                       <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute top-2 right-2 z-10 h-8 w-8 text-foreground bg-background/80 hover:bg-background shadow-sm"
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => toggleQrReveal(key)}
                                         aria-label={revealed ? `Hide SeedQR ${i + 1}` : `Show SeedQR ${i + 1}`}
                                       >
-                                        {revealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        {revealed ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                                        {revealed ? 'Hide' : 'Reveal'}
                                       </Button>
                                     </div>
                                     {fingerprints[i] && (
