@@ -610,6 +610,16 @@ export function RestoreSecretForm() {
           <p className="mt-3 text-sm text-[hsl(37,10%,75%)]">Restoring your secret…</p>
         </div>
       )}
+      {restoredSecret && (
+        <Button
+          onClick={handleReset}
+          variant="outline"
+          size="sm"
+          className="absolute top-10 right-10 z-10"
+        >
+          <RefreshCcw className="mr-2 h-4 w-4" /> Start Over
+        </Button>
+      )}
       <CardHeader className="p-10">
         <CardTitle>Restore From Backup</CardTitle>
         <CardDescription>Follow the steps to restore a secret from your backups.</CardDescription>
@@ -620,46 +630,38 @@ export function RestoreSecretForm() {
                 <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
                 <h3 className="text-2xl font-bold">Secret Revealed!</h3>
                 {restoredLabel && <p className="text-lg text-muted-foreground">Label: <span className="font-semibold">{restoredLabel}</span></p>}
-                <div className="relative">
-                    <Textarea
-                        readOnly
-                        aria-label="Restored secret"
-                        value={restoredSecret}
-                        rows={5}
-                        className={cn(
-                            "text-lg font-mono bg-green-50 dark:bg-green-900/20 border-green-200 text-green-900 dark:text-green-100 transition-all duration-300 pr-20",
-                            !isSecretVisible && "blur-md"
-                        )}
-                        />
-                    <div className="absolute top-2 right-2 flex flex-col gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={() => setIsSecretVisible(!isSecretVisible)}
-                            title={isSecretVisible ? 'Hide secret' : 'Show secret'}
-                        >
-                            {isSecretVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={handleCopy}
-                            title="Copy secret"
-                        >
-                            <Copy className="h-5 w-5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={openQrDialog}
-                            title="Show QR code"
-                        >
-                            <QrCode className="h-5 w-5" />
-                        </Button>
-                    </div>
+                <Textarea
+                    readOnly
+                    aria-label="Restored secret"
+                    value={restoredSecret}
+                    rows={5}
+                    className={cn(
+                        "text-lg font-mono bg-green-50 dark:bg-green-900/20 border-green-200 text-green-900 dark:text-green-100 transition-all duration-300",
+                        !isSecretVisible && "blur-md"
+                    )}
+                />
+                <div className="flex flex-col sm:flex-row justify-center gap-2">
+                    <Button
+                        onClick={() => setIsSecretVisible(!isSecretVisible)}
+                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
+                    >
+                        {isSecretVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                        {isSecretVisible ? 'Hide' : 'Reveal'}
+                    </Button>
+                    <Button
+                        onClick={handleCopy}
+                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
+                    >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy
+                    </Button>
+                    <Button
+                        onClick={openQrDialog}
+                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
+                    >
+                        <QrCode className="mr-2 h-4 w-4" />
+                        QR Code
+                    </Button>
                 </div>
                 <Dialog
                   open={isQrDialogOpen}
@@ -774,9 +776,6 @@ export function RestoreSecretForm() {
                     </div>
                   </DialogContent>
                 </Dialog>
-                <Button onClick={handleReset} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
-                  <RefreshCcw className="mr-2 h-4 w-4" /> Start Over
-                </Button>
             </div>
         ) : (
           <>
