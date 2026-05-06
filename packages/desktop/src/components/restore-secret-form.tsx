@@ -15,6 +15,7 @@ import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
 import { restoreSecret, decryptVault } from '@/lib/desktop-crypto';
+import { invoke } from '@tauri-apps/api/core';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -183,18 +184,35 @@ export function RestoreSecretForm() {
   }
 
   // Decode a QR code from an image using the best available decoder.
-  // BarcodeDetector (native Chromium API) handles dense codes far better than jsQR.
-  const decodeQR = async (image: HTMLImageElement): Promise<string | null> => {
-    // Strategy 1: Native BarcodeDetector API (Chromium / Tauri)
+  // Strategy order: BarcodeDetector (Chromium) → rqrr via Tauri/Rust (much
+  // more capable on dense QRs than jsQR — closes the WKWebView gap on macOS
+  // where BarcodeDetector is absent) → jsQR as last resort.
+  //
+  // `dataUrl` is the FileReader.readAsDataURL output; passed through so the
+  // Tauri/Rust layer can decode the original PNG/JPEG without a re-encode.
+  const decodeQR = async (image: HTMLImageElement, dataUrl?: string): Promise<string | null> => {
+    // Strategy 1: Native BarcodeDetector API (Chromium browsers, not WKWebView)
     if ('BarcodeDetector' in window) {
       try {
         const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
         const results = await detector.detect(image);
         if (results.length > 0) return results[0].rawValue;
+      } catch (_) { /* fall through */ }
+    }
+
+    // Strategy 2: rqrr via Tauri (Rust). Handles dense QR codes (version
+    // 25+) that jsQR struggles with, and is the primary path on macOS where
+    // WKWebView lacks BarcodeDetector.
+    if (dataUrl) {
+      try {
+        const commaIdx = dataUrl.indexOf(',');
+        const b64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+        const decoded = await invoke<string | null>('qr_decode', { dataB64: b64 });
+        if (decoded) return decoded;
       } catch (_) { /* fall through to jsQR */ }
     }
 
-    // Strategy 2: jsQR with upscaling fallback (for Firefox/Safari/older browsers)
+    // Strategy 3: jsQR with upscaling fallback (last-resort path).
     for (const scale of [1, 2, 3]) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -223,9 +241,10 @@ export function RestoreSecretForm() {
     const filePromises = files.map(file => new Promise<void>((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
             const image = new Image();
             image.onload = async () => {
-                const result = await decodeQR(image);
+                const result = await decodeQR(image, dataUrl);
 
                 if (result) {
                     addShare(result, file.name, true);
@@ -238,7 +257,7 @@ export function RestoreSecretForm() {
                 addShare('', file.name, false);
                 resolve();
             };
-            image.src = e.target?.result as string;
+            image.src = dataUrl;
         };
         reader.readAsDataURL(file);
     }));

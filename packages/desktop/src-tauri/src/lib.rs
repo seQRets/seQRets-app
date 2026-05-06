@@ -1,5 +1,6 @@
 mod crypto;
 mod keychain;
+mod qr;
 mod review_reminder;
 mod smartcard;
 
@@ -45,6 +46,9 @@ pub fn run() {
       keychain::keychain_get,
       keychain::keychain_set,
       keychain::keychain_delete,
+      // QR code decoder (rqrr — fallback for dense QRs that BarcodeDetector
+      // can't handle on macOS WKWebView)
+      qr::qr_decode,
       // Inheritance plan review-reminder sidecar
       review_reminder::reminder_read,
       review_reminder::reminder_write,

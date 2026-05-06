@@ -35,6 +35,19 @@ zeroize = { version = "1", features = ["derive"] }
 flate2 = "1"
 rand = "0.9"
 base64 = "0.22"
+# QR code decoding (for dropped PNG/JPEG Qard images — closes a gap where
+# WebKit's WKWebView lacks the BarcodeDetector API and jsQR can't reliably
+# decode dense QR codes on the JS side).
+rqrr = "0.7"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+# In dev builds, compile dependency crates with full optimizations while
+# leaving our own code unoptimized for fast incremental builds. Without
+# this, image-processing crates like `image` and `rqrr` run 10-50× slower
+# in dev than in release, making `npm run desktop:dev` deceptively slow
+# at QR decoding.
+[profile.dev.package."*"]
+opt-level = 3
