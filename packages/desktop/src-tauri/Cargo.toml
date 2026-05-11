@@ -38,7 +38,7 @@ base64 = "0.22"
 # QR code decoding (for dropped PNG/JPEG Qard images — closes a gap where
 # WebKit's WKWebView lacks the BarcodeDetector API and jsQR can't reliably
 # decode dense QR codes on the JS side).
-rqrr = "0.7"
+rqrr = "0.10"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 [target.'cfg(unix)'.dependencies]
