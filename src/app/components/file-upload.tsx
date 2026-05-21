@@ -4,6 +4,7 @@
 import { useRef } from 'react';
 import { Camera, FileUp, FolderOpen, TextCursorInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HelpHint } from '@/components/ui/help-hint';
 import { DragDropZone } from './drag-drop-zone';
 
 interface FileUploadProps {
@@ -57,7 +58,17 @@ export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen, onImportV
             aria-label="Upload QR code images"
           />
         </div>
-        <p className="text-xs text-muted-foreground text-center">or use another method:</p>
+        <div className="flex items-center justify-center gap-2">
+          <p className="text-sm text-muted-foreground">or use another method:</p>
+          <HelpHint label="What's the difference?">
+            <p className="font-bold mb-2">Choose how to add your Qards</p>
+            <p className="mt-1"><strong>Paste Text</strong> — type or paste the raw Qard text (the long <code className="text-xs">seQRets|…</code> string).</p>
+            <p className="mt-2"><strong>Scan QR</strong> — open the camera and scan a physical Qard.</p>
+            {onImportVault && (
+              <p className="mt-2"><strong>Import Vault</strong> — load an encrypted vault file you exported earlier (all Qards in one file).</p>
+            )}
+          </HelpHint>
+        </div>
         <div className="grid grid-cols-3 gap-2">
             <Button variant="outline" onClick={onManualOpen} className="w-full text-sm px-2 dark-thin-border bg-[#cbc5ba] hover:bg-background dark:bg-[#232122] dark:text-white dark:border-black dark:hover:bg-[#605c53] dark:hover:text-white dark:hover:border-black">
                 <TextCursorInput className="hidden sm:inline sm:mr-1.5 h-4 w-4 shrink-0" />

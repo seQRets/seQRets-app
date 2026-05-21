@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download, CreditCard, RefreshCcw, Save, TriangleAlert, FilePenLine, Bot, FileText } from 'lucide-react';
+import { Lock, KeyRound, Eye, EyeOff, Paperclip, Loader2, CheckCircle2, X, FileDown, ArrowDown, ShieldCheck, Download, CreditCard, RefreshCcw, Save, TriangleAlert, FilePenLine, Bot, FileText } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpHint } from '@/components/ui/help-hint';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { playFileDropSound } from '@/lib/play-sound';
@@ -400,7 +401,15 @@ export default function InstructionsPage() {
             </div>
           )}
           <CardContent className="p-6 pt-6">
-            <h2 className="text-2xl font-bold text-foreground">Inheritance Planning</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">Inheritance Planning</h2>
+              <HelpHint label="What's an inheritance plan?">
+                <p className="font-bold mb-2">What goes in an inheritance plan?</p>
+                <p>The instructions, account lists, wallet addresses, and context your heirs need to act on what you&apos;ve left them.</p>
+                <p className="mt-2">Three ways to build it: <strong>Encrypt Plan</strong> locks down a document you&apos;ve already prepared. <strong>Create Plan</strong> opens a guided 9-section builder. <strong>Decrypt / Edit Plan</strong> opens a previously encrypted plan to view or update it.</p>
+                <p className="mt-2">For each asset you can reference a seQRet Set (e.g. <em>&quot;Protected by seQRets — seQRet 1&quot;</em>) if the seed is on Qards, or include the seed directly. The whole plan is encrypted before it leaves your device.</p>
+              </HelpHint>
+            </div>
             <p className="text-muted-foreground text-sm mb-6">
               Create an inheritance plan or encrypt a document for your heirs. Decrypt and view previously encrypted plans.
             </p>
@@ -453,20 +462,15 @@ export default function InstructionsPage() {
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
                               <Label htmlFor="use-keyfile-encrypt" className="text-base font-medium">Use a Keyfile</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
-                                    <TriangleAlert className="h-4 w-4" />
-                                    <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
-                                    <AlertDescription>
-                                      You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
-                                    </AlertDescription>
-                                  </Alert>
-                                </PopoverContent>
-                              </Popover>
+                              <HelpHint>
+                                <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
+                                  <TriangleAlert className="h-4 w-4" />
+                                  <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
+                                  <AlertDescription>
+                                    You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
+                                  </AlertDescription>
+                                </Alert>
+                              </HelpHint>
                             </div>
                             <Switch id="use-keyfile-encrypt" checked={encryptUseKeyfile} onCheckedChange={setEncryptUseKeyfile} />
                           </div>
@@ -639,20 +643,15 @@ export default function InstructionsPage() {
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
                               <Label htmlFor="use-keyfile-create" className="text-base font-medium">Use a Keyfile</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
-                                    <TriangleAlert className="h-4 w-4" />
-                                    <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
-                                    <AlertDescription>
-                                      You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
-                                    </AlertDescription>
-                                  </Alert>
-                                </PopoverContent>
-                              </Popover>
+                              <HelpHint>
+                                <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
+                                  <TriangleAlert className="h-4 w-4" />
+                                  <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
+                                  <AlertDescription>
+                                    You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
+                                  </AlertDescription>
+                                </Alert>
+                              </HelpHint>
                             </div>
                             <Switch id="use-keyfile-create" checked={encryptUseKeyfile} onCheckedChange={setEncryptUseKeyfile} />
                           </div>
@@ -850,14 +849,9 @@ export default function InstructionsPage() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Label htmlFor="decrypt-password">Password</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Enter the same password that was used when the instructions were encrypted.
-                              </PopoverContent>
-                            </Popover>
+                            <HelpHint>
+                              Enter the same password that was used when the instructions were encrypted.
+                            </HelpHint>
                           </div>
                           <div className="relative">
                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -884,14 +878,9 @@ export default function InstructionsPage() {
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
                               <Label htmlFor="use-keyfile-decrypt" className="text-base font-medium">Was a Keyfile used?</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  If a keyfile was used when encrypting the instructions, enable this and upload the same keyfile.
-                                </PopoverContent>
-                              </Popover>
+                              <HelpHint>
+                                If a keyfile was used when encrypting the instructions, enable this and upload the same keyfile.
+                              </HelpHint>
                             </div>
                             <Switch id="use-keyfile-decrypt" checked={decryptUseKeyfile} onCheckedChange={setDecryptUseKeyfile} />
                           </div>

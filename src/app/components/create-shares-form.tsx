@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { CreateSharesRequest, CreateSharesResult } from '@/lib/types';
 import { SeedPhraseGenerator } from './seed-phrase-generator';
 import { gzip, tryGetEntropy } from '@seqrets/crypto';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpHint } from '@/components/ui/help-hint';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { KeyfileGenerator } from './keyfile-generator';
 import { Separator } from '@/components/ui/separator';
@@ -297,14 +297,9 @@ export function CreateSharesForm() {
                 <div className="flex justify-between items-center gap-2">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="secret"><span className="sm:hidden">Your Secret</span><span className="hidden sm:inline">Your Secret Text</span></Label>
-                      <Popover>
-                          <PopoverTrigger asChild>
-                              <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: secret text</span></button>
-                          </PopoverTrigger>
-                          <PopoverContent className="text-sm">
-                              Enter the secret you want to protect. This could be a 12/24-word BIP-39 seed phrase, a private key, or any other important text. The app will automatically detect valid seed phrases for better storage efficiency.
-                          </PopoverContent>
-                      </Popover>
+                      <HelpHint label="Help: secret text">
+                          Enter the secret you want to protect. This could be a 12/24-word BIP-39 seed phrase, a private key, or any other important text. The app will automatically detect valid seed phrases for better storage efficiency.
+                      </HelpHint>
                   </div>
                   <Button onClick={() => setShowSeedGenerator(!showSeedGenerator)} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
                       <Wand className="mr-2 h-4 w-4" />
@@ -401,20 +396,15 @@ export function CreateSharesForm() {
                         <div className="flex items-center space-x-2">
                           <Paperclip className="h-5 w-5" />
                           <Label htmlFor="use-keyfile" className="text-base font-medium">Use a Keyfile</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: keyfile</span></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                    <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
-                                        <TriangleAlert className="h-4 w-4" />
-                                        <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
-                                        <AlertDescription>
-                                            You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
-                                        </AlertDescription>
-                                    </Alert>
-                                </PopoverContent>
-                            </Popover>
+                            <HelpHint label="Help: keyfile">
+                                <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
+                                    <TriangleAlert className="h-4 w-4" />
+                                    <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
+                                    <AlertDescription>
+                                        You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
+                                    </AlertDescription>
+                                </Alert>
+                            </HelpHint>
                         </div>
                         <Switch id="use-keyfile" checked={useKeyfile} onCheckedChange={setUseKeyfile} />
                       </div>
@@ -466,34 +456,26 @@ export function CreateSharesForm() {
                             <div className="flex flex-col justify-end space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Label htmlFor="label">Optional Label</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: label</span></button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="text-sm">
+                                    <HelpHint label="Help: label">
                                         Add a label to your secret (e.g., "Inheritance Wallet", "Bitcoin Cold Storage"). This label will be encrypted along with your secret and will appear when you restore it.
-                                        </PopoverContent>
-                                    </Popover>
+                                    </HelpHint>
                                 </div>
                                 <Input id="label" placeholder="e.g., 'Inheritance Wallet'" value={label} onChange={(e) => setLabel(e.target.value)} />
                             </div>
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Label htmlFor="total-shares">Total Qards ({totalShares})</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <button>
-                                            {totalShares === 1
-                                                ? <TriangleAlert className="h-4 w-4 fill-red-500 text-white" />
-                                                : <HelpCircle className="h-4 w-4 text-primary" />}
-                                            <span className="sr-only">{totalShares === 1 ? 'Warning: single Qard' : 'Help: total Qards'}</span>
-                                        </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="text-sm">
+                                    <HelpHint
+                                        label={totalShares === 1 ? 'Warning: single Qard' : 'Help: total Qards'}
+                                        icon={totalShares === 1
+                                            ? <TriangleAlert className="h-4 w-4 fill-red-500 text-white" />
+                                            : <HelpCircle className="h-4 w-4 text-primary" />}
+                                    >
                                         {totalShares === 1 ? (
                                             <>
                                                 <p className="font-bold mb-2 text-red-500">Single point of failure</p>
-                                                <p>One Qard, no backup. If it's damaged, lost, or fades, the secret is unrecoverable. Consider 2-of-3 for redundancy.</p>
+                                                <p>One Qard, no backup. If it's damaged, lost, or fades, the secret is unrecoverable.</p>
+                                                <p className="mt-2">Two ways to add safety: print or save multiple copies of this same Qard and store them in different places, or use a 2-of-3 split so no single Qard can unlock the secret on its own.</p>
                                             </>
                                         ) : (
                                             <>
@@ -501,8 +483,7 @@ export function CreateSharesForm() {
                                                 This is the total number of QR code backups (Qards) that will be created. You can distribute these among family members, lawyers, or secure physical locations.
                                             </>
                                         )}
-                                        </PopoverContent>
-                                    </Popover>
+                                    </HelpHint>
                                 </div>
                                 <div className="flex h-10 items-center">
                                   <Slider id="total-shares" min={1} max={10} step={1} value={[totalShares]} onValueChange={([val]) => setTotalShares(val)} />
@@ -511,16 +492,11 @@ export function CreateSharesForm() {
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Label htmlFor="required-shares">Qards to Restore ({requiredShares})</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: Qards to restore</span></button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="text-sm">
+                                    <HelpHint label="Help: Qards to restore">
                                         <p className="font-bold mb-2">Qards to Restore</p>
                                         This is the minimum number of Qards that must be brought together to recover the original secret. This is also known as the "threshold".
                                         <p className="mt-2 text-xs text-muted-foreground">For example, a 3-of-5 setup means you create 5 total Qards, but only need any 3 of them to restore your secret.</p>
-                                        </PopoverContent>
-                                    </Popover>
+                                    </HelpHint>
                                 </div>
                                 <div className="flex h-10 items-center">
                                   <Slider id="required-shares" min={totalShares === 1 ? 1 : 2} max={totalShares} step={1} value={[requiredShares]} onValueChange={([val]) => setRequiredShares(val)} />
@@ -534,23 +510,18 @@ export function CreateSharesForm() {
                                 <Label htmlFor="embed-recovery-info" className="text-base font-medium">
                                   Include Qard Share Data ({requiredShares} of {totalShares}) in QR
                                 </Label>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <button><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: Qard share data</span></button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="text-sm">
-                                    <p className="font-bold mb-2">Qard Share Data</p>
-                                    <p>
-                                      Embeds the threshold ({requiredShares}) and total ({totalShares}) inside each Qard&apos;s QR data.
-                                      During restoration, the app shows a live countdown — for example, &quot;1 more Qard required&quot;.
-                                      Helpful for heirs decades from now.
-                                    </p>
-                                    <p className="mt-2 text-xs text-muted-foreground">
-                                      Trade-off: anyone who scans a Qard learns that you split your secret into {totalShares} parts and need {requiredShares} to restore it.
-                                      Without the password, that information is not enough to recover anything — but it does narrow what an attacker is searching for.
-                                    </p>
-                                  </PopoverContent>
-                                </Popover>
+                                <HelpHint label="Help: Qard share data">
+                                  <p className="font-bold mb-2">Qard Share Data</p>
+                                  <p>
+                                    Embeds the threshold ({requiredShares}) and total ({totalShares}) inside each Qard&apos;s QR data.
+                                    During restoration, the app shows a live countdown — for example, &quot;1 more Qard required&quot;.
+                                    Helpful for heirs decades from now.
+                                  </p>
+                                  <p className="mt-2 text-xs text-muted-foreground">
+                                    Trade-off: anyone who scans a Qard learns that you split your secret into {totalShares} parts and need {requiredShares} to restore it.
+                                    Without the password, that information is not enough to recover anything — but it does narrow what an attacker is searching for.
+                                  </p>
+                                </HelpHint>
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {embedRecoveryInfo
@@ -589,20 +560,15 @@ export function CreateSharesForm() {
             <CardHeader className="flex flex-row justify-between items-start sm:items-center p-6 sm:p-10 gap-4">
                 <div>
                     <CardTitle className="pb-2">Your Encrypted Qards{' '}
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <button className="inline-flex align-middle ml-1"><HelpCircle className="h-4 w-4 text-primary" /><span className="sr-only">Help: encryption details</span></button>
-                        </PopoverTrigger>
-                        <PopoverContent className="text-sm">
-                            <Alert variant="destructive">
-                                <TriangleAlert className="h-4 w-4" />
-                                <AlertTitle>CRITICAL: Secure Your Credentials!</AlertTitle>
-                                <AlertDescription>
-                                    You have successfully created your Qard backups. Your final step is to secure the password {keyfile ? 'and the keyfile' : ''} you used for encryption. Without them, these Qards are permanently useless. Do not proceed until you have saved your credentials.
-                                </AlertDescription>
-                            </Alert>
-                        </PopoverContent>
-                    </Popover>
+                    <HelpHint label="Help: encryption details" triggerClassName="inline-flex align-middle ml-1">
+                        <Alert variant="destructive">
+                            <TriangleAlert className="h-4 w-4" />
+                            <AlertTitle>CRITICAL: Secure Your Credentials!</AlertTitle>
+                            <AlertDescription>
+                                You have successfully created your Qard backups. Your final step is to secure the password {keyfile ? 'and the keyfile' : ''} you used for encryption. Without them, these Qards are permanently useless. Do not proceed until you have saved your credentials.
+                            </AlertDescription>
+                        </Alert>
+                    </HelpHint>
                     </CardTitle>
                 </div>
                 <Button onClick={handleReset} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md flex-shrink-0">

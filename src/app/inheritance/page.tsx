@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bot, KeyRound, Eye, EyeOff, Paperclip, HelpCircle, Loader2, CheckCircle2, X, FileDown, FileUp, ArrowDown, ShieldCheck, Lock, Download, TriangleAlert } from 'lucide-react';
+import { Bot, KeyRound, Eye, EyeOff, Paperclip, Loader2, CheckCircle2, X, FileDown, FileUp, ArrowDown, ShieldCheck, Lock, Download, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Header } from '../components/header';
@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpHint } from '@/components/ui/help-hint';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type { RawInstruction, DecryptInstructionRequest } from '@/lib/types';
@@ -264,7 +265,14 @@ export default function InstructionsPage() {
             </div>
           )}
           <CardContent className="p-6 pt-6">
-            <h2 className="text-2xl font-bold text-foreground">Inheritance Planning</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">Inheritance Planning</h2>
+              <HelpHint label="What's an inheritance plan?">
+                <p className="font-bold mb-2">What goes in an inheritance plan?</p>
+                <p>The instructions, account lists, wallet addresses, and context your heirs need to act on what you&apos;ve left them. The whole document is encrypted with its own password before it leaves your device.</p>
+                <p className="mt-2">You can include recovery seeds directly if you want — the safer pattern is to keep seeds on Qards and just reference the Qard set in the plan.</p>
+              </HelpHint>
+            </div>
             <p className="text-muted-foreground text-sm mb-4">
               Encrypt a document with instructions for your heirs, or decrypt a previously encrypted file.
             </p>
@@ -321,20 +329,15 @@ export default function InstructionsPage() {
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
                               <Label htmlFor="use-keyfile-encrypt" className="text-base font-medium">Use a Keyfile</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
-                                    <TriangleAlert className="h-4 w-4" />
-                                    <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
-                                    <AlertDescription>
-                                      You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
-                                    </AlertDescription>
-                                  </Alert>
-                                </PopoverContent>
-                              </Popover>
+                              <HelpHint label="Help: keyfile">
+                                <Alert variant="destructive" className="border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500">
+                                  <TriangleAlert className="h-4 w-4" />
+                                  <AlertTitle className="font-bold">CRITICAL: Back Up Your Keyfile!</AlertTitle>
+                                  <AlertDescription>
+                                    You MUST save the keyfile. It is required for recovery and **cannot be generated again.** Store it safely, separate from your Qards. For better obscurity, you can rename the file.
+                                  </AlertDescription>
+                                </Alert>
+                              </HelpHint>
                             </div>
                             <Switch id="use-keyfile-encrypt" checked={encryptUseKeyfile} onCheckedChange={setEncryptUseKeyfile} />
                           </div>
@@ -496,14 +499,9 @@ export default function InstructionsPage() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Label htmlFor="decrypt-password">Password</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                              </PopoverTrigger>
-                              <PopoverContent className="text-sm">
-                                Enter the same password that was used when the instructions were encrypted.
-                              </PopoverContent>
-                            </Popover>
+                            <HelpHint label="Help: password">
+                              Enter the same password that was used when the instructions were encrypted.
+                            </HelpHint>
                           </div>
                           <div className="relative">
                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -530,14 +528,9 @@ export default function InstructionsPage() {
                             <div className="flex items-center space-x-2">
                               <Paperclip className="h-5 w-5" />
                               <Label htmlFor="use-keyfile-decrypt" className="text-base font-medium">Was a Keyfile used?</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                  If you attached a keyfile for extra security when encrypting the plan, you must enable this and upload the exact same file now to decrypt.
-                                </PopoverContent>
-                              </Popover>
+                              <HelpHint label="Help: keyfile">
+                                If you attached a keyfile for extra security when encrypting the plan, you must enable this and upload the exact same file now to decrypt.
+                              </HelpHint>
                             </div>
                             <Switch id="use-keyfile-decrypt" checked={decryptUseKeyfile} onCheckedChange={setDecryptUseKeyfile} />
                           </div>

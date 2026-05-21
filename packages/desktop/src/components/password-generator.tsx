@@ -3,10 +3,10 @@ import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, KeyRound, Loader2, Wand2, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Copy, KeyRound, Loader2, Wand2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpHint } from '@/components/ui/help-hint';
 
 interface PasswordGeneratorProps {
   value: string;
@@ -105,20 +105,15 @@ export function PasswordGenerator({ value, onValueChange, onValidationChange, pl
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Label htmlFor="password">Required Password</Label>
-        <Popover>
-            <PopoverTrigger asChild>
-                <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-            </PopoverTrigger>
-            <PopoverContent className="text-sm">
-                <ul className="list-disc space-y-1 pl-4">
-                    <li>Must be at least 24 characters long.</li>
-                    <li>Must include uppercase and lowercase letters.</li>
-                    <li>Must include numbers.</li>
-                    <li>Must include special symbols (e.g., !@#$%^&*).</li>
-                </ul>
-                <p className="mt-2 text-xs text-muted-foreground">Use the generator for a high-entropy password that resists Grover-accelerated brute-force.</p>
-            </PopoverContent>
-        </Popover>
+        <HelpHint>
+            <ul className="list-disc space-y-1 pl-4">
+                <li>Must be at least 24 characters long.</li>
+                <li>Must include uppercase and lowercase letters.</li>
+                <li>Must include numbers.</li>
+                <li>Must include special symbols (e.g., !@#$%^&*).</li>
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">Use the generator for a high-entropy password that resists Grover-accelerated brute-force.</p>
+        </HelpHint>
       </div>
       <div className="flex items-center gap-2">
         <div className="relative flex-grow">

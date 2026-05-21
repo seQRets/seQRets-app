@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
-import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, HelpCircle, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { CameraScanner } from './camera-scanner';
 import { Switch } from '@/components/ui/switch';
 import { KeyfileUpload } from './keyfile-upload';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpHint } from '@/components/ui/help-hint';
 import { Separator } from '@/components/ui/separator';
 import { playQardDropSound } from '@/lib/play-sound';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
@@ -640,7 +640,14 @@ export function RestoreSecretForm() {
         </Button>
       )}
       <CardHeader className="p-10">
-        <CardTitle>Restore From Backup</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Restore From Backup</CardTitle>
+          <HelpHint label="How does restoring work?">
+            <p className="font-bold mb-2">How does restoring work?</p>
+            <p>Bring together the minimum number of Qards (the threshold you set when creating them) plus the password — and the keyfile if you used one. Drop in QR images, scan with the camera, paste the text, or load directly from a seQRets smart card.</p>
+            <p className="mt-2">If your Qards include recovery info, the app shows a live count of how many you still need.</p>
+          </HelpHint>
+        </div>
         <CardDescription>Follow the steps to restore a secret from your backups.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8 p-10 pt-0">
@@ -950,14 +957,9 @@ export function RestoreSecretForm() {
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Label htmlFor="password-restore">Your Password</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                    Enter the exact same password you used when the secret was originally encrypted. Passwords are case-sensitive.
-                                </PopoverContent>
-                            </Popover>
+                            <HelpHint>
+                                Enter the exact same password you used when the secret was originally encrypted. Passwords are case-sensitive.
+                            </HelpHint>
                         </div>
                         <div className="relative">
                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -978,14 +980,9 @@ export function RestoreSecretForm() {
                         <div className="flex items-center space-x-2">
                           <Paperclip className="h-5 w-5" />
                           <Label htmlFor="use-keyfile-restore" className="text-base font-medium">Was a Keyfile used?</Label>
-                          <Popover>
-                                <PopoverTrigger asChild>
-                                    <button aria-label="Help"><HelpCircle className="h-4 w-4 text-primary" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm">
-                                    If you attached a keyfile for extra security when creating the Qards, you must enable this and upload the exact same file now to restore your secret.
-                                </PopoverContent>
-                            </Popover>
+                          <HelpHint>
+                                If you attached a keyfile for extra security when creating the Qards, you must enable this and upload the exact same file now to restore your secret.
+                            </HelpHint>
                         </div>
                         <Switch id="use-keyfile-restore" checked={useKeyfile} onCheckedChange={setUseKeyfile} />
                       </div>
