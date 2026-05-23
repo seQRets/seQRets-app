@@ -38,12 +38,35 @@ export default defineConfig({
           if (id.includes('jspdf') || id.includes('fflate') || id.includes('fast-png')) return 'pdf';
           // Crypto libs
           if (id.includes('@seqrets/crypto') || id.includes('shamir-secret-sharing') || id.includes('@noble/')) return 'crypto';
+          // BIP39 wordlists (~100 KB)
+          if (id.includes('@scure/bip39')) return 'bip39';
           // React core
           if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) return 'ui';
           // Google Generative AI (Bob chat)
           if (id.includes('@google/generative-ai')) return 'gemini';
           // DOMPurify
           if (id.includes('dompurify')) return 'sanitize';
+          // Radix UI primitives (16 packages, large surface)
+          if (id.includes('@radix-ui/')) return 'radix';
+          // Framer Motion animations
+          if (id.includes('framer-motion')) return 'motion';
+          // Markdown rendering (Bob chat output)
+          if (
+            id.includes('react-markdown') ||
+            id.includes('rehype-') ||
+            id.includes('remark-') ||
+            id.includes('/unified/') ||
+            id.includes('/mdast') ||
+            id.includes('/hast')
+          ) return 'markdown';
+          // QR encode/decode
+          if (id.includes('jsqr') || id.includes('qrcode')) return 'qr';
+          // Compression (vault import/export)
+          if (id.includes('jszip') || id.includes('pako')) return 'compression';
+          // Tauri plugin bridges
+          if (id.includes('@tauri-apps/')) return 'tauri';
+          // Lucide icons (per-icon imports add up)
+          if (id.includes('lucide-react')) return 'icons';
         },
       },
     },
