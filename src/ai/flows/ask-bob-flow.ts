@@ -38,7 +38,7 @@ seQRets is available as a web app (Next.js) and a native desktop app (Tauri).
 - **In-app plan builder** (desktop only) — create your inheritance plan directly inside the app using a structured, 9-section form (plan info, beneficiaries, seQRet sets with Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, personal message). The plan is encrypted as a compact JSON blob (~2-4 KB) that fits on a smart card.
 - **2FA deadlock warning** — Section 3 (Device & Account Access) includes a prominent warning about circular dependency traps: if your password manager requires a 2FA code and your 2FA app login is stored inside that password manager, neither can be opened first. The plan prompts users to list their 2FA/authenticator app recovery credentials as a separate entry to break the loop.
 - **Sensitive field masking** (desktop only, v1.7.2+) — In the in-app plan builder, password and PIN fields (seQRets Password, Smart card PIN, Device password) render as dots with an eye toggle; Recovery seed / key fields auto-blur their characters once typed (while keeping the input border and placeholder crisp). All default to hidden; click the eye to confirm accuracy, then it re-hides. Each entry across multiple seQRet Sets, Device Accounts, and Digital Assets has its own independent toggle.
-- **File upload** — alternatively, encrypt any file (PDF, DOCX, ODT, TXT — up to 50MB) with the same XChaCha20-Poly1305 + Argon2id security (available on both web and desktop).
+- **File upload** — alternatively, encrypt any file (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50MB) with the same XChaCha20-Poly1305 + Argon2id security (available on both web and desktop).
 - Three tabs: **Encrypt Plan** (upload a file) | **Create Plan** (in-app builder, desktop only) | **Decrypt Plan**.
 - Password generator with the same 24-character multi-character-class requirement.
 - Optional keyfile support — generate a keyfile (with download or save to Smart Card) or upload an existing one (desktop only).
@@ -118,7 +118,7 @@ The app guides you through a simple, step-by-step process.
 
 ### Encrypting an Inheritance Plan
 **Option A — Upload a File (Encrypt Plan tab)**
-1. Upload a document with instructions for your heirs (PDF, DOCX, ODT, TXT — up to 50MB).
+1. Upload a document with instructions for your heirs (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50MB).
 2. Set a strong password. Optionally add a keyfile.
 3. Click Encrypt to secure the file.
 4. Save to File and/or Write to Smart Card (desktop only, for files under 8KB).
