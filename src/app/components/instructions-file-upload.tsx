@@ -67,7 +67,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
       <div className="hidden sm:block">
         <DragDropZone
           onFiles={handleFiles}
-          accept=".txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept=".txt,.pdf,.doc,.docx,.odt,.ods,.odp,.json,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,application/json"
           label="Drag & drop your instructions file here"
           hint="or click to select a file (50MB limit)"
         />
@@ -84,7 +84,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
         <input
           ref={mobileFileInputRef}
           type="file"
-          accept=".txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept=".txt,.pdf,.doc,.docx,.odt,.ods,.odp,.json,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,application/json"
           className="hidden"
           onChange={(e) => {
             const files = Array.from(e.target.files || []);

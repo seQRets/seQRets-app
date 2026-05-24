@@ -126,7 +126,7 @@ export function InstructionsFileUpload({ onFileSelected, selectedFile }: Instruc
         type="file"
         className="hidden"
         onChange={handleFileSelect}
-        accept=".txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept=".txt,.pdf,.doc,.docx,.odt,.ods,.odp,.json,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,application/json"
       />
     </div>
   );
