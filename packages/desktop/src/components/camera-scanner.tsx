@@ -2,17 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Camera } from 'lucide-react';
 
 interface CameraScannerProps {
   onScan: (data: string) => void;
 }
+
+const CAMERA_PREF_KEY = 'seQRets_cameraDeviceId';
 
 export function CameraScanner({ onScan }: CameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try { return localStorage.getItem(CAMERA_PREF_KEY); } catch { return null; }
+  });
   const { toast } = useToast();
   const animationFrameId = useRef<number>();
 
@@ -79,18 +88,27 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         }
     };
 
-    const getCameraPermission = async () => {
+    const startStream = async () => {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error("Camera access is not supported by your browser.");
         }
 
-        // Prefer rear camera on mobile, fall back to any camera on desktop
+        // Build constraints based on selection.
+        // If user has picked a specific camera, request it exactly.
+        // Otherwise prefer rear-facing on mobile, fall back to any camera.
+        const constraints: MediaStreamConstraints = selectedDeviceId
+          ? { video: { deviceId: { exact: selectedDeviceId } } }
+          : { video: { facingMode: { ideal: 'environment' } } };
+
         try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: 'environment' } }
-            });
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch {
+            // Preferred camera unavailable — clear stale preference and grab whatever's there.
+            if (selectedDeviceId) {
+                try { localStorage.removeItem(CAMERA_PREF_KEY); } catch { /* ignore */ }
+                if (isComponentMounted) setSelectedDeviceId(null);
+            }
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
 
@@ -110,6 +128,21 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         }
 
         setHasCameraPermission(true);
+
+        // Now that permission is granted, enumerate available cameras
+        // (labels are only populated after a successful getUserMedia).
+        try {
+            const all = await navigator.mediaDevices.enumerateDevices();
+            const videoInputs = all.filter(d => d.kind === 'videoinput');
+            if (isComponentMounted) setDevices(videoInputs);
+        } catch { /* enumerate is best-effort */ }
+
+        // Record which device the stream is actually using (for the picker UI).
+        const trackSettings = stream.getVideoTracks()[0]?.getSettings();
+        if (trackSettings?.deviceId && isComponentMounted) {
+            setActiveDeviceId(trackSettings.deviceId);
+        }
+
         animationFrameId.current = requestAnimationFrame(tick);
       } catch (error) {
         console.error('Error accessing camera:', error);
@@ -126,7 +159,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
       }
     };
 
-    getCameraPermission();
+    startStream();
 
     return () => {
       isComponentMounted = false;
@@ -140,11 +173,33 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [onScan, toast]);
+  }, [onScan, toast, selectedDeviceId]);
+
+  const handleDeviceChange = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+    try { localStorage.setItem(CAMERA_PREF_KEY, deviceId); } catch { /* ignore */ }
+  };
 
   return (
-    <div className="relative flex flex-col items-center justify-center">
-        <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline muted />
+    <div className="relative flex flex-col items-center justify-center gap-2">
+        {devices.length > 1 && (
+            <div className="flex items-center gap-2 w-full">
+                <Camera className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Select value={selectedDeviceId ?? activeDeviceId ?? undefined} onValueChange={handleDeviceChange}>
+                    <SelectTrigger className="w-full" aria-label="Choose camera">
+                        <SelectValue placeholder="Choose camera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {devices.map((d, i) => (
+                            <SelectItem key={d.deviceId || `cam-${i}`} value={d.deviceId}>
+                                {d.label || `Camera ${i + 1}`}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        )}
+        <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted object-contain" autoPlay playsInline muted />
         <canvas ref={canvasRef} className="hidden" />
 
         {hasCameraPermission === null && (
