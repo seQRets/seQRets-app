@@ -1,19 +1,17 @@
 version: 2
 updates:
-  # Rust crates for the Tauri desktop app
+  # Rust crates for the Tauri desktop app.
+  # open-pull-requests-limit: 0 disables routine version-update PRs —
+  # security-advisory PRs are exempt from the limit and still come through.
+  # Net effect: a cargo PR only appears when a crate has a real CVE.
   - package-ecosystem: "cargo"
     directory: "/packages/desktop/src-tauri"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
       - "rust"
-    groups:
-      # Batch low-risk patch/minor bumps into one PR to cut noise
-      cargo-minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      - "security"
