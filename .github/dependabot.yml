@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Rust crates for the Tauri desktop app
+  - package-ecosystem: "cargo"
+    directory: "/packages/desktop/src-tauri"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "rust"
+    groups:
+      # Batch low-risk patch/minor bumps into one PR to cut noise
+      cargo-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
