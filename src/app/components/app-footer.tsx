@@ -9,7 +9,7 @@ export function AppFooter() {
     return (
         <footer className="text-center text-sm text-muted-foreground mt-8 mb-16 px-4">
             <p className="text-sm font-bold">{VERSION_STRING}</p>
-            <p className="mt-1">&copy; {new Date().getFullYear()} seQRets. All rights reserved.</p>
+            <p className="mt-1">&copy; {new Date().getFullYear()} seQRets — a product of Toothjockey LLC. All rights reserved.</p>
             <div className="flex justify-center items-center gap-3 mt-2">
                 <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
                 <span className="text-muted-foreground">·</span>
