@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { UpdateChecker } from '@/components/update-checker';
+import { TermsGate } from '@/components/terms-gate';
 import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
@@ -37,14 +38,16 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="system">
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/support" element={<SupportPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/smartcard" element={<SmartCardPage />} />
-        <Route path="/inheritance" element={<InstructionsPage />} />
-      </Routes>
+      <TermsGate>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/smartcard" element={<SmartCardPage />} />
+          <Route path="/inheritance" element={<InstructionsPage />} />
+        </Routes>
+      </TermsGate>
       <UpdateChecker checkOnMount />
       <Toaster />
     </ThemeProvider>

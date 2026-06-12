@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from './components/theme-provider';
 import { PwaInstallBanner } from './components/pwa-install-banner';
+import { TermsGate } from './components/terms-gate';
 import React from 'react';
 
 export const viewport: Viewport = {
@@ -104,7 +105,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
             <PwaInstallBanner />
-            {children}
+            <TermsGate>
+              {children}
+            </TermsGate>
             <Toaster />
         </ThemeProvider>
       </body>
