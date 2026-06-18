@@ -57,7 +57,11 @@ export default function RootLayout({
           httpEquiv="Content-Security-Policy"
           content={[
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
+            // 'unsafe-eval' is added ONLY in development: Next.js dev mode (React
+            // server-dom / Turbopack) uses eval() for callstack reconstruction and
+            // throws a blocking overlay without it. Production builds are a static
+            // export that never use eval(), so the prod policy stays strict.
+            `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data: blob:",
