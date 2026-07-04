@@ -45,7 +45,10 @@ web-build. Full `tauri:build` / Rust compile is only needed for batches that tou
 
 ## Tier 0 — Close before widening the launch
 
-### [ ] 0.1 — Honest integrity claims for the share hash · *Medium (claims/legal)*
+> **✅ ALL COMPLETE (2026-07-04)** — 0.1, 0.2, 0.3, 0.4 all shipped and verified. This is the pre-launch-worthy security set.
+
+### [x] 0.1 — Honest integrity claims for the share hash · ✅ DONE (2026-07-04, commit f232832)
+**Shipped:** reworded the "cannot be tampered with" claim → "detects accidental corruption/damage, not deliberate tampering" in `types.ts`, the `appendShareHash` docstring, and **both** Bob prompts. Both restore forms now show amber **"No integrity hash"** (legacy, `hashValid===null`) and **"Hash mismatch"** (`false`) instead of a green "Success". The optional AEAD-binding item was deferred (format-version change). Original finding below.
 The `sha256:` segment is unkeyed SHA-256: it detects corruption, but an attacker who can
 reprint a Qard can alter `t=/n=/i=` and recompute a valid hash, or strip the segment entirely —
 and restore silently accepts the stripped case as "Success." Yet `types.ts:29-35`, the
@@ -89,7 +92,8 @@ rolled back" — which was false against that code.
   now accurate — no change needed. Pre-existing cosmetic nit (applet sends `0x6983` on lockout
   but `smartcard.rs` only special-cases `0x6984`) left as-is; unrelated to this fix.
 
-### [ ] 0.3 — Scope `opener:allow-open-url` · *High (post-XSS)* · **desktop-only**
+### [x] 0.3 — Scope `opener:allow-open-url` · ✅ DONE (2026-07-04, commit ed7bbb2) · **desktop-only**
+**Shipped:** dropped `opener:default` (it bundled `allow-default-urls` = the `https://*` floodgate, plus unused `reveal-item-in-dir`) and scoped `allow-open-url` to `seqrets.app/*` + `aistudio.google.com/*` (the only two hosts the app opens). `open_path` stays scoped to `$TEMP/*`. Original finding below.
 `capabilities/default.json:15` grants `opener:allow-open-url` unscoped (verified — `open-path`
 right below it *is* scoped to `$TEMP/*`). `openUrl()` hands an arbitrary URL to the OS browser,
 sidestepping the tight `connect-src` CSP; an XSS'd renderer could exfiltrate the Gemini key /
@@ -100,7 +104,8 @@ decrypted secrets out-of-band.
 - **Verify:** desktop build; click every external link and confirm each opens; confirm an
   off-list URL is now blocked.
 
-### [ ] 0.4 — `spellCheck={false}` on all secret inputs · *Medium (smallest fix, real exfil channel)* · web + desktop
+### [x] 0.4 — `spellCheck={false}` on all secret inputs · ✅ DONE (2026-07-04, commit b997c92) · web + desktop
+**Shipped:** set `spellCheck/autoComplete/autoCorrect/autoCapitalize="off"` on the shared `Textarea` primitive (every secret/seed/share field) and `spellCheck={false}` on the shared `Input` primitive (covers revealed password fields) — one edit each, covers both apps, no new sync-pair surface. Original finding below.
 No secret input disables spellcheck/autocorrect (verified absent everywhere). Chrome/Edge
 Enhanced Spell Check transmits field contents to Google/Microsoft — seed phrases are exactly
 dictionary words. Affects secret Textarea (`create-shares-form.tsx:319`), restored-secret +
