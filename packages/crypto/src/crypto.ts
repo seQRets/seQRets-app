@@ -120,7 +120,10 @@ export function computeShareHash(input: string): string {
 /**
  * Append a SHA-256 segment to the END of the share string. The hash
  * input is everything before the appended segment, so any optional
- * metadata passed in is bound by the hash and tamper-detectable.
+ * metadata passed in is covered by the hash. NOTE: this is an UNKEYED hash
+ * that travels with the share — it detects accidental corruption or damage,
+ * not deliberate tampering (an attacker who edits the share can recompute a
+ * matching hash).
  *
  *   "seQRets|salt|data"                       → "seQRets|salt|data|sha256:H"
  *   "seQRets|salt|data|t=3|n=5|i=2"           → "seQRets|salt|data|t=3|n=5|i=2|sha256:H"

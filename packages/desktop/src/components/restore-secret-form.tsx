@@ -971,12 +971,12 @@ export function RestoreSecretForm() {
                                         ) : share.verified === true ? (
                                             <ShieldCheck className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
                                         ) : (
-                                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
+                                            <CheckCircle2 className="h-4 w-4 mr-2 text-amber-500 flex-shrink-0" />
                                         )}
                                         <span className="truncate" title={share.fileName}>{share.fileName}</span>
                                     </div>
                                     <div className='flex items-center gap-2'>
-                                        <span className="text-xs text-muted-foreground mr-2">{!share.success ? 'Failed' : share.verified === false ? 'Hash Mismatch' : share.verified === true ? 'Verified' : 'Success'}</span>
+                                        <span className={cn("text-xs mr-2", !share.success ? "text-destructive" : share.verified === true ? "text-muted-foreground" : "text-amber-600 dark:text-amber-500")}>{!share.success ? 'Failed' : share.verified === false ? 'Hash mismatch' : share.verified === true ? 'Verified' : 'No integrity hash'}</span>
                                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveShare(share.id)}>
                                           <X className="h-4 w-4" />
                                           <span className="sr-only">Remove share</span>

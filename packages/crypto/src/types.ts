@@ -29,8 +29,11 @@ export interface CreateSharesRequest {
     /**
      * If true, embed threshold/total/index metadata in each share string.
      * Enables a "X more Qards required" countdown during restoration. The
-     * metadata is covered by the SHA-256 hash so it cannot be tampered
-     * with, but it IS visible to anyone who scans the QR. Off by default.
+     * metadata is covered by the SHA-256 hash, which detects accidental
+     * corruption or damage — but NOT deliberate tampering: the hash is
+     * unkeyed and travels with the Qard, so anyone who edits a Qard can
+     * recompute a matching hash. The metadata is also visible to anyone who
+     * scans the QR. Off by default.
      */
     embedRecoveryInfo?: boolean;
 }

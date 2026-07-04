@@ -34,6 +34,7 @@ interface DecodedShare {
     threshold: number | null; // K, if the share was generated with embedRecoveryInfo
     total: number | null;     // N, if the share was generated with embedRecoveryInfo
     index: number | null;     // 1-based card index, if embedRecoveryInfo
+    hashValid: boolean | null; // integrity hash: true=valid, false=mismatch, null=absent (legacy Qard)
 }
 
 function parseShareMeta(data: string) {
@@ -44,9 +45,10 @@ function parseShareMeta(data: string) {
             threshold: parsed.threshold,
             total: parsed.total,
             index: parsed.index,
+            hashValid: parsed.hashValid,
         };
     } catch {
-        return { setId: null, threshold: null, total: null, index: null };
+        return { setId: null, threshold: null, total: null, index: null, hashValid: null };
     }
 }
 
@@ -174,7 +176,7 @@ export function RestoreSecretForm() {
       });
       return;
     }
-    const meta = success && data ? parseShareMeta(data) : { setId: null, threshold: null, total: null, index: null };
+    const meta = success && data ? parseShareMeta(data) : { setId: null, threshold: null, total: null, index: null, hashValid: null };
     const newShare: DecodedShare = { id: `${Date.now()}-${Math.random()}`, data, fileName, success, ...meta };
     setDecodedShares(prev => [...prev, newShare]);
 
@@ -883,11 +885,25 @@ export function RestoreSecretForm() {
                             {decodedShares.map((share) => (
                                 <li key={share.id} className={cn("text-sm flex items-center justify-between p-1 rounded-md hover:bg-muted/50", !share.success && 'text-destructive')}>
                                     <div className="flex items-center flex-1 min-w-0">
-                                        {share.success ? <CheckCircle2 className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" /> : <XCircle className="h-4 w-4 mr-2 text-destructive flex-shrink-0" />}
+                                        {!share.success
+                                          ? <XCircle className="h-4 w-4 mr-2 text-destructive flex-shrink-0" />
+                                          : share.hashValid === false
+                                            ? <XCircle className="h-4 w-4 mr-2 text-amber-500 flex-shrink-0" />
+                                            : share.hashValid === null
+                                              ? <CheckCircle2 className="h-4 w-4 mr-2 text-amber-500 flex-shrink-0" />
+                                              : <CheckCircle2 className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />}
                                         <span className="truncate" title={share.fileName}>{share.fileName}</span>
                                     </div>
                                     <div className='flex items-center gap-2'>
-                                        <span className="text-xs text-muted-foreground mr-2">{share.success ? 'Success' : 'Failed'}</span>
+                                        <span className={cn("text-xs mr-2",
+                                          !share.success ? "text-destructive"
+                                          : share.hashValid === true ? "text-muted-foreground"
+                                          : "text-amber-600 dark:text-amber-500")}>
+                                          {!share.success ? 'Failed'
+                                            : share.hashValid === false ? 'Hash mismatch'
+                                            : share.hashValid === null ? 'No integrity hash'
+                                            : 'Verified'}
+                                        </span>
                                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveShare(share.id)}>
                                           <X className="h-4 w-4" />
                                           <span className="sr-only">Remove share</span>
