@@ -12,7 +12,6 @@ type ActivePage = "create" | "plan" | "restore";
 
 interface WelcomeCardsProps {
   onSelect: (tab: ActivePage) => void;
-  variant?: 'web' | 'desktop';
 }
 
 type CardPalette = {
@@ -47,7 +46,7 @@ const cards: CardDef[] = [
   { value: "restore", label: "Restore a Secret", description: "Rebuild a secret from Qards", icon: Combine },
 ];
 
-export function WelcomeCards({ onSelect, variant = 'web' }: WelcomeCardsProps) {
+export function WelcomeCards({ onSelect }: WelcomeCardsProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -110,9 +109,7 @@ export function WelcomeCards({ onSelect, variant = 'web' }: WelcomeCardsProps) {
             <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
             <p className="text-muted-foreground">
               <strong className="text-card-foreground">Runs locally</strong>
-              {variant === 'web'
-                ? <> — <a href="/go-pro" className="underline text-card-foreground hover:text-primary">desktop app coming soon</a> for max security.</>
-                : <> — Native Rust crypto, this machine only.</>}
+              {' '}— <a href="/go-pro" className="underline text-card-foreground hover:text-primary">desktop app coming soon</a> for max security.
             </p>
           </div>
           <span aria-hidden="true" className="hidden sm:block w-px self-stretch bg-foreground/25 dark:bg-border" />
