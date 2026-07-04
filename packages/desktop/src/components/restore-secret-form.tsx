@@ -9,6 +9,7 @@ import { FileUpload } from './file-upload';
 import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
 import { wordlist } from '@scure/bip39/wordlists/english';
+import { mnemonicToEntropy } from '@scure/bip39';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
 import { parseShare } from '@seqrets/crypto';
 import jsQR from 'jsqr';
@@ -62,6 +63,7 @@ export function RestoreSecretForm() {
   const [qrTab, setQrTab] = useState<'data' | 'seed'>('data');
   const [qrDataUri, setQrDataUri] = useState<string | null>(null);
   const [seedQrUris, setSeedQrUris] = useState<string[]>([]);
+  const [seedQrFormat, setSeedQrFormat] = useState<'standard' | 'compact'>('standard');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
@@ -518,6 +520,7 @@ export function RestoreSecretForm() {
     setQrTab('data');
     setQrDataUri(null);
     setSeedQrUris([]);
+    setSeedQrFormat('standard');
     setStep(1);
   }
 
@@ -526,6 +529,10 @@ export function RestoreSecretForm() {
   /** Encode a single BIP-39 phrase as a SeedQR numeric string (4-digit zero-padded word indices). */
   const toSeedQR = (phrase: string): string =>
     phrase.split(/\s+/).map(word => wordlist.indexOf(word).toString().padStart(4, '0')).join('');
+
+  /** Encode a BIP-39 phrase as CompactSeedQR (raw entropy bytes, byte-mode QR). */
+  const toCompactEntropy = (phrase: string): Uint8Array =>
+    new Uint8Array(mnemonicToEntropy(phrase.trim(), wordlist));
 
   const mnemonicResult = restoredSecret ? tryGetEntropy(restoredSecret) : null;
   const isMnemonic = mnemonicResult !== null;
@@ -541,16 +548,31 @@ export function RestoreSecretForm() {
     } catch { /* QR generation failed — secret may be too long */ }
   };
 
-  const ensureSeedQr = async () => {
-    if (seedQrUris.length > 0 || !mnemonicResult) return;
+  /** Always rebuild the SeedQR images in the given format, ignoring any cached state. */
+  const regenerateSeedQr = async (format: 'standard' | 'compact') => {
+    if (!mnemonicResult) return;
     try {
       const uris = await Promise.all(
         mnemonicResult.chunks.map(chunk =>
-          QRCode.toDataURL(toSeedQR(chunk), { errorCorrectionLevel: 'L', margin: 2, width: 800 })
-        )
+          format === 'compact'
+            ? QRCode.toDataURL([{ data: toCompactEntropy(chunk), mode: 'byte' }], { errorCorrectionLevel: 'L', margin: 2, width: 800 })
+            : QRCode.toDataURL(toSeedQR(chunk), { errorCorrectionLevel: 'L', margin: 2, width: 800 })
+      )
       );
       setSeedQrUris(uris);
     } catch { /* QR generation failed */ }
+  };
+
+  const ensureSeedQr = async () => {
+    if (seedQrUris.length > 0 || !mnemonicResult) return;
+    await regenerateSeedQr(seedQrFormat);
+  };
+
+  const selectSeedQrFormat = (format: 'standard' | 'compact') => {
+    if (format === seedQrFormat) return;
+    setSeedQrFormat(format);
+    setSeedQrUris([]); // clear so the old-format images don't linger while regenerating
+    regenerateSeedQr(format);
   };
 
   const openQrDialog = () => {
@@ -703,7 +725,9 @@ export function RestoreSecretForm() {
                       </DialogTitle>
                       <DialogDescription className="min-h-[2.5rem]">
                         {qrTab === 'seed'
-                          ? 'Scan with a SeedQR-compatible signer to import your seed.'
+                          ? (seedQrFormat === 'compact'
+                              ? 'Compact SeedQR — encodes the raw entropy as bytes. Smaller, denser code.'
+                              : 'Standard SeedQR — encodes each word as a numeric index.')
                           : 'Scan this code to transfer the decrypted secret.'}
                       </DialogDescription>
                     </DialogHeader>
@@ -725,6 +749,38 @@ export function RestoreSecretForm() {
                           <Sprout className="mr-2 h-4 w-4" />
                           SeedQR
                         </Button>
+                      </div>
+                    )}
+                    {isMnemonic && qrTab === 'seed' && (
+                      <div className="flex items-center justify-center gap-3 rounded-md border border-border bg-foreground/10 px-4 py-2.5 text-sm">
+                        <span className="font-medium text-muted-foreground">QR Format</span>
+                        <button
+                          type="button"
+                          onClick={() => selectSeedQrFormat('standard')}
+                          className={cn(
+                            "font-medium transition-colors",
+                            seedQrFormat === 'standard' ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                          )}
+                          aria-pressed={seedQrFormat === 'standard'}
+                        >
+                          Standard
+                        </button>
+                        <Switch
+                          checked={seedQrFormat === 'compact'}
+                          onCheckedChange={(checked) => selectSeedQrFormat(checked ? 'compact' : 'standard')}
+                          aria-label="Toggle between Standard and Compact SeedQR format"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => selectSeedQrFormat('compact')}
+                          className={cn(
+                            "font-medium transition-colors",
+                            seedQrFormat === 'compact' ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                          )}
+                          aria-pressed={seedQrFormat === 'compact'}
+                        >
+                          Compact
+                        </button>
                       </div>
                     )}
                     <div className="py-2">
