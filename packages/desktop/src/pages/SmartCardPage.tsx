@@ -74,6 +74,14 @@ import {
   CardItem,
 } from '@/lib/smartcard';
 
+/**
+ * Smart-card PINs are stored as raw bytes on the card, which enforces an
+ * 8-16 *byte* length. Restrict input to printable ASCII so one typed
+ * character is always one byte — keeping the UI's character count in step
+ * with the card and preventing multi-byte input from being silently rejected.
+ */
+const asciiOnly = (v: string) => v.replace(/[^\x20-\x7E]/g, '');
+
 export default function SmartCardPage() {
   const { toast } = useToast();
   const { theme } = useTheme();
@@ -765,7 +773,7 @@ export default function SmartCardPage() {
                       placeholder="Enter PIN"
                       maxLength={16}
                       value={unlockPinInput}
-                      onChange={(e) => setUnlockPinInput(e.target.value)}
+                      onChange={(e) => setUnlockPinInput(asciiOnly(e.target.value))}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleUnlockPin();
                       }}
@@ -827,7 +835,7 @@ export default function SmartCardPage() {
                         placeholder="Enter current PIN"
                         maxLength={16}
                         value={oldPinInput}
-                        onChange={(e) => setOldPinInput(e.target.value)}
+                        onChange={(e) => setOldPinInput(asciiOnly(e.target.value))}
                         disabled={isChangingPin}
                       />
                     </div>
@@ -840,7 +848,7 @@ export default function SmartCardPage() {
                           placeholder="Enter new PIN"
                           maxLength={16}
                           value={changePinInput}
-                          onChange={(e) => setChangePinInput(e.target.value)}
+                          onChange={(e) => setChangePinInput(asciiOnly(e.target.value))}
                           disabled={isChangingPin}
                           className="pr-10"
                         />
@@ -863,7 +871,7 @@ export default function SmartCardPage() {
                           placeholder="Re-enter new PIN"
                           maxLength={16}
                           value={confirmChangePinInput}
-                          onChange={(e) => setConfirmChangePinInput(e.target.value)}
+                          onChange={(e) => setConfirmChangePinInput(asciiOnly(e.target.value))}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && changePinValid) handleChangePin();
                           }}
@@ -943,7 +951,7 @@ export default function SmartCardPage() {
                           placeholder="Enter PIN"
                           maxLength={16}
                           value={newPinInput}
-                          onChange={(e) => setNewPinInput(e.target.value)}
+                          onChange={(e) => setNewPinInput(asciiOnly(e.target.value))}
                           disabled={isSettingPin}
                           className="pr-10"
                         />
@@ -966,7 +974,7 @@ export default function SmartCardPage() {
                           placeholder="Re-enter PIN"
                           maxLength={16}
                           value={confirmPinInput}
-                          onChange={(e) => setConfirmPinInput(e.target.value)}
+                          onChange={(e) => setConfirmPinInput(asciiOnly(e.target.value))}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && setPinValid) handleSetPin();
                           }}
@@ -1220,7 +1228,7 @@ export default function SmartCardPage() {
                         placeholder="Leave blank if no PIN"
                         maxLength={16}
                         value={cloneDestPin}
-                        onChange={(e) => setCloneDestPin(e.target.value)}
+                        onChange={(e) => setCloneDestPin(asciiOnly(e.target.value))}
                         disabled={cloneStep === 'writing'}
                       />
                     </div>

@@ -48,6 +48,14 @@ interface SmartCardDialogProps {
   onDataRead?: (data: CardItem) => void;
 }
 
+/**
+ * Smart-card PINs are stored as raw bytes on the card, which enforces an
+ * 8-16 *byte* length. Restrict input to printable ASCII so one typed
+ * character is always one byte — keeping the UI's character count in step
+ * with the card and preventing multi-byte input from being silently rejected.
+ */
+const asciiOnly = (v: string) => v.replace(/[^\x20-\x7E]/g, '');
+
 export function SmartCardDialog({
   open,
   onOpenChange,
@@ -461,7 +469,7 @@ export function SmartCardDialog({
                     placeholder="Enter PIN"
                     maxLength={16}
                     value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
+                    onChange={(e) => setPinInput(asciiOnly(e.target.value))}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyPin(); }}
                     disabled={isPinVerifying}
                     className="flex-1"
@@ -508,7 +516,7 @@ export function SmartCardDialog({
                   placeholder="8-16 characters"
                   maxLength={16}
                   value={newPinInput}
-                  onChange={(e) => setNewPinInput(e.target.value)}
+                  onChange={(e) => setNewPinInput(asciiOnly(e.target.value))}
                   className="flex-1"
                 />
                 <Button
