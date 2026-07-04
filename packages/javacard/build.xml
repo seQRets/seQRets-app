@@ -21,7 +21,7 @@
             <cap
                 sources="${src.dir}"
                 package="com.seqrets.card"
-                version="1.0"
+                version="1.1"
                 aid="F053515254530100"
                 output="${build.dir}/SeQRetsApplet.cap"
             >

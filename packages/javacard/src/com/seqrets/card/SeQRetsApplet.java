@@ -20,8 +20,13 @@
  *   INS 0x22  SET_PIN       — Initial PIN setup (only if no PIN set)
  *   INS 0x23  SET_WIPE_PROTECT — Enable/disable wipe protection (P1=0x00 off / 0x01 on)
  *
+ * PIN handling uses javacard.framework.OwnerPIN. Its try counter is
+ * decremented BEFORE the comparison and committed atomically by the
+ * platform, so a power-tear/glitch during a failed attempt cannot roll
+ * back a spent try — the defence a hand-rolled counter cannot provide.
+ *
  * @author seQRets
- * @version 1.0
+ * @version 1.1
  */
 package com.seqrets.card;
 
@@ -62,14 +67,12 @@ public class SeQRetsApplet extends Applet {
     private byte   dataType;
     private byte[] label;
     private byte   labelLength;
-    private byte[] pin;
-    private byte   pinLength;
-    private byte   pinRetries;
-    private boolean pinSet;
-    private boolean wipeProtected;
-
-    // ── Transient storage (RAM — clears on deselect) ───────────────────
-    private boolean[] pinVerified;
+    // OwnerPIN owns the PIN value, the try counter, and the (transient)
+    // validated flag. `pinSet` tracks whether SET_PIN has been run, since
+    // OwnerPIN has no "is a PIN configured" concept of its own.
+    private OwnerPIN pin;
+    private boolean  pinSet;
+    private boolean  wipeProtected;
 
     /**
      * Private constructor — called from install().
@@ -80,15 +83,9 @@ public class SeQRetsApplet extends Applet {
         dataType    = TYPE_EMPTY;
         label       = new byte[MAX_LABEL_SIZE];
         labelLength = (byte) 0;
-        pin         = new byte[MAX_PIN_SIZE];
-        pinLength   = (byte) 0;
-        pinRetries  = MAX_PIN_RETRIES;
+        pin         = new OwnerPIN(MAX_PIN_RETRIES, MAX_PIN_SIZE);
         pinSet      = false;
         wipeProtected = false;
-
-        // Transient array — clears when applet is deselected (card removed)
-        pinVerified = JCSystem.makeTransientBooleanArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
-        pinVerified[0] = false;
 
         register();
     }
@@ -104,7 +101,7 @@ public class SeQRetsApplet extends Applet {
      * Called when the applet is selected. Reset PIN verification state.
      */
     public boolean select() {
-        pinVerified[0] = false;
+        pin.reset();
         return true;
     }
 
@@ -112,7 +109,7 @@ public class SeQRetsApplet extends Applet {
      * Called when the applet is deselected.
      */
     public void deselect() {
-        pinVerified[0] = false;
+        pin.reset();
     }
 
     /**
@@ -185,7 +182,7 @@ public class SeQRetsApplet extends Applet {
      * If PIN is set and not yet verified this session, throw security error.
      */
     private void checkPinIfRequired() {
-        if (pinSet && !pinVerified[0]) {
+        if (pinSet && !pin.isValidated()) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
     }
@@ -288,10 +285,10 @@ public class SeQRetsApplet extends Applet {
         buffer[offset++] = pinSet ? (byte) 0x01 : (byte) 0x00;
 
         // PIN verified flag
-        buffer[offset++] = pinVerified[0] ? (byte) 0x01 : (byte) 0x00;
+        buffer[offset++] = pin.isValidated() ? (byte) 0x01 : (byte) 0x00;
 
         // PIN retries remaining
-        buffer[offset++] = pinRetries;
+        buffer[offset++] = pin.getTriesRemaining();
 
         // Label length
         buffer[offset++] = labelLength;
@@ -327,12 +324,14 @@ public class SeQRetsApplet extends Applet {
         // Clear label
         Util.arrayFillNonAtomic(label, (short) 0, MAX_LABEL_SIZE, (byte) 0x00);
         labelLength = (byte) 0;
-        // Clear PIN (full factory reset)
-        Util.arrayFillNonAtomic(pin, (short) 0, MAX_PIN_SIZE, (byte) 0x00);
-        pinLength = (byte) 0;
+        // Clear PIN (full factory reset). storedData was just zeroed above,
+        // so its leading bytes are 0x00 — overwrite the OwnerPIN value with
+        // them so the old PIN does not linger in EEPROM. update() also resets
+        // the try counter, so a card locked by exhausted retries is unblocked
+        // by a factory reset (the intended recovery path).
+        pin.update(storedData, (short) 0, MAX_PIN_SIZE);
+        pin.reset();
         pinSet = false;
-        pinRetries = MAX_PIN_RETRIES;
-        pinVerified[0] = false;
         wipeProtected = false;
     }
 
@@ -374,35 +373,28 @@ public class SeQRetsApplet extends Applet {
 
     /**
      * Verify the PIN. Data = PIN bytes.
-     * If retries exhausted, card locks PIN permanently.
+     * If retries are exhausted, the PIN is blocked until a factory reset.
      */
     private void processVerifyPin(APDU apdu) {
         if (!pinSet) {
-            // No PIN set — nothing to verify, succeed
-            pinVerified[0] = true;
+            // No PIN set — nothing to verify, succeed.
             return;
         }
 
-        if (pinRetries == (byte) 0) {
+        if (pin.getTriesRemaining() == (byte) 0) {
             ISOException.throwIt(ISO7816.SW_FILE_INVALID); // Locked out
         }
 
         byte[] buffer = apdu.getBuffer();
         short bytesRead = apdu.setIncomingAndReceive();
 
-        if (bytesRead != (short) pinLength) {
-            pinRetries--;
+        // OwnerPIN.check() spends a try (decrement-before-compare, committed
+        // atomically) and only sets the validated flag on an exact match. A
+        // wrong length or wrong value both return false and cost one try.
+        if (!pin.check(buffer, ISO7816.OFFSET_CDATA, (byte) bytesRead)) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
-
-        if (Util.arrayCompare(buffer, ISO7816.OFFSET_CDATA, pin, (short) 0, (short) pinLength) == 0) {
-            pinVerified[0] = true;
-            pinRetries = MAX_PIN_RETRIES; // Reset retries on success
-        } else {
-            pinRetries--;
-            pinVerified[0] = false;
-            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-        }
+        // Match → validated flag is set; return SW 0x9000.
     }
 
     // ── CHANGE_PIN (INS 0x21) ──────────────────────────────────────────
@@ -416,7 +408,7 @@ public class SeQRetsApplet extends Applet {
         if (!pinSet) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
-        if (!pinVerified[0]) {
+        if (!pin.isValidated()) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
@@ -425,9 +417,13 @@ public class SeQRetsApplet extends Applet {
         byte oldPinLen = buffer[ISO7816.OFFSET_P1];
         short newPinLen = (short) (bytesRead - oldPinLen);
 
-        // Validate old PIN
-        if (oldPinLen != pinLength ||
-            Util.arrayCompare(buffer, ISO7816.OFFSET_CDATA, pin, (short) 0, (short) pinLength) != 0) {
+        // Reject an implausible old-PIN length before using it as an offset.
+        if (oldPinLen < MIN_PIN_SIZE || oldPinLen > MAX_PIN_SIZE) {
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
+
+        // Confirm the supplied old PIN via OwnerPIN (constant-time compare).
+        if (!pin.check(buffer, ISO7816.OFFSET_CDATA, oldPinLen)) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
@@ -436,18 +432,19 @@ public class SeQRetsApplet extends Applet {
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
 
-        // Store new PIN
-        Util.arrayFillNonAtomic(pin, (short) 0, MAX_PIN_SIZE, (byte) 0x00);
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + oldPinLen), pin, (short) 0, newPinLen);
-        pinLength = (byte) newPinLen;
-        pinRetries = MAX_PIN_RETRIES;
+        // Store new PIN. update() resets the try counter and the validated
+        // flag; re-check with the new PIN so the session stays verified,
+        // matching the prior behaviour where a successful change left the
+        // card verified with a full retry count.
+        pin.update(buffer, (short) (ISO7816.OFFSET_CDATA + oldPinLen), (byte) newPinLen);
+        pin.check(buffer, (short) (ISO7816.OFFSET_CDATA + oldPinLen), (byte) newPinLen);
     }
 
     // ── SET_PIN (INS 0x22) ─────────────────────────────────────────────
 
     /**
      * Initial PIN setup. Only works if no PIN is currently set.
-     * Data = new PIN bytes (4-8 bytes).
+     * Data = new PIN bytes (8-16 bytes).
      */
     private void processSetPin(APDU apdu) {
         if (pinSet) {
@@ -461,11 +458,10 @@ public class SeQRetsApplet extends Applet {
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
 
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pin, (short) 0, bytesRead);
-        pinLength = (byte) bytesRead;
+        pin.update(buffer, ISO7816.OFFSET_CDATA, (byte) bytesRead);
         pinSet = true;
-        pinRetries = MAX_PIN_RETRIES;
-        pinVerified[0] = true; // Auto-verify after initial setup
+        // Auto-verify after initial setup (matches prior behaviour).
+        pin.check(buffer, ISO7816.OFFSET_CDATA, (byte) bytesRead);
     }
 
     // ── SET_WIPE_PROTECT (INS 0x23) ─────────────────────────────────────
@@ -479,7 +475,7 @@ public class SeQRetsApplet extends Applet {
         if (!pinSet) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
-        if (!pinVerified[0]) {
+        if (!pin.isValidated()) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
