@@ -53,15 +53,24 @@ Bob is an AI assistant that can answer questions about seQRets and inheritance p
 
 ## 💳 JavaCard Applet Installation
 
-The SeQRets JavaCard applet must be installed on each card before use. All build tools (`ant-javacard.jar`, `gp.jar`, and the JavaCard 3.0.4 SDK) are included in the repository — no additional downloads are needed.
+The SeQRets JavaCard applet must be installed on each card before use.
 
-**Requirements:** JDK 11–17 and Apache Ant.
+**Requirements:** JDK 11 and Apache Ant. JDK 11 is required specifically — the JavaCard 3.0.4 converter targets Java 1.6 bytecode, which JDK 12+ (including 17) can no longer produce. (JDK 8 also works if you have it.)
+
+The build tools (`ant-javacard.jar`, `gp.jar`, and the JavaCard 3.0.4 SDK) are **not** checked into the repository — `packages/javacard/lib/*.jar` and `sdks/` are gitignored. Fetch them once:
 
 ```bash
 cd packages/javacard
 
-# Install JDK and Ant (macOS — skip if already installed)
+# Install JDK 11 and Ant (macOS — skip if already installed)
 brew install openjdk@11 ant
+
+# Fetch the build tools (one-time; lib/*.jar and sdks/ are gitignored)
+mkdir -p lib
+curl -fL -o lib/ant-javacard.jar https://github.com/martinpaljak/ant-javacard/releases/latest/download/ant-javacard.jar
+curl -fL -o lib/gp.jar https://github.com/martinpaljak/GlobalPlatformPro/releases/latest/download/gp.jar
+git clone --depth 1 --filter=blob:none --sparse https://github.com/martinpaljak/oracle_javacard_sdks.git sdks/oracle_javacard_sdks
+( cd sdks/oracle_javacard_sdks && git sparse-checkout set jc304_kit )
 
 # Build the applet
 export JAVA_HOME=/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home
@@ -71,11 +80,14 @@ ant clean build
 # Install on card (card must be inserted in a PC/SC reader)
 java -jar lib/gp.jar --install build/SeQRetsApplet.cap
 
+# Reflashing over an existing install? Remove the old package first:
+#   java -jar lib/gp.jar --uninstall build/SeQRetsApplet.cap
+
 # Verify installation
 java -jar lib/gp.jar --list
 ```
 
-> **Note:** Any JDK from version 11 through 17 will work. JDK 18+ is not supported by the JavaCard build toolchain. On macOS with Homebrew, you can also use `openjdk@17`.
+> **Note:** JDK 11 is required — the JavaCard 3.0.4 toolchain's converter cannot target the bytecode produced by JDK 12+ (including 17).
 
 ## 📁 Project Structure
 

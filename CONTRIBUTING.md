@@ -19,7 +19,6 @@ Thank you for your interest in contributing to seQRets! We welcome contributions
    ```bash
    npm run build
    npm run type-check
-   npm run lint
    ```
 5. **Commit** and **push** your changes, then open a **Pull Request** against the `main` branch.
 
