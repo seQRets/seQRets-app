@@ -63,19 +63,31 @@ and restore silently accepts the stripped case as "Success." Yet `types.ts:29-35
 - **Verify:** [FULL-VERIFY]; restore a hashless Qard (badge shows), a good Qard (no badge), a
   corrupted-hash Qard (still rejected). Re-read both Bob prompts side by side to confirm sync.
 
-### [ ] 0.2 — JavaCard PIN → `OwnerPIN`, and correct the docs · *Medium→High physical; claims* · **desktop-only**
-`SeQRetsApplet.java:379-405` uses a hand-rolled persistent `byte pinRetries`, decremented
-*after* the compare (verified). Power-glitch/tear in that window skips the decrement →
-effectively unlimited PIN guessing. `arrayCompare` is non-constant-time; PIN stored cleartext.
-Meanwhile `bob-api.ts:234,260` + MEMORY.md claim a "hardware-enforced retry counter that cannot
-be rolled back" — currently false.
-- Replace custom PIN + counter with `javacard.framework.OwnerPIN` (`.check()` = transaction-safe
-  decrement-*before*-compare + lockout).
-- **Now, regardless of card timing:** correct the claim in both Bob prompts + MEMORY.md.
-- **Sequencing:** applet rebuild/re-flash rides the smartcard-sourcing milestone (desktop
-  release is already gated on it). Doc correction happens immediately.
-- **Verify:** applet unit test — exhaust retries, confirm lockout persists across simulated
-  tear; real card verify/change-PIN cycle. Prompt edits: type-check + Bob sync re-read.
+### [x] 0.2 — JavaCard PIN → `OwnerPIN` · ✅ DONE (2026-07-04) · **desktop-only**
+The applet used a hand-rolled persistent `byte pinRetries` decremented *after* the compare, so
+a power-glitch/tear in that window skipped the decrement → effectively unlimited PIN guessing.
+The Bob prompts (`bob-api.ts` / `ask-bob-flow.ts`) claimed `OwnerPIN` + a counter that "cannot be
+rolled back" — which was false against that code.
+- **Fix:** rewrote `SeQRetsApplet.java` to use `javacard.framework.OwnerPIN` — `check()` does the
+  decrement-*before*-compare with an atomic commit (glitch can't roll back a spent try), plus
+  constant-time compare and `CHANGE_PIN` old-PIN validation through `OwnerPIN`. Bumped CAP
+  `version 1.0 → 1.1`.
+- **Bob prompts needed no edit:** the migration makes the existing `OwnerPIN`/"cannot be rolled
+  back" claim *true*. Both prompts remain accurate and in sync.
+- **Desktop code (Rust/TS): zero changes** — migration is wire-identical (INS codes, `GET_STATUS`
+  byte layout, status words, 8–16 PIN rule all preserved).
+- **Verified on the physical demo card** (built + flashed via `ant` + `gp`, tested via raw APDUs):
+  set-PIN/auto-verify, per-session verification reset, wrong-PIN decrement (5→0), correct-PIN
+  reset, lockout at 0 (`6983`), factory-reset unblock, PIN-gated data access, and CHANGE_PIN
+  (old rejected / new accepted). Glitch/tear resistance itself is the structural `OwnerPIN`
+  guarantee (needs fault-injection HW to exercise directly).
+- **Also shipped (0.2a):** restricted all desktop PIN inputs to printable ASCII (`asciiOnly`
+  helper in `SmartCardPage.tsx` + `smartcard-dialog.tsx`) so the UI's character count always
+  equals the card's byte-length limit — a non-ASCII PIN could previously look ≤16 chars but
+  exceed 16 bytes and be rejected by the card.
+- **Follow-up (pending):** MEMORY.md / `smartcard_strategy.md` describe the OwnerPIN design;
+  now accurate — no change needed. Pre-existing cosmetic nit (applet sends `0x6983` on lockout
+  but `smartcard.rs` only special-cases `0x6984`) left as-is; unrelated to this fix.
 
 ### [ ] 0.3 — Scope `opener:allow-open-url` · *High (post-XSS)* · **desktop-only**
 `capabilities/default.json:15` grants `opener:allow-open-url` unscoped (verified — `open-path`
@@ -178,10 +190,10 @@ where noted).
 
 ---
 
-## Batch A — Dead code cleanup + build-fragility fix · ✅ DONE (staged, awaiting test)
+## Batch A — Dead code cleanup + build-fragility fix · ✅ DONE & COMMITTED (2026-07-04)
 
-Completed 2026-07-04. Verified: build:crypto ✅ · web tsc ✅ · desktop tsc ✅ · web `next build`
-✅ (12 routes) · desktop `tsc && vite build` ✅. Not yet committed.
+Committed as `f5f9fc0`. Verified: build:crypto ✅ · web tsc ✅ · desktop tsc ✅ · web `next build`
+✅ (12 routes) · desktop `tsc && vite build` ✅.
 
 - [x] Delete `src/lib/chime.ts` + `packages/desktop/src/lib/chime.ts` (dead in both; zero importers)
 - [x] Delete `packages/desktop/src/assets/icons/logo-dark.png` + `logo-light.png` (superseded by
