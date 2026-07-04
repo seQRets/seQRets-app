@@ -13,8 +13,13 @@
     "fs:allow-write-text-file",
     "fs:allow-write-file",
     "fs:allow-temp-write",
-    "opener:default",
-    "opener:allow-open-url",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://seqrets.app/*" },
+        { "url": "https://aistudio.google.com/*" }
+      ]
+    },
     {
       "identifier": "opener:allow-open-path",
       "allow": [{ "path": "$TEMP/*" }]
