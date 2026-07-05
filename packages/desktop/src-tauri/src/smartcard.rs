@@ -8,6 +8,7 @@
 
 use pcsc::*;
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroizing;
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -167,8 +168,8 @@ fn disconnect_with_reset(card: Card) {
 /// If a PIN is provided, verify it on the current connection.
 /// This must be called in the same connection as the protected operation
 /// because PIN verification state is transient (cleared on applet re-select).
-fn verify_pin_if_needed(card: &Card, pin: &Option<String>) -> Result<(), String> {
-    if let Some(ref p) = pin {
+fn verify_pin_if_needed(card: &Card, pin: Option<&str>) -> Result<(), String> {
+    if let Some(p) = pin {
         if !p.is_empty() {
             send_apdu(card, CLA, INS_VERIFY_PIN, 0x00, 0x00, p.as_bytes())?;
         }
@@ -393,9 +394,10 @@ pub fn list_readers() -> Result<Vec<String>, String> {
 /// Get the status of the card in the given reader, including item summaries.
 #[tauri::command]
 pub fn get_card_status(reader: String, pin: Option<String>) -> Result<CardStatus, String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
 
     let resp = send_apdu(&card, CLA, INS_GET_STATUS, 0x00, 0x00, &[])?;
 
@@ -508,9 +510,10 @@ pub fn write_item_to_card(
     label: String,
     pin: Option<String>,
 ) -> Result<(), String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
 
     // Read existing items (if any)
     let (raw_data, type_byte, existing_label) = read_raw_card_data(&card)?;
@@ -536,9 +539,10 @@ pub fn write_item_to_card(
 /// Read all items from the card.
 #[tauri::command]
 pub fn read_card_items(reader: String, pin: Option<String>) -> Result<Vec<CardItem>, String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
 
     let (raw_data, type_byte, label) = read_raw_card_data(&card)?;
 
@@ -559,9 +563,10 @@ pub fn read_card_item(
     index: usize,
     pin: Option<String>,
 ) -> Result<CardItem, String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
 
     let (raw_data, type_byte, label) = read_raw_card_data(&card)?;
 
@@ -586,9 +591,10 @@ pub fn delete_card_item(
     index: usize,
     pin: Option<String>,
 ) -> Result<(), String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
 
     let (raw_data, type_byte, label) = read_raw_card_data(&card)?;
 
@@ -624,9 +630,10 @@ pub fn delete_card_item(
 /// Erase all data from the card.
 #[tauri::command]
 pub fn erase_card(reader: String, pin: Option<String>) -> Result<(), String> {
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
     let result = send_apdu(&card, CLA, INS_ERASE_DATA, 0x00, 0x00, &[]);
     disconnect_with_reset(card);
     result.map(|_| ())
@@ -643,9 +650,10 @@ pub fn write_all_items(
     if items.is_empty() {
         return Err("No items to write.".to_string());
     }
+    let pin = pin.map(Zeroizing::new);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
-    verify_pin_if_needed(&card, &pin)?;
+    verify_pin_if_needed(&card, pin.as_deref().map(|s| s.as_str()))?;
     let result = write_items_to_card(&card, &items);
     disconnect_with_reset(card);
     result
@@ -668,6 +676,7 @@ pub fn force_erase_card(reader: String) -> Result<(), String> {
 /// Requires PIN verification. When enabled, ERASE_DATA requires PIN.
 #[tauri::command]
 pub fn set_wipe_protect(reader: String, pin: String, enabled: bool) -> Result<(), String> {
+    let pin = Zeroizing::new(pin);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
     send_apdu(&card, CLA, INS_VERIFY_PIN, 0x00, 0x00, pin.as_bytes())?;
@@ -680,6 +689,7 @@ pub fn set_wipe_protect(reader: String, pin: String, enabled: bool) -> Result<()
 /// Verify the PIN on the card.
 #[tauri::command]
 pub fn verify_pin(reader: String, pin: String) -> Result<(), String> {
+    let pin = Zeroizing::new(pin);
     let (_ctx, card) = connect_reader(&reader)?;
     select_applet(&card)?;
     let result = send_apdu(&card, CLA, INS_VERIFY_PIN, 0x00, 0x00, pin.as_bytes());
@@ -690,6 +700,7 @@ pub fn verify_pin(reader: String, pin: String) -> Result<(), String> {
 /// Set initial PIN on the card (only works if no PIN is set).
 #[tauri::command]
 pub fn set_pin(reader: String, pin: String) -> Result<(), String> {
+    let pin = Zeroizing::new(pin);
     let pin_bytes = pin.as_bytes();
     if pin_bytes.len() < 8 || pin_bytes.len() > 16 {
         return Err("PIN must be 8-16 characters.".to_string());
@@ -705,13 +716,15 @@ pub fn set_pin(reader: String, pin: String) -> Result<(), String> {
 /// Change the PIN on the card (must be verified first).
 #[tauri::command]
 pub fn change_pin(reader: String, old_pin: String, new_pin: String) -> Result<(), String> {
+    let old_pin = Zeroizing::new(old_pin);
+    let new_pin = Zeroizing::new(new_pin);
     let new_pin_bytes = new_pin.as_bytes();
     if new_pin_bytes.len() < 8 || new_pin_bytes.len() > 16 {
         return Err("New PIN must be 8-16 characters.".to_string());
     }
 
     let old_pin_bytes = old_pin.as_bytes();
-    let mut data = Vec::with_capacity(old_pin_bytes.len() + new_pin_bytes.len());
+    let mut data = Zeroizing::new(Vec::with_capacity(old_pin_bytes.len() + new_pin_bytes.len()));
     data.extend_from_slice(old_pin_bytes);
     data.extend_from_slice(new_pin_bytes);
 
