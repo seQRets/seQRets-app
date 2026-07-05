@@ -144,13 +144,18 @@ at build time.
 - **Verify:** prod build; no CSP console violations, SW still registers; no `'unsafe-inline'` in
   the emitted header. More involved — schedule deliberately.
 
-### [ ] 1.4 — Argon2id off the Tauri main thread · *perf/UX* · **desktop-only**
-`crypto.rs:148-234` — all four crypto commands are sync `pub fn` (verified, no `spawn_blocking`),
-so ~0.5–2 s key derivation freezes the window on every encrypt/decrypt.
-- Make the four commands `async fn` + wrap the body in `tauri::async_runtime::spawn_blocking`.
-  Behavior-identical (frontend already `await`s these). **Touches Rust → full `tauri:build`.**
-- **Verify:** encrypt a large file, window stays responsive; full encrypt→split→restore + vault
-  round-trip correct.
+### [x] 1.4 — Argon2id off the Tauri main thread · ✅ DONE (2026-07-05, commit 4993a22) · **desktop-only**
+**Shipped:** all four crypto commands are now thin `async fn` wrappers dispatching to
+`tauri::async_runtime::spawn_blocking`, so key derivation runs on the blocking pool and the
+window stays responsive. The four pairwise-identical bodies were deduped into two shared sync
+impls (`encrypt_impl`/`decrypt_impl`); wire format, error strings, and zeroize behavior
+unchanged. New unit test covers the async dispatch path. Verified: `cargo test` 5/5, full build
+set clean, manual encrypt→split→restore + vault round-trip correct. **Residual (tracked as
+follow-up):** `qr_decode` (CPU-heavy image decode) and the smartcard/reminder commands are still
+sync on the main thread — same treatment later, promoting `run_blocking` to a shared helper.
+Original finding below.
+- Original: `crypto.rs:148-234` — all four crypto commands were sync `pub fn`, so ~0.5–2 s key
+  derivation froze the window on every encrypt/decrypt.
 
 ### [ ] 1.5 — Lazy-load Bob chat on first paint · *perf* · web + desktop
 `page.tsx:14` statically imports `BobChatInterface`, pulling `react-markdown` + `rehype-sanitize`
