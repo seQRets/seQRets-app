@@ -138,75 +138,10 @@ fn decrypt(data_b64: &str, key: &[u8; KEY_LENGTH]) -> Result<Zeroizing<Vec<u8>>,
     Ok(Zeroizing::new(plaintext))
 }
 
-// ── Tauri commands ────────────────────────────────────────────────────────────
-
-/// Gzip-compresses `json_payload`, derives a key with Argon2id, then encrypts
-/// with XChaCha20-Poly1305. Returns a random base64 salt and the encrypted blob.
-///
-/// Used by `createShares` in desktop-crypto.ts: the caller performs the Shamir
-/// split on the decoded `data` bytes in JavaScript.
-#[tauri::command]
-pub fn crypto_create(
-    json_payload: String,
-    password: String,
-    keyfile_b64: Option<String>,
-) -> Result<CryptoResult, String> {
-    let password = Zeroizing::new(password);
-    let compressed = Zeroizing::new(gzip_compress(json_payload.as_bytes())?);
-
-    let mut salt = [0u8; SALT_LENGTH];
-    rand::rng().fill_bytes(&mut salt);
-
-    let key = derive_key(password.as_str(), &salt, keyfile_b64.as_deref())?;
-    let data = encrypt(&compressed, &key)?;
-
-    Ok(CryptoResult {
-        salt: STANDARD.encode(salt),
-        data,
-    })
-}
-
-/// Derives a key with Argon2id, decrypts `encrypted_b64` (base64 of the
-/// Shamir-combined nonce||ciphertext), then gzip-decompresses. Returns the
-/// JSON payload string.
-///
-/// Used by `restoreSecret` in desktop-crypto.ts: the caller performs the
-/// Shamir combine in JavaScript before calling this command.
-#[tauri::command]
-pub fn crypto_restore(
-    salt_b64: String,
-    encrypted_b64: String,
-    password: String,
-    keyfile_b64: Option<String>,
-) -> Result<String, String> {
-    let password = Zeroizing::new(password);
-    let salt = STANDARD
-        .decode(&salt_b64)
-        .map_err(|e| format!("Salt base64 decode error: {e}"))?;
-
-    let key = derive_key(password.as_str(), &salt, keyfile_b64.as_deref())?;
-    let mut plaintext = decrypt(&encrypted_b64, &key)?;
-
-    let decompressed = gzip_decompress(&plaintext)?;
-    plaintext.zeroize(); // zero the compressed-but-decrypted bytes
-
-    // Convert to String; on failure, zeroize the invalid bytes before propagating.
-    match String::from_utf8(decompressed) {
-        Ok(s) => Ok(s),
-        Err(e) => {
-            let mut bytes = e.into_bytes();
-            bytes.zeroize();
-            Err("UTF-8 decode error".to_string())
-        }
-    }
-}
-
-/// Gzip-compresses and encrypts a JSON string for vault/instructions storage.
-/// Returns a base64 salt and encrypted blob (nonce||ciphertext).
-///
-/// Used by `encryptVault` and `encryptInstructions` in desktop-crypto.ts.
-#[tauri::command]
-pub fn crypto_encrypt_blob(
+/// Gzip-compresses `json`, derives a key with Argon2id over a fresh random
+/// salt, then encrypts with XChaCha20-Poly1305. Shared body of `crypto_create`
+/// and `crypto_encrypt_blob`.
+fn encrypt_impl(
     json: String,
     password: String,
     keyfile_b64: Option<String>,
@@ -226,12 +161,10 @@ pub fn crypto_encrypt_blob(
     })
 }
 
-/// Derives a key with Argon2id, decrypts `data_b64` (base64 of nonce||ciphertext),
-/// then gzip-decompresses. Returns the JSON string.
-///
-/// Used by `decryptVault` and `decryptInstructions` in desktop-crypto.ts.
-#[tauri::command]
-pub fn crypto_decrypt_blob(
+/// Derives a key with Argon2id, decrypts `data_b64` (base64 of
+/// nonce||ciphertext), then gzip-decompresses. Returns the JSON payload
+/// string. Shared body of `crypto_restore` and `crypto_decrypt_blob`.
+fn decrypt_impl(
     salt_b64: String,
     data_b64: String,
     password: String,
@@ -246,7 +179,7 @@ pub fn crypto_decrypt_blob(
     let mut plaintext = decrypt(&data_b64, &key)?;
 
     let decompressed = gzip_decompress(&plaintext)?;
-    plaintext.zeroize();
+    plaintext.zeroize(); // zero the compressed-but-decrypted bytes
 
     // Convert to String; on failure, zeroize the invalid bytes before propagating.
     match String::from_utf8(decompressed) {
@@ -259,11 +192,87 @@ pub fn crypto_decrypt_blob(
     }
 }
 
+// ── Tauri commands ────────────────────────────────────────────────────────────
+//
+// All four are thin async wrappers that dispatch to the blocking thread pool:
+// Argon2id takes ~0.5–2 s and would freeze the window if run on the main
+// thread (Tauri executes sync commands there).
+
+/// Runs a CPU-heavy crypto closure on the blocking thread pool so the Tauri
+/// main thread — and with it the webview — stays responsive.
+async fn run_blocking<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| format!("Crypto task failed: {e}"))?
+}
+
+/// Gzip-compresses `json_payload`, derives a key with Argon2id, then encrypts
+/// with XChaCha20-Poly1305. Returns a random base64 salt and the encrypted blob.
+///
+/// Used by `createShares` in desktop-crypto.ts: the caller performs the Shamir
+/// split on the decoded `data` bytes in JavaScript.
+#[tauri::command]
+pub async fn crypto_create(
+    json_payload: String,
+    password: String,
+    keyfile_b64: Option<String>,
+) -> Result<CryptoResult, String> {
+    run_blocking(move || encrypt_impl(json_payload, password, keyfile_b64)).await
+}
+
+/// Derives a key with Argon2id, decrypts `encrypted_b64` (base64 of the
+/// Shamir-combined nonce||ciphertext), then gzip-decompresses. Returns the
+/// JSON payload string.
+///
+/// Used by `restoreSecret` in desktop-crypto.ts: the caller performs the
+/// Shamir combine in JavaScript before calling this command.
+#[tauri::command]
+pub async fn crypto_restore(
+    salt_b64: String,
+    encrypted_b64: String,
+    password: String,
+    keyfile_b64: Option<String>,
+) -> Result<String, String> {
+    run_blocking(move || decrypt_impl(salt_b64, encrypted_b64, password, keyfile_b64)).await
+}
+
+/// Gzip-compresses and encrypts a JSON string for vault/instructions storage.
+/// Returns a base64 salt and encrypted blob (nonce||ciphertext).
+///
+/// Used by `encryptVault` and `encryptInstructions` in desktop-crypto.ts.
+#[tauri::command]
+pub async fn crypto_encrypt_blob(
+    json: String,
+    password: String,
+    keyfile_b64: Option<String>,
+) -> Result<CryptoResult, String> {
+    run_blocking(move || encrypt_impl(json, password, keyfile_b64)).await
+}
+
+/// Derives a key with Argon2id, decrypts `data_b64` (base64 of nonce||ciphertext),
+/// then gzip-decompresses. Returns the JSON string.
+///
+/// Used by `decryptVault` and `decryptInstructions` in desktop-crypto.ts.
+#[tauri::command]
+pub async fn crypto_decrypt_blob(
+    salt_b64: String,
+    data_b64: String,
+    password: String,
+    keyfile_b64: Option<String>,
+) -> Result<String, String> {
+    run_blocking(move || decrypt_impl(salt_b64, data_b64, password, keyfile_b64)).await
+}
+
 // ── Unit tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Tests exercise encrypt_impl/decrypt_impl directly: all four Tauri
+    // commands are thin async wrappers around these two functions.
 
     // Round-trip: encrypt then decrypt must return the original plaintext.
     #[test]
@@ -271,11 +280,11 @@ mod tests {
         let payload = r#"{"secret":"hello world","label":"test","isMnemonic":false}"#.to_string();
         let password = "s3cur3P@ssw0rd!".to_string();
 
-        let result = crypto_encrypt_blob(payload.clone(), password.clone(), None)
-            .expect("encrypt_blob should not fail");
+        let result = encrypt_impl(payload.clone(), password.clone(), None)
+            .expect("encrypt should not fail");
 
-        let decrypted = crypto_decrypt_blob(result.salt, result.data, password, None)
-            .expect("decrypt_blob should not fail");
+        let decrypted = decrypt_impl(result.salt, result.data, password, None)
+            .expect("decrypt should not fail");
 
         assert_eq!(decrypted, payload, "decrypted payload must match original");
     }
@@ -287,11 +296,11 @@ mod tests {
         // 32 random bytes encoded as base64
         let keyfile_b64 = Some(STANDARD.encode(b"0123456789abcdef0123456789abcdef"));
 
-        let result = crypto_encrypt_blob(payload.clone(), password.clone(), keyfile_b64.clone())
-            .expect("encrypt_blob with keyfile should not fail");
+        let result = encrypt_impl(payload.clone(), password.clone(), keyfile_b64.clone())
+            .expect("encrypt with keyfile should not fail");
 
-        let decrypted = crypto_decrypt_blob(result.salt, result.data, password, keyfile_b64)
-            .expect("decrypt_blob with keyfile should not fail");
+        let decrypted = decrypt_impl(result.salt, result.data, password, keyfile_b64)
+            .expect("decrypt with keyfile should not fail");
 
         assert_eq!(decrypted, payload);
     }
@@ -299,25 +308,11 @@ mod tests {
     #[test]
     fn test_wrong_password_fails() {
         let payload = r#"{"secret":"my secret","isMnemonic":false}"#.to_string();
-        let result = crypto_encrypt_blob(payload, "correct-password".to_string(), None)
+        let result = encrypt_impl(payload, "correct-password".to_string(), None)
             .expect("encrypt should succeed");
 
-        let err = crypto_decrypt_blob(result.salt, result.data, "wrong-password".to_string(), None);
+        let err = decrypt_impl(result.salt, result.data, "wrong-password".to_string(), None);
         assert!(err.is_err(), "decryption with wrong password must fail");
-    }
-
-    #[test]
-    fn test_create_restore_roundtrip() {
-        let payload = r#"{"secret":"wallet seed","label":"cold storage","isMnemonic":false}"#.to_string();
-        let password = "test-password-123".to_string();
-
-        let created = crypto_create(payload.clone(), password.clone(), None)
-            .expect("crypto_create should succeed");
-
-        let restored = crypto_restore(created.salt, created.data, password, None)
-            .expect("crypto_restore should succeed");
-
-        assert_eq!(restored, payload);
     }
 
     #[test]
@@ -327,11 +322,31 @@ mod tests {
         let payload = r#"{"secret":"test","isMnemonic":false}"#.to_string();
         let password = "pw".to_string();
 
-        let r1 = crypto_encrypt_blob(payload.clone(), password.clone(), None).unwrap();
-        let r2 = crypto_encrypt_blob(payload, password, None).unwrap();
+        let r1 = encrypt_impl(payload.clone(), password.clone(), None).unwrap();
+        let r2 = encrypt_impl(payload, password, None).unwrap();
 
         // Different salts means different keys means different ciphertext
         assert_ne!(r1.salt, r2.salt);
         assert_ne!(r1.data, r2.data);
+    }
+
+    // The commands themselves are async — verify the spawn_blocking dispatch
+    // path end-to-end on a minimal runtime.
+    #[test]
+    fn test_async_command_roundtrip() {
+        let payload = r#"{"secret":"wallet seed","label":"cold storage","isMnemonic":false}"#.to_string();
+        let password = "test-password-123".to_string();
+
+        let restored = tauri::async_runtime::block_on(async {
+            let created = crypto_create(payload.clone(), password.clone(), None)
+                .await
+                .expect("crypto_create should succeed");
+
+            crypto_restore(created.salt, created.data, password, None)
+                .await
+                .expect("crypto_restore should succeed")
+        });
+
+        assert_eq!(restored, payload);
     }
 }
