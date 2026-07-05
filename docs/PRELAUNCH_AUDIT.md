@@ -282,5 +282,9 @@ Recommended order, lowest-risk first:
 - **Desktop 1.6 · Smartcard PIN not zeroized in Rust** — ✅ **DONE (2026-07-04)**: every PIN the
   Rust side owns (all 11 PIN-taking commands + `change_pin`'s concatenated buffer) is now wrapped in
   `zeroize::Zeroizing` and wiped on drop, matching `crypto.rs`. Behavior-neutral. `cargo check` clean.
-- **Desktop 1.7 · `$TEMP` write+open chain:** bounded XSS escalation aid via scoped `$TEMP/*`
-  `opener:allow-open-path`. Tighten or accept + document.
+- **Desktop 1.7 · `$TEMP` write+open chain** — ✅ **DONE (tier-1, 2026-07-04)**: scoped
+  `opener:allow-open-path` from the `$TEMP/*` glob down to the exact print file
+  `$TEMP/seqrets-print.html`, so a post-XSS renderer can no longer open arbitrary filenames/
+  extensions in `$TEMP`. (Tier-2 — moving write+open into a Rust command to drop the general-purpose
+  fs/opener primitives entirely — deferred; it wouldn't fully close the "open app HTML in browser"
+  vector inherent to the print design, so low extra value for the work.)
