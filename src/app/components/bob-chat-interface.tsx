@@ -139,20 +139,6 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         }
     }, [conversation]);
 
-    // Listen for storage events so the popover and full page stay in sync
-    useEffect(() => {
-        const handleStorage = (e: StorageEvent) => {
-            if (e.key === CHAT_HISTORY_KEY && e.newValue) {
-                try {
-                    const updated = JSON.parse(e.newValue) as ChatMessage[];
-                    setConversation(updated);
-                } catch { /* ignore parse errors */ }
-            }
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
-
     if (!hasApiKey) {
         return <BobSetupGuide onKeyConfigured={() => setHasApiKey(true)} />;
     }

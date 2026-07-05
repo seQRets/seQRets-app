@@ -127,20 +127,6 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         };
     }, []);
 
-    // Listen for storage events so the popover and full page stay in sync
-    useEffect(() => {
-        const handleStorage = (e: StorageEvent) => {
-            if (e.key === 'bob-chat-history' && e.newValue) {
-                try {
-                    const updated = JSON.parse(e.newValue) as ChatMessage[];
-                    setConversation(updated);
-                } catch { /* ignore parse errors */ }
-            }
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
-
     // Only show setup guide once we've confirmed no API key exists.
     // While the keychain check is pending (hasApiKey === null), render the
     // chat UI so conversation loaded from localStorage is visible immediately
