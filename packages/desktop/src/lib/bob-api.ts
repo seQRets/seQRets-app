@@ -728,7 +728,7 @@ export type ChatMessage = {
 
 export function getChatHistory(): ChatMessage[] {
   try {
-    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+    const stored = sessionStorage.getItem(CHAT_HISTORY_KEY);
     if (!stored) return [];
     return JSON.parse(stored) as ChatMessage[];
   } catch {
@@ -738,14 +738,14 @@ export function getChatHistory(): ChatMessage[] {
 
 export function saveChatHistory(messages: ChatMessage[]) {
   try {
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+    sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
   } catch {
     // Storage full or unavailable — silently ignore
   }
 }
 
 export function clearChatHistory() {
-  localStorage.removeItem(CHAT_HISTORY_KEY);
+  sessionStorage.removeItem(CHAT_HISTORY_KEY);
 }
 
 export async function askBob(

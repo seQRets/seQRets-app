@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Send, User, ExternalLink, KeyRound, Eraser, TriangleAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { askBob, getApiKey, removeApiKey, migrateApiKeyToKeychain, getChatHistory, saveChatHistory, clearChatHistory } from '@/lib/bob-api';
+import { looksLikeSecret } from '@seqrets/crypto';
 import type { ChatMessage } from '@/lib/bob-api';
 import { BobSetupGuide } from '@/components/bob-setup-guide';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,7 +15,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-const BOB_DISCLAIMER_KEY = 'bob-disclaimer-acknowledged';
+const BOB_DISCLAIMER_KEY = 'bob-disclaimer-acknowledged-v2';
 
 interface BobChatInterfaceProps {
   initialMessage?: string;
@@ -109,7 +110,7 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
     const conversationRef = useRef(conversation);
     conversationRef.current = conversation;
 
-    // Persist conversation to localStorage whenever it changes
+    // Persist conversation to sessionStorage (cleared when the app closes)
     useEffect(() => {
         if (conversation.length > 0) {
             saveChatHistory(conversation);
@@ -167,6 +168,15 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         e.preventDefault();
         if (!message.trim()) return;
 
+        if (looksLikeSecret(message)) {
+            toast({
+                variant: "destructive",
+                title: "Never share secrets with Bob",
+                description: "That looks like a seed phrase or Qard. Bob sends your messages to Google — never paste seed phrases, private keys, or Qards into the chat.",
+            });
+            return;
+        }
+
         const userMessage: ChatMessage = { role: 'user', content: message };
         const updatedHistory = [...conversation, userMessage];
         setConversation(updatedHistory);
@@ -210,6 +220,8 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
                             <strong>Bob is for inheritance planning &amp; app support only.</strong>
                             <br /><br />
                             Never enter seed phrases, passwords, private keys, or any other sensitive data — your messages are sent to Google's Gemini API and are not private.
+                            <br /><br />
+                            Bob doesn't save your chat — it's cleared when you close the app or remove your API key.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

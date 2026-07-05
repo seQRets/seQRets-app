@@ -109,6 +109,29 @@ export function masterFingerprint(mnemonic: string): string | null {
     return fp.toString(16).padStart(8, '0').toUpperCase();
 }
 
+// ── Secret-leak guard (the Bob chat forwards messages to Google Gemini) ──
+
+/**
+ * Heuristic: does this text look like a secret the user must never paste
+ * into the Bob chat? Flags a seQRets Qard/share (`seQRets|…`) or a run of
+ * consecutive BIP-39 wordlist words (a seed phrase). The word-run threshold
+ * is conservative to avoid tripping on ordinary prose.
+ */
+export function looksLikeSecret(text: string): boolean {
+    if (/seqrets\|/i.test(text)) return true;
+    const words = new Set(wordlist);
+    let run = 0;
+    for (const token of text.toLowerCase().split(/[^a-z]+/)) {
+        if (token && words.has(token)) {
+            run += 1;
+            if (run >= 11) return true;
+        } else if (token) {
+            run = 0;
+        }
+    }
+    return false;
+}
+
 // ── SHA-256 share integrity helpers ──
 
 export function computeShareHash(input: string): string {

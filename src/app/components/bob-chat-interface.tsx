@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Send, User, ExternalLink, KeyRound, Eraser, TriangleAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { askBob, removeApiKey, getApiKey } from '@/ai/flows/ask-bob-flow';
+import { looksLikeSecret } from '@seqrets/crypto';
 import { AskBobInput } from '@/lib/types';
 import { BobSetupGuide } from '@/app/components/bob-setup-guide';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,7 +18,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-const BOB_DISCLAIMER_KEY = 'bob-disclaimer-acknowledged';
+const BOB_DISCLAIMER_KEY = 'bob-disclaimer-acknowledged-v2';
 
 type ChatMessage = {
     role: 'user' | 'model';
@@ -28,7 +29,7 @@ const CHAT_HISTORY_KEY = 'bob-chat-history';
 
 function getChatHistory(): ChatMessage[] {
     try {
-        const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+        const stored = sessionStorage.getItem(CHAT_HISTORY_KEY);
         if (!stored) return [];
         return JSON.parse(stored) as ChatMessage[];
     } catch {
@@ -38,14 +39,14 @@ function getChatHistory(): ChatMessage[] {
 
 function saveChatHistory(messages: ChatMessage[]) {
     try {
-        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
     } catch {
         // Storage full or unavailable — silently ignore
     }
 }
 
 function clearChatHistory() {
-    localStorage.removeItem(CHAT_HISTORY_KEY);
+    sessionStorage.removeItem(CHAT_HISTORY_KEY);
 }
 
 interface BobChatInterfaceProps {
@@ -131,7 +132,7 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
         prevLengthRef.current = conversation.length;
     }, [conversation]);
 
-    // Persist conversation to localStorage whenever it changes
+    // Persist conversation to sessionStorage (cleared when the tab/app closes)
     useEffect(() => {
         if (conversation.length > 0) {
             saveChatHistory(conversation);
@@ -175,6 +176,15 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!message.trim()) return;
+
+        if (looksLikeSecret(message)) {
+            toast({
+                variant: "destructive",
+                title: "Never share secrets with Bob",
+                description: "That looks like a seed phrase or Qard. Bob sends your messages to Google — never paste seed phrases, private keys, or Qards into the chat.",
+            });
+            return;
+        }
 
         const userMessage: ChatMessage = { role: 'user', content: message };
         const updatedHistory = [...conversation, userMessage];
@@ -223,6 +233,8 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
                             <strong>Bob is for inheritance planning &amp; app support only.</strong>
                             <br /><br />
                             Never enter seed phrases, passwords, private keys, or any other sensitive data — your messages are sent to Google&apos;s Gemini API and are not private.
+                            <br /><br />
+                            Bob doesn&apos;t save your chat — it&apos;s cleared when you close the tab or remove your API key.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
