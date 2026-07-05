@@ -173,11 +173,15 @@ in a click-to-open Popover. Hurts the fast-offline-cold-boot PWA pitch.
 Batch together — all small, all in `packages/crypto/src/crypto.ts` (+ `desktop-crypto.ts` mirror
 where noted).
 
-- [ ] **F2 · Mnemonic re-grouping (Low, but inheritance-critical):** `tryGetEntropy:27-70`
-  greedily chunks across pasted-phrase boundaries; a rare (~1/4000) misgroup silently produces
-  valid-checksum-but-wrong SeedQRs for wallets that never existed. Fix: chunk along the user's
-  original newline boundaries first, then fall back to greedy. The one edge case with a real,
-  if rare, unrecoverable-heir outcome.
+- [x] **F2 · Mnemonic re-grouping** — ✅ **DONE (2026-07-05, commit pending):** `tryGetEntropy` now
+  honors the user's newline boundaries first (if every line is a complete valid mnemonic, that
+  grouping wins), falling back to the old greedy scan only when the lines don't cleanly resolve.
+  Measured on 200k two-12-word pastes against the real built function: silent merges 753→0,
+  plain-text fallbacks 10,616→0, round-trip mismatches 0, single-phrase (12/15/18/21/24) regressions 0,
+  a 24-word phrase wrapped across two lines still parses as one phrase (500/500). Note: the original
+  "~1/4000" estimate understated it (measured ~1/266 merge + ~1/19 plain-text fallback for the
+  two-12-word case); and the words always survived in order, so the true harm was misgrouping /
+  a misleading SeedQR rather than literal data loss. Single-phrase users were never affected.
 - [ ] **F3 · Metadata validation:** `parseShare:204-215` accepts `t=-3`, `t=0`, `t=999`,
   `t=3junk`. Accept only `/^\d+$/`, `1 ≤ n ≤ 255`; null the trio if `t>n` or `i>n`.
 - [ ] **F4 · Input size cap:** no length bound before SHA-256 + base64 + Shamir + 64 MiB Argon2id.
@@ -291,3 +295,14 @@ Recommended order, lowest-risk first:
   extensions in `$TEMP`. (Tier-2 — moving write+open into a Rust command to drop the general-purpose
   fs/opener primitives entirely — deferred; it wouldn't fully close the "open app HTML in browser"
   vector inherent to the print design, so low extra value for the work.)
+
+## Very Optional — nice-to-smooth-out, not launch-blocking
+
+- **Move remaining blocking commands off the main thread** (desktop) — follow-on from 1.4. That item
+  moved the four crypto commands to `spawn_blocking` so Argon2id no longer freezes the window. The same
+  main-thread-blocking pattern remains in `qr.rs` `qr_decode` (CPU-heavy image decode of large Qard
+  PNGs, can take a beat) and the 13 `smartcard.rs` PC/SC commands (blocking reader I/O); `review_reminder.rs`
+  file I/O is low-risk. Apply the same treatment where a user would notice — at minimum `qr_decode`,
+  ideally the smartcard commands — and promote `crypto.rs`'s private `run_blocking` helper to a shared
+  `pub(crate)` helper (with a parameterized error label) rather than duplicating it. Rust-only; frontend
+  already `await`s all invokes. Purely a smoothness win — nothing is broken today.

@@ -22,22 +22,18 @@ const NONCE_LENGTH = 24;
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-// Attempts to convert one or more concatenated BIP-39 phrases to a single entropy buffer.
-// Returns an object with the combined entropy and the original chunks, or null if it fails.
-export function tryGetEntropy(str: string): { entropy: Buffer; chunks: string[] } | null {
-    const cleanStr = str.replace(/\n/g, ' ').trim();
-    const words = cleanStr.split(/\s+/).filter(Boolean);
+// Valid BIP-39 phrase lengths, longest first (greedy prefers longer matches).
+const MNEMONIC_WORD_COUNTS = [24, 21, 18, 15, 12];
 
-    if (words.length === 0) {
-        return null;
-    }
-
+// Greedily partitions a flat word stream into consecutive valid BIP-39 phrases,
+// preferring longer phrases at each position. Returns the chunk phrases, or null
+// if the words don't partition cleanly into valid mnemonics with nothing left over.
+function greedyChunkMnemonics(words: string[]): string[] | null {
     const chunks: string[] = [];
     let currentIndex = 0;
     while (currentIndex < words.length) {
         let foundChunk = false;
-        // Check for 24, 21, 18, 15, and 12-word chunks in that order
-        for (const count of [24, 21, 18, 15, 12]) {
+        for (const count of MNEMONIC_WORD_COUNTS) {
             if (currentIndex + count <= words.length) {
                 const phrase = words.slice(currentIndex, currentIndex + count).join(' ');
                 if (validateMnemonic(phrase, wordlist)) {
@@ -56,6 +52,53 @@ export function tryGetEntropy(str: string): { entropy: Buffer; chunks: string[] 
 
     // If we have no valid chunks, or if we didn't consume all words, it's not a clean set of mnemonics.
     if (chunks.length === 0 || currentIndex !== words.length) {
+        return null;
+    }
+    return chunks;
+}
+
+// Attempts to convert one or more concatenated BIP-39 phrases to a single entropy buffer.
+// Returns an object with the combined entropy and the original chunks, or null if it fails.
+//
+// A user pasting several phrases almost always puts one phrase per line, so we honor those
+// newline boundaries first: if every non-empty line is itself a complete valid mnemonic, that
+// grouping wins. Only when the line split doesn't yield a clean set (e.g. everything on one
+// line, or a single phrase wrapped across several lines) do we fall back to a greedy scan over
+// the whole word stream. Honoring the user's line breaks avoids silently merging two shorter
+// phrases into one longer one whenever the concatenation happens to pass its checksum.
+export function tryGetEntropy(str: string): { entropy: Buffer; chunks: string[] } | null {
+    let chunks: string[] | null = null;
+
+    // 1) Prefer the user's explicit line grouping: each non-empty line must be a full valid phrase.
+    const lines = str.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (lines.length > 0) {
+        const perLineChunks: string[] = [];
+        let allLinesValid = true;
+        for (const line of lines) {
+            const lineWords = line.split(/\s+/).filter(Boolean);
+            const phrase = lineWords.join(' ');
+            if (MNEMONIC_WORD_COUNTS.includes(lineWords.length) && validateMnemonic(phrase, wordlist)) {
+                perLineChunks.push(phrase);
+            } else {
+                allLinesValid = false;
+                break;
+            }
+        }
+        if (allLinesValid) {
+            chunks = perLineChunks;
+        }
+    }
+
+    // 2) Fall back to a greedy scan over the whole word stream.
+    if (!chunks) {
+        const words = str.replace(/\n/g, ' ').trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+            return null;
+        }
+        chunks = greedyChunkMnemonics(words);
+    }
+
+    if (!chunks) {
         return null;
     }
 
