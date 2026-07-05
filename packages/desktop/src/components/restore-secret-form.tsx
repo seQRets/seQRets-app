@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { copyWithAutoClear } from '@/lib/clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +43,19 @@ interface DecodedShare {
 
 export function RestoreSecretForm() {
   const [step, setStep] = useState(1);
+  const endRef = useRef<HTMLDivElement>(null);
+  // When the user advances a step, scroll to the bottom so the newly
+  // revealed step/section comes fully into view (respects reduced-motion).
+  useEffect(() => {
+    if (step <= 1) return;
+    const el = endRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const id = requestAnimationFrame(() =>
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [step]);
   const [decodedShares, setDecodedShares] = useState<DecodedShare[]>([]);
   const [password, setPassword] = useState('');
   const [restoredSecret, setRestoredSecret] = useState('');
@@ -1157,6 +1170,7 @@ export function RestoreSecretForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <div ref={endRef} aria-hidden="true" />
     </Card>
   );
 }

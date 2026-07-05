@@ -50,6 +50,19 @@ export function CreateSharesForm() {
 
   // New state for progressive reveal
   const [step, setStep] = useState(1);
+  const endRef = useRef<HTMLDivElement>(null);
+  // When the user advances a step, scroll to the bottom so the newly
+  // revealed step/section comes fully into view (respects reduced-motion).
+  useEffect(() => {
+    if (step <= 1) return;
+    const el = endRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const id = requestAnimationFrame(() =>
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [step]);
   const cryptoWorkerRef = useRef<Worker>();
 
   const isTextOnly = estimatedShareSize > QR_CAPACITY_LIMIT;
@@ -588,6 +601,7 @@ export function CreateSharesForm() {
             </CardContent>
         </>
       )}
+      <div ref={endRef} aria-hidden="true" />
     </Card>
   );
 }
