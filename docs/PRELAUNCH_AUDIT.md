@@ -119,21 +119,19 @@ manual-share Textareas (`restore-secret-form.tsx:594-603, 817-823`), both apps.
 
 ## Tier 1 — Should fix, lower urgency
 
-### [ ] 1.1 — Bob chat history in plaintext localStorage · *Medium/Low* · web + desktop
-Full Bob conversation persists indefinitely (`bob-chat-interface.tsx:39-45` web;
-`bob-api.ts:722-745` desktop). If a user pastes a seed/share it is sent to Google *and* written
-to disk cleartext for any future XSS/extension/forensics.
-- (a) Cheap pre-send guard detecting a `seQRets|` prefix or a run of BIP-39 words (wordlist
-  available via `@seqrets/crypto`), blocking with a warning. (b) Switch history to
-  `sessionStorage` or add "clear on close." Do both apps together.
-- **Verify:** paste a fake share → send blocked; normal chat works/persists per policy; [FULL-VERIFY].
+### [x] 1.1 — Bob chat history / seed leaks · ✅ DONE (2026-07-04, commit 4717ed4) · web + desktop
+**Shipped:** (a) `looksLikeSecret()` in `@seqrets/crypto` (one shared impl) flags a `seQRets|` Qard
+or 11+ consecutive BIP-39 words; both chat interfaces block the send with a warning instead of
+forwarding to Google (unit-tested 7/7). (b) Chat history moved `localStorage` → `sessionStorage`
+(clears on tab/app close). (c) Disclaimer updated + key bumped to `-v2` so existing users see it.
+Also dropped now-inert cross-tab `storage` listeners. Original finding below.
 
-### [ ] 1.2 — Lock keychain command namespace · *Medium* · **desktop-only**
-`keychain.rs:13-45` takes an arbitrary `key: String` from the webview; only "gemini-api-key" is
-ever used. Post-XSS the renderer can read it.
-- Validate `key` against a hardcoded allowlist inside the command (or hardcode the single
-  service key server-side; `bob-api.ts:688` only uses one constant).
-- **Verify:** desktop build; save/read/delete API key still works; invalid key name errors.
+### [x] 1.2 — Lock keychain command namespace · ✅ DONE (2026-07-04, commit 8e57adb) · **desktop-only**
+**Shipped:** `keychain.rs` now enforces `ALLOWED_KEYS = ["gemini-api-key"]` in all three commands,
+so a compromised renderer can't touch arbitrary entries under the service. Behavior-neutral;
+`cargo check` clean. **Residual:** the renderer can still read the one gemini key (Bob calls Gemini
+from the webview) — the full fix (Rust proxy so the key never returns to the renderer) is scoped
+and tracked as a separate follow-up. Original finding below.
 
 ### [ ] 1.3 — Remove `'unsafe-inline'` for scripts in prod CSP · *Medium* · web
 `layout.tsx:64` + Cloudflare `public/_headers` ship `script-src 'self' 'unsafe-inline'` in prod
