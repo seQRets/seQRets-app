@@ -279,7 +279,8 @@ Recommended order, lowest-risk first:
   be cached + served offline. Gate on `status === 200` like the `_next/static/` branch already does.
 - **L1 · Gemini API key "remember" defaults ON** (`bob-setup-guide.tsx:18`): default the checkbox to
   session-only. (Transport verified safe — key sent as `x-goog-api-key` header over HTTPS.)
-- **Desktop 1.6 · Smartcard PIN not zeroized in Rust** (`smartcard.rs`): PINs passed as plain `String`,
-  never zeroized, unlike `crypto.rs`. Wrap in `zeroize::Zeroizing`.
+- **Desktop 1.6 · Smartcard PIN not zeroized in Rust** — ✅ **DONE (2026-07-04)**: every PIN the
+  Rust side owns (all 11 PIN-taking commands + `change_pin`'s concatenated buffer) is now wrapped in
+  `zeroize::Zeroizing` and wiped on drop, matching `crypto.rs`. Behavior-neutral. `cargo check` clean.
 - **Desktop 1.7 · `$TEMP` write+open chain:** bounded XSS escalation aid via scoped `$TEMP/*`
   `opener:allow-open-path`. Tighten or accept + document.
