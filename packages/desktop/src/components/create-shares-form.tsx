@@ -256,10 +256,10 @@ export function CreateSharesForm() {
 
 
   const getSecretBorderColor = () => {
-    if (!secret) return '';
-    if (seedValidationStatus === 'valid') return 'border-green-500 focus-visible:ring-green-500';
-    if (seedValidationStatus === 'invalid') return 'border-red-500 focus-visible:ring-red-500';
-    return '';
+    if (!secret) return 'border-input focus-within:ring-ring';
+    if (seedValidationStatus === 'valid') return 'border-green-500 focus-within:ring-green-500';
+    if (seedValidationStatus === 'invalid') return 'border-red-500 focus-within:ring-red-500';
+    return 'border-input focus-within:ring-ring';
   };
 
   const toggleSecretVisibility = () => {
@@ -325,7 +325,10 @@ export function CreateSharesForm() {
                       }} />
                   </div>
                 )}
-                <div className="relative">
+                <div className={cn(
+                  "relative overflow-hidden rounded-md border bg-background ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2",
+                  getSecretBorderColor()
+                )}>
                   <Textarea
                     id="secret"
                     placeholder="Enter your 12 or 24-word seed phrase, private key, or other secret..."
@@ -333,8 +336,9 @@ export function CreateSharesForm() {
                     onChange={(e) => setSecret(e.target.value)}
                     rows={4}
                     className={cn(
-                      "pr-10",
-                      getSecretBorderColor(),
+                      // Border/ring live on the wrapper; the textarea stays transparent and
+                      // border-less so the blur mask can't fuzz the outline or bleed its halo past it.
+                      "border-0 bg-transparent pr-10 focus-visible:ring-0 focus-visible:ring-offset-0",
                       !isSecretVisible && "blur-sm"
                     )}
                   />
