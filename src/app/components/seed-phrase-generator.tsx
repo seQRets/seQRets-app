@@ -24,6 +24,10 @@ export function SeedPhraseGenerator({ onPhraseGenerated }: SeedPhraseGeneratorPr
 
   const handleGenerate = () => {
     const strength = wordCount === '12' ? 128 : 256;
+    // Entropy comes straight from the OS CSPRNG: generateMnemonic pulls the full
+    // 128/256 bits from @noble/hashes randomBytes → crypto.getRandomValues (no
+    // Math.random / PRNG / time-seed; it throws rather than degrading). Not
+    // exposed to the IllBloom / "Milk Sad" weak-entropy class of vulnerability.
     const newPhrase = generateMnemonic(wordlist, strength);
     setPhrase(newPhrase);
     setIsValid(validateMnemonic(newPhrase, wordlist));

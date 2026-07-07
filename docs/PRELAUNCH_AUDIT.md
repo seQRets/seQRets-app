@@ -252,6 +252,13 @@ Recommended order, lowest-risk first:
 
 ## Verified-good (checked and passed — no action)
 
+- **Seed generation — CSPRNG, NOT IllBloom/"Milk Sad"-vulnerable (re-verified 2026-07-05):**
+  `SeedPhraseGenerator` (web + desktop) → `@scure/bip39` 1.6.0 `generateMnemonic(wordlist, 128|256)`
+  → `entropyToMnemonic(randomBytes(strength/8), …)` → `@noble/hashes` 1.8.0 `randomBytes` =
+  OS-level `crypto.getRandomValues`. Full 128/256-bit entropy pulled directly from the CSPRNG (not a
+  small seed expanded by a PRNG), no `Math.random`/time-seed anywhere near it, and `randomBytes`
+  **throws** rather than degrading if the CSPRNG is missing — so no low-entropy seed is reachable.
+  Prompted by the Coinspect IllBloom disclosure (weak-PRNG recovery-phrase generation).
 - **Crypto:** Argon2id m=64 MiB/t=4/p=1, identical TS↔Rust; all randomness CSPRNG (no `Math.random`
   near key material); no nonce/key reuse; full 16-byte Poly1305 tag; Shamir splits the *ciphertext*
   (<K shares information-theoretically useless, threshold not dependent on attacker-modifiable
