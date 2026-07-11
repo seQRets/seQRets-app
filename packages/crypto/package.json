@@ -1,6 +1,6 @@
 {
   "name": "@seqrets/crypto",
-  "version": "1.11.8",
+  "version": "1.11.9",
   "private": true,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
