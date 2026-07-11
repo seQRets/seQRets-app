@@ -19,6 +19,19 @@ const KEY_LENGTH = 32;
 
 const NONCE_LENGTH = 24;
 
+// Upper bound on a share string accepted by parseShare. QR Qards top out near
+// 1,400 characters, but the app also produces text-file backups for secrets
+// too large for a QR code, so this ceiling is deliberately generous — its job
+// is to reject pathological input (a multi-megabyte paste or a wrong file)
+// before we spend work on SHA-256, base64 decoding, Shamir, and Argon2id.
+// Never lower this: any Qard ever generated must keep parsing forever.
+const MAX_SHARE_LENGTH = 262_144; // 256 KB
+
+// Creation-side companion to MAX_SHARE_LENGTH: cap the compressed payload so a
+// generated share (base64, ~4/3 expansion) always stays comfortably below the
+// parse ceiling — a Qard we create today must be readable tomorrow.
+const MAX_COMPRESSED_PAYLOAD = 150_000;
+
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
@@ -105,7 +118,9 @@ export function tryGetEntropy(str: string): { entropy: Buffer; chunks: string[] 
     try {
         // Convert each valid mnemonic chunk to entropy and concatenate
         const entropies = chunks.map(chunk => mnemonicToEntropy(chunk, wordlist));
-        return { entropy: Buffer.concat(entropies), chunks };
+        const entropy = Buffer.concat(entropies); // concat copies, so the sources can be wiped
+        entropies.forEach(e => e.fill(0));
+        return { entropy, chunks };
     } catch (e) {
         // This catch is for any unexpected errors during conversion.
         return null;
@@ -227,6 +242,10 @@ export function truncateHash(fullHex: string): string {
  * verifies correctly here.
  */
 export function parseShare(shareString: string): ParsedShare {
+    if (shareString.length > MAX_SHARE_LENGTH) {
+        throw new Error('This file or text is far too large to be a seQRets Qard.');
+    }
+
     const parts = shareString.split('|');
 
     if (parts[0] !== 'seQRets') {
@@ -276,11 +295,31 @@ export function parseShare(shareString: string): ParsedShare {
         if (eq <= 0) continue;
         const key = segment.slice(0, eq);
         const value = segment.slice(eq + 1);
+        // Recovery metadata values are small positive integers — the Shamir
+        // library caps counts at 255. Anything else (t=0, t=-3, t=999, t=3junk)
+        // is corruption; ignore the segment rather than feed nonsense to the
+        // restore countdown. Note t=1/n=1/i=1 is legitimate (single-Qard sets).
+        if (!/^\d{1,3}$/.test(value)) continue;
         const n = Number.parseInt(value, 10);
-        if (!Number.isFinite(n)) continue;
+        if (n < 1 || n > 255) continue;
         if (key === 't') meta.threshold = n;
         else if (key === 'n') meta.total = n;
         else if (key === 'i') meta.index = n;
+    }
+
+    // The app always writes t/n/i together and internally consistent (t ≤ n,
+    // i ≤ n). A partial or contradictory trio can't be trusted, so drop all
+    // three — the share still restores; only the "X of K added" countdown and
+    // card-index display are lost.
+    if (meta.threshold !== null || meta.total !== null || meta.index !== null) {
+        if (
+            meta.threshold === null || meta.total === null || meta.index === null ||
+            meta.threshold > meta.total || meta.index > meta.total
+        ) {
+            meta.threshold = null;
+            meta.total = null;
+            meta.index = null;
+        }
     }
 
     return {
@@ -300,6 +339,12 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
         throw new Error('If total shares is 1, required shares must also be 1.');
     }
 
+    // Defense-in-depth: the UI prevents this, and the Shamir library would
+    // reject it anyway (threshold must be ≥ 2) — but with its own jargon.
+    if (requiredShares === 1 && totalShares > 1) {
+        throw new Error('A set where only 1 Qard is required would let any single Qard restore the secret on its own. Require at least 2 Qards, or create just 1 Qard.');
+    }
+
     const keyfileBytes = keyfile ? Buffer.from(keyfile, 'base64') : undefined;
 
     // --- Create main secret payload ---
@@ -311,6 +356,7 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
         const entropyBase64 = entropyResult.entropy.toString('base64');
         const mnemonicLengths = entropyResult.chunks.map(c => c.split(' ').length);
         payloadObject = { secret: entropyBase64, label: label || '', isMnemonic: true, mnemonicLengths };
+        entropyResult.entropy.fill(0);
     } else {
         // If it's not a perfect mnemonic, treat it as a regular text secret.
         const cleanSecret = secret.trim();
@@ -320,16 +366,23 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
     const payloadString = JSON.stringify(payloadObject);
     const payloadBytes = textEncoder.encode(payloadString);
 
-    const compressedPayload = gzip(payloadBytes, {
-        level: 9,
-        windowBits: 15,
-        memLevel: 9,
-    });
-
-    const salt = randomBytes(SALT_LENGTH);
-    const passwordDerivedKey = await deriveKey(password, salt, keyfileBytes);
+    let passwordDerivedKey: Uint8Array | undefined;
+    let compressedPayload: Uint8Array | undefined;
 
     try {
+        compressedPayload = gzip(payloadBytes, {
+            level: 9,
+            windowBits: 15,
+            memLevel: 9,
+        });
+
+        if (compressedPayload.length > MAX_COMPRESSED_PAYLOAD) {
+            throw new Error('This secret is too large. Please shorten it, or split it into separate smaller secrets.');
+        }
+
+        const salt = randomBytes(SALT_LENGTH);
+        passwordDerivedKey = await deriveKey(password, salt, keyfileBytes);
+
         const nonce = randomBytes(NONCE_LENGTH);
         const encryptedSecret = xchacha20poly1305(passwordDerivedKey, nonce).encrypt(compressedPayload);
 
@@ -372,8 +425,13 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
             setId,
         };
     } finally {
-        passwordDerivedKey.fill(0);
+        passwordDerivedKey?.fill(0);
         keyfileBytes?.fill(0);
+        // Plaintext hygiene: wipe every buffer that held the unencrypted
+        // payload. (The payloadString itself is a JS string and cannot be
+        // wiped — an accepted platform limitation.)
+        payloadBytes.fill(0);
+        compressedPayload?.fill(0);
     }
 }
 
@@ -386,6 +444,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
     }
 
     let saltBase64: string | null = null;
+    let requiredFromMeta: number | null = null;
     const encryptedShares: Uint8Array[] = [];
 
     for (const share of shares) {
@@ -403,12 +462,23 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
             throw new Error('Inconsistent salts found across shares. Shares might be from different secrets.');
         }
 
+        if (parsed.threshold !== null) {
+            requiredFromMeta = Math.max(requiredFromMeta ?? 0, parsed.threshold);
+        }
+
         const encryptedShareData = new Uint8Array(Buffer.from(parsed.data, 'base64'));
         encryptedShares.push(encryptedShareData);
     }
 
     if (saltBase64 === null) {
         throw new Error("Could not extract salt from shares.");
+    }
+
+    // When the Qards carry recovery metadata we know the real threshold — fail
+    // fast with an actionable message instead of running Argon2id and surfacing
+    // a misleading "check your password" after decryption inevitably fails.
+    if (requiredFromMeta !== null && encryptedShares.length < requiredFromMeta) {
+        throw new Error(`This secret needs ${requiredFromMeta} Qards to restore, but only ${encryptedShares.length} ${encryptedShares.length === 1 ? 'has' : 'have'} been added. Please add more Qards from this set.`);
     }
 
     // When there's only 1 share, it was stored without Shamir splitting,
@@ -441,7 +511,12 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
         try {
             decryptedBytes = xchacha20poly1305(passwordDerivedKey, nonce).decrypt(encryptedData);
         } catch (error) {
-            throw new Error('Authentication failed. Please check your password, keyfile, and QR codes.');
+            // A lone share from a multi-Qard set decrypts to garbage and lands
+            // here too, so with one share "wrong password" isn't the only
+            // possible cause — say so.
+            throw new Error(encryptedShares.length === 1
+                ? 'Authentication failed. Please check your password, keyfile, and QR codes — or you may need more Qards from this set.'
+                : 'Authentication failed. Please check your password, keyfile, and QR codes.');
         }
 
         decompressedBytes = ungzip(decryptedBytes);
@@ -475,6 +550,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
                 }
 
                 finalSecret = phrases.join('\n\n');
+                combinedEntropy.fill(0); // slices above are views; this wipes them too
             }
 
             return {
@@ -599,6 +675,7 @@ export function buildSharePayload(secret: string, label?: string): string {
         const entropyBase64 = entropyResult.entropy.toString('base64');
         const mnemonicLengths = entropyResult.chunks.map(c => c.split(' ').length);
         payloadObject = { secret: entropyBase64, label: label || '', isMnemonic: true, mnemonicLengths };
+        entropyResult.entropy.fill(0);
     } else {
         payloadObject = { secret: secret.trim(), label: label || '', isMnemonic: false };
     }
@@ -635,6 +712,7 @@ export function parseSharePayload(jsonStr: string): { secret: string; label?: st
             throw new Error('Entropy length does not match sum of mnemonic lengths. The data is likely corrupted.');
         }
         finalSecret = phrases.join('\n\n');
+        combinedEntropy.fill(0); // slices above are views; this wipes them too
     }
 
     return { secret: finalSecret, label: payload.label || undefined };

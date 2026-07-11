@@ -182,21 +182,37 @@ where noted).
   "~1/4000" estimate understated it (measured ~1/266 merge + ~1/19 plain-text fallback for the
   two-12-word case); and the words always survived in order, so the true harm was misgrouping /
   a misleading SeedQR rather than literal data loss. Single-phrase users were never affected.
-- [ ] **F3 · Metadata validation:** `parseShare:204-215` accepts `t=-3`, `t=0`, `t=999`,
-  `t=3junk`. Accept only `/^\d+$/`, `1 ≤ n ≤ 255`; null the trio if `t>n` or `i>n`.
-- [ ] **F4 · Input size cap:** no length bound before SHA-256 + base64 + Shamir + 64 MiB Argon2id.
-  Reject shares > ~16 KB at the top of `parseShare` (real Qards ≤ ~3 KB).
-- [ ] **F7 · Single-share error message:** a lone share from a multi-share set fails with "check
-  your password." When `shares.length === 1` and decrypt fails, append "…or you may need more
-  Qards from this set" (both `crypto.ts` + `desktop-crypto.ts`).
-- [ ] **F9 · `createShares` threshold guard:** friendly error for `requiredShares===1 &&
-  totalShares>1` (UI prevents it; defense-in-depth).
+- [x] **F3 · Metadata validation** — ✅ **DONE (2026-07-11, commit pending):** `parseShare` now
+  accepts only `/^\d{1,3}$/` values in `1..255`, and nulls the whole t/n/i trio when it is
+  partial or contradictory (`t>n`, `i>n`). Restore is unaffected — only the countdown/index UI
+  degrades. `t=1|n=1|i=1` (single-Qard sets with `embedRecoveryInfo`) verified still accepted.
+- [x] **F4 · Input size cap** — ✅ **DONE (2026-07-11, commit pending):** `parseShare` rejects
+  input > **256 KB** (`MAX_SHARE_LENGTH`), before any SHA-256/base64/Shamir/Argon2id work.
+  **Deliberately larger than the ~16 KB first proposed:** creation has no size cap and secrets
+  too big for QR become *text-file backups* (restore accepts `.txt`), so legit shares > 16 KB
+  can exist in the wild — 256 KB keeps the DoS protection with zero strand risk. Going forward,
+  creation also caps the compressed payload at 150 KB (`MAX_COMPRESSED_PAYLOAD` in `crypto.ts`,
+  mirrored on the encrypted bytes in `desktop-crypto.ts`) so generated shares always stay below
+  the parse ceiling. **Never lower `MAX_SHARE_LENGTH`.**
+- [x] **F7 · Single-share error message** — ✅ **DONE (2026-07-11, commit pending):** both
+  `crypto.ts` and `desktop-crypto.ts`. Two layers: (1) when shares carry recovery metadata and
+  fewer than `t` are provided, fail fast *before* Argon2id with "This secret needs K Qards to
+  restore, but only X have been added"; (2) when a single metadata-less share fails decryption,
+  the auth error now adds "…or you may need more Qards from this set."
+- [x] **F9 · `createShares` threshold guard** — ✅ **DONE (2026-07-11, commit pending):**
+  friendly plain-language error in both `crypto.ts` and `desktop-crypto.ts`. Confirmed the
+  Shamir library already hard-rejects `threshold < 2`, so no K=1/N>1 sets can exist in the
+  wild — pure defense-in-depth.
 - [ ] **F8 · `@noble/ciphers` pin:** exact-pinned at 0.4.0 (Dec 2023) while current is 1.x. Bump
   and re-run a cross-version round-trip (old-encrypted → new-decrypted) **and** TS↔Rust parity
   vectors before shipping. No known CVE — own commit with the round-trip proof.
-- [ ] **F6 · Zeroize plaintext buffers (hygiene):** add `payloadBytes.fill(0)`,
-  `compressedPayload.fill(0)`, `entropyResult.entropy.fill(0)` to the `finally` in `createShares`,
-  matching `restoreSecret`.
+- [x] **F6 · Zeroize plaintext buffers (hygiene)** — ✅ **DONE (2026-07-11, commit pending):**
+  `createShares` now wipes `payloadBytes` + `compressedPayload` in a widened `finally` (covers a
+  failed key derivation too) and wipes the mnemonic entropy right after base64 encoding; same in
+  `buildSharePayload` (desktop path). Also wiped: the per-phrase entropy buffers in
+  `tryGetEntropy` after concat, and the reconstructed `combinedEntropy` in `restoreSecret` /
+  `parseSharePayload` once phrases are derived. Known limitation (accepted): JS *strings*
+  (payload JSON, base64 entropy, the secret itself) cannot be wiped.
 - **Verify (tier):** [FULL-VERIFY] + paste multi-phrase mnemonics, malformed-metadata Qards, an
   oversized blob, a single share from a 2-of-3 set, and a legacy pre-v1.9 Qard.
 

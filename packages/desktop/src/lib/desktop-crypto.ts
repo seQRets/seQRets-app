@@ -54,6 +54,12 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
         throw new Error('If total shares is 1, required shares must also be 1.');
     }
 
+    // Defense-in-depth: the UI prevents this, and the Shamir library would
+    // reject it anyway (threshold must be ≥ 2) — but with its own jargon.
+    if (requiredShares === 1 && totalShares > 1) {
+        throw new Error('A set where only 1 Qard is required would let any single Qard restore the secret on its own. Require at least 2 Qards, or create just 1 Qard.');
+    }
+
     // Step 1: Build the JSON payload string (BIP-39 detection happens here).
     const jsonPayload = buildSharePayload(secret, label);
 
@@ -68,6 +74,14 @@ export async function createShares(request: CreateSharesRequest): Promise<Create
     // When totalShares === 1, skip Shamir splitting (the library requires ≥2)
     // and return the encrypted data directly as a single share.
     const encryptedBytes = new Uint8Array(Buffer.from(data, 'base64'));
+
+    // Keep generated shares comfortably below parseShare's size ceiling so a
+    // Qard we create today can always be read back tomorrow (matches the
+    // MAX_COMPRESSED_PAYLOAD guard in @seqrets/crypto createShares).
+    if (encryptedBytes.length > 150_000) {
+        throw new Error('This secret is too large. Please shorten it, or split it into separate smaller secrets.');
+    }
+
     const encryptedShares = totalShares === 1
         ? [encryptedBytes]
         : await split(encryptedBytes, totalShares, requiredShares);
@@ -122,6 +136,7 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
 
     // Step 1: Validate and parse share strings.
     let saltBase64: string | null = null;
+    let requiredFromMeta: number | null = null;
     const shareBuffers: Uint8Array[] = [];
 
     for (const share of shares) {
@@ -137,11 +152,23 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
         } else if (saltBase64 !== currentSalt) {
             throw new Error('Inconsistent salts found across shares. Shares might be from different secrets.');
         }
+
+        if (parsed.threshold !== null) {
+            requiredFromMeta = Math.max(requiredFromMeta ?? 0, parsed.threshold);
+        }
+
         shareBuffers.push(new Uint8Array(Buffer.from(parsed.data, 'base64')));
     }
 
     if (!saltBase64) {
         throw new Error('Could not extract salt from shares.');
+    }
+
+    // When the Qards carry recovery metadata we know the real threshold — fail
+    // fast with an actionable message instead of running Argon2id and surfacing
+    // a misleading "check your password" after decryption inevitably fails.
+    if (requiredFromMeta !== null && shareBuffers.length < requiredFromMeta) {
+        throw new Error(`This secret needs ${requiredFromMeta} Qards to restore, but only ${shareBuffers.length} ${shareBuffers.length === 1 ? 'has' : 'have'} been added. Please add more Qards from this set.`);
     }
 
     // Step 2: Shamir combine — reconstructs the raw (nonce||ciphertext) bytes.
@@ -171,7 +198,13 @@ export async function restoreSecret(request: RestoreSecretRequest): Promise<Rest
         });
     } catch (e: any) {
         // Surface Rust error (wrong password / keyfile / corrupted) cleanly.
-        throw new Error(e?.message ?? 'Authentication failed. Please check your password, keyfile, and QR codes.');
+        // A lone share from a multi-Qard set decrypts to garbage and lands here
+        // too, so with one share "wrong password" isn't the only possible
+        // cause — say so.
+        const message = e?.message ?? 'Authentication failed. Please check your password, keyfile, and QR codes.';
+        throw new Error(shareBuffers.length === 1
+            ? `${message} If this secret was split into multiple Qards, you may also need more Qards from this set.`
+            : message);
     }
 
     // Step 4: Parse payload (reconstructs BIP-39 phrases if applicable).
