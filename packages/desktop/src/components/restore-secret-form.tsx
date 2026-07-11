@@ -148,8 +148,15 @@ export function RestoreSecretForm() {
         total = parsed.total;
         index = parsed.index;
       } catch {
-        // parseShare threw — treat as failed decode
-        success = false;
+        // parseShare threw — a QR code WAS decoded, it just isn't a Qard
+        // (WiFi login, URL, another app's code). Say so specifically instead
+        // of the misleading "QR Code Not Found", and don't add a row.
+        toast({
+          variant: "destructive",
+          title: "Not a seQRets Qard",
+          description: `${fileName} doesn't contain a valid seQRets Qard. Please check that you scanned or pasted the right code.`,
+        });
+        return;
       }
     }
 

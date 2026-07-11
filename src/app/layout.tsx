@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './fonts.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from './components/theme-provider';
 import { PwaInstallBanner } from './components/pwa-install-banner';
@@ -62,8 +63,10 @@ export default function RootLayout({
             // throws a blocking overlay without it. Production builds are a static
             // export that never use eval(), so the prod policy stays strict.
             `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' https://fonts.gstatic.com",
+            // Fonts are self-hosted (public/fonts + fonts.css) — no Google
+            // Fonts origins in the policy, and no third-party ping on load.
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self'",
             "img-src 'self' data: blob:",
             "connect-src 'self' https://api.coinbase.com https://generativelanguage.googleapis.com",
             "worker-src 'self' blob:",
@@ -73,14 +76,30 @@ export default function RootLayout({
             "form-action 'self'",
           ].join('; ')}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,700;0,800;0,900;1,800&family=Poppins:wght@700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `
+            __html: process.env.NODE_ENV === 'development' ? `
+              // DEV ONLY: never run the service worker against the dev server.
+              // Client navigations fetch RSC payloads (?_rsc=...) that the SW's
+              // cache-first branch would keep across recompiles; once the chunk
+              // graph changes, the stale payload references dead chunk URLs and
+              // routes hang or never render. The cache name only rotates on
+              // release, so in dev the rot accumulates. Unregister + clear to
+              // heal browsers that already have a SW from an earlier session.
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  regs.forEach(function(r) { r.unregister(); });
+                });
+                if (window.caches) {
+                  caches.keys().then(function(keys) {
+                    keys.filter(function(k) { return k.indexOf('seqrets-') === 0; })
+                        .forEach(function(k) { caches.delete(k); });
+                  });
+                }
+              }
+            ` : `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                   navigator.serviceWorker.register('/sw.js').then(function(reg) {

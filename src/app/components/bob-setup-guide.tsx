@@ -15,7 +15,8 @@ interface BobSetupGuideProps {
 
 export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
   const [apiKey, setApiKeyInput] = useState('');
-  const [rememberKey, setRememberKey] = useState(true);
+  // Session-only by default — persisting the key to localStorage is opt-in.
+  const [rememberKey, setRememberKey] = useState(false);
   const [error, setError] = useState('');
 
   const handleSave = () => {
@@ -159,7 +160,7 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
               {rememberKey
                 ? 'Your API key will be stored in your browser\'s local storage. It persists across sessions but is accessible to browser extensions. You can remove it anytime.'
                 : 'Your API key will be held in memory only and will be cleared when you close this tab.'}
-              {' '}Your key is never sent anywhere except directly to Google\u2019s API. Your conversation history will remain in local storage until you clear the chat.
+              {' '}Your key is never sent anywhere except directly to Google\u2019s API. Your conversation history stays on this device and is cleared when you close the tab.
             </p>
           </div>
         </CardContent>

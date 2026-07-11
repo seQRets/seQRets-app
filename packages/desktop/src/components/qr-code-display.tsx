@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { PRINT_FONT_CSS } from './print-fonts';
 import { Printer, FileArchive, TriangleAlert, Loader2, Lock, Save, Eye, EyeOff, ShieldCheck, CreditCard, ScanLine } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import JSZip from 'jszip';
@@ -60,7 +61,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
   }
 
   const getPrintableStyles = (forPrintAll: boolean = false) => `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+    ${PRINT_FONT_CSS}
     @page { size: A5; margin: 0; }
     body {
         margin: 0;
@@ -482,8 +483,11 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
       toast({ variant: 'destructive', title: 'Passwords Don\'t Match', description: 'Please make sure both passwords match.' });
       return;
     }
-    if (vaultPassword.length < 4) {
-      toast({ variant: 'destructive', title: 'Password Too Short', description: 'Vault password must be at least 4 characters.' });
+    // The vault holds ALL the Qards of this set in one file, so this password
+    // is the only thing standing between the file and the secret — demand more
+    // of it than we do elsewhere.
+    if (vaultPassword.length < 8) {
+      toast({ variant: 'destructive', title: 'Password Too Short', description: 'This file contains all your Qards in one place, so its password matters most. Please use at least 8 characters.' });
       return;
     }
     setIsEncryptingVault(true);

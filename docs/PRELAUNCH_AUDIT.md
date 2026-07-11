@@ -283,7 +283,7 @@ Recommended order, lowest-risk first:
   generation-time self-check re-parses + hash-verifies every share.
 - **Web:** no dynamic XSS sinks (only static `dangerouslySetInnerHTML`); prod CSP has no
   `unsafe-eval`; exhaustive egress inventory = Coinbase ticker (no user data) + user-initiated Gemini
-  (key in header) + Google Fonts (see L2 below) + same-origin `HEAD /ping`; no analytics/telemetry;
+  (key in header) + same-origin `HEAD /ping` (Google Fonts removed 2026-07-11, see L2); no analytics/telemetry;
   clipboard copies auto-clear at 60s; no secret material in URLs/history; SW same-origin + versioned;
   terms gate fails closed.
 - **Desktop:** updater minisign-pubkey-pinned + HTTPS; tight webview CSP (`script-src 'self'`, no
@@ -296,19 +296,36 @@ Recommended order, lowest-risk first:
 
 ## Lower-severity items noted (web) — address opportunistically
 
-- **L2 · Google Fonts cross-origin** (`layout.tsx:76-78`, `qr-code-display.tsx:77`): pings Google on
-  every load; conflicts with offline/zero-knowledge posture; print styling degrades offline.
-  Self-host the three families, then drop `fonts.googleapis.com`/`fonts.gstatic.com` from both CSP copies.
-- **L3 · Vault export password min 4 chars** (`qr-code-display.tsx:474`): a vault aggregates all N
-  shares, collapsing the Shamir threshold — only Argon2id+password remains. Raise the minimum or add
-  strength feedback.
-- **L4 · Camera/image scan skips share-format validation** (`restore-secret-form.tsx:216-221, 268`):
-  arbitrary QR payloads get "Share Added!" and only fail later at restore. Apply the `seQRets|` prefix
-  / `parseShare` check with an immediate error toast. (No XSS — values render as React text.)
-- **L5 · SW caches non-200 navigations** (`sw.template.js:50-59`): a transient 404/500 HTML page can
-  be cached + served offline. Gate on `status === 200` like the `_next/static/` branch already does.
-- **L1 · Gemini API key "remember" defaults ON** (`bob-setup-guide.tsx:18`): default the checkbox to
-  session-only. (Transport verified safe — key sent as `x-goog-api-key` header over HTTPS.)
+- **L2 · Google Fonts cross-origin** — ✅ **DONE (2026-07-11, commit pending):** all three families
+  self-hosted. Inter + Space Grotesk are variable fonts (one file per subset covers every weight —
+  Google serves byte-identical files per weight, verified by hash), so `public/fonts/` is 8 woff2
+  files / 260 KB, mirrored to `packages/desktop/public/fonts/`. Google origins dropped from all
+  three CSP copies (`layout.tsx` meta, `_headers`, desktop `index.html`) — the DESKTOP app also
+  pinged Google on every launch (worse than the audit noted). Print flows: web print window uses
+  absolute same-origin URLs (about:blank has no base URL); desktop print HTML (opened in the
+  external browser, no app-asset access) embeds Inter as base64 via generated `print-fonts.ts`,
+  so printed Qards keep their typeface fully offline. Live-verified: zero requests to any Google
+  host; all faces load from `/fonts/`. ⚠️ **Follow-up (user):** the production CSP header is a
+  Cloudflare Transform Rule (`_headers` is reference-only) — remove `fonts.googleapis.com` /
+  `fonts.gstatic.com` from it in the dashboard. Safe order: code shipped first; a CSP that still
+  allows unused origins breaks nothing.
+- **L3 · Vault export password min 4 chars** — ✅ **DONE (2026-07-11, commit pending):** minimum
+  raised to 8 in both apps with plain-language copy explaining *why* ("this file contains all your
+  Qards in one place"). Export-side only — importing an old vault with a 4-char password still
+  works (no length check on import). Live-verified: 4-char rejected with new toast, 8-char exports.
+- **L4 · Camera/image scan skips share-format validation** — ✅ **DONE (2026-07-11, commit
+  pending):** `addShare` now runs `parseShare` as the gate (covers camera + image + manual paths)
+  and rejects non-Qard QR payloads with a specific "Not a seQRets Qard" toast. Desktop previously
+  demoted these to a misleading "QR Code Not Found" row — now matches web. Live-verified: garbage
+  rejected; current hashed, legacy 3-segment, and metadata Qards all still accepted (full 2-of-2
+  restore incl. one legacy share succeeded).
+- **L5 · SW caches non-200 navigations** — ✅ **DONE (2026-07-11, commit pending):** navigation
+  branch of `sw.template.js` now gates `cache.put` on `status === 200`, matching the
+  `_next/static/` branch. Verified in generated `out/sw.js`.
+- **L1 · Gemini API key "remember" defaults ON** — ✅ **DONE (2026-07-11, commit pending):**
+  checkbox defaults to session-only (key held in memory, cleared on tab close); persisting is
+  opt-in. Also fixed a stale claim in the same note — chat history moved to sessionStorage in 1.1
+  but the copy still said localStorage. Live-verified unchecked by default.
 - **Desktop 1.6 · Smartcard PIN not zeroized in Rust** — ✅ **DONE (2026-07-04)**: every PIN the
   Rust side owns (all 11 PIN-taking commands + `change_pin`'s concatenated buffer) is now wrapped in
   `zeroize::Zeroizing` and wiped on drop, matching `crypto.rs`. Behavior-neutral. `cargo check` clean.

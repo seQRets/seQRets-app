@@ -180,6 +180,21 @@ export function RestoreSecretForm() {
 
 
   const addShare = (data: string, fileName: string, success: boolean) => {
+    // A camera or image scan decodes ANY QR code (WiFi logins, URLs, other
+    // apps' codes). Reject anything that isn't a seQRets Qard right here,
+    // instead of accepting it and failing cryptically at restore time.
+    if (success && data) {
+      try {
+        parseShare(data);
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Not a seQRets Qard",
+          description: `${fileName} doesn't contain a valid seQRets Qard. Please check that you scanned or pasted the right code.`,
+        });
+        return;
+      }
+    }
     // Prevent adding duplicate shares based on data
     if (data && decodedShares.some(s => s.data === data)) {
       toast({
