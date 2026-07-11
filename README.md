@@ -30,7 +30,7 @@ seQRets encrypts your most sensitive secrets — seed phrases, private keys, pas
 
 | | Source Available (Unsupported) | Official Signed Release |
 |---|---|---|
-| **Cost** | Free | TBD |
+| **Cost** | Free | One-time purchase (price TBA) |
 | **Source** | Compile from this repo | Signed pre-built binary |
 | **Platforms** | Any (with Rust + Node.js) | macOS, Windows, Linux |
 | **Auto-updates** | ✗ | ✓ |
@@ -39,7 +39,7 @@ seQRets encrypts your most sensitive secrets — seed phrases, private keys, pas
 | **Portable card reader** | ✗ | ✓ Included |
 
 Build from source: see [docs/BUILDING.md](docs/BUILDING.md).
-Official release: **<a href="https://seqrets.app" target="_blank" rel="noopener noreferrer">seqrets.app</a>**.
+Official release: coming soon — **<a href="https://seqrets.app" target="_blank" rel="noopener noreferrer">join the waitlist at seqrets.app</a>**.
 
 ## ✨ Features
 
@@ -85,6 +85,7 @@ To report a vulnerability, see [SECURITY.md](SECURITY.md).
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cryptographic design, encrypt-first ordering, quantum resistance, RNG, and the web vs desktop threat model
 - [docs/SMARTCARD.md](docs/SMARTCARD.md) — JavaCard hardware, features, applet AID
 - [docs/BUILDING.md](docs/BUILDING.md) — build instructions for web, desktop, and the JavaCard applet
+- <a href="https://seqrets.app/docs/inheritance" target="_blank" rel="noopener noreferrer">Inheritance Guide</a> — how to plan, distribute, and hand off Qards to your heirs
 - [SECURITY.md](SECURITY.md) — vulnerability reporting policy
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guide and CLA
 
@@ -98,7 +99,7 @@ Licensed under the **GNU Affero General Public License v3.0** — see [LICENSE](
 
 Commercial licenses are available for proprietary use — email **licensing@seqrets.app**.
 
-Copyright (c) 2026 seQRets.
+Copyright (c) 2026 seQRets — a product of Toothjockey LLC.
 
 ## ⚠️ Disclaimer
 
