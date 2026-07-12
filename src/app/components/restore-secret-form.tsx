@@ -215,6 +215,8 @@ export function RestoreSecretForm() {
         addShare(share, `Manual Entry ${decodedShares.length + 1}`, true);
         setManualShare('');
         setIsManualEntryOpen(false);
+        // Reveal the added-share list, countdown, and Next Step button.
+        scrollToReveal(endRef.current);
     } else {
         toast({
             variant: "destructive",
@@ -233,6 +235,7 @@ export function RestoreSecretForm() {
     if (data) {
         addShare(data, `Camera Scan ${decodedShares.length + 1}`, true);
         setIsCameraOpen(false); // Close the dialog on successful scan
+        scrollToReveal(endRef.current);
     }
   }
 
@@ -335,6 +338,8 @@ export function RestoreSecretForm() {
 
     if (addedCount > 0) {
       playQardDropSound();
+      // Reveal the imported shares, countdown, and Next Step button.
+      scrollToReveal(endRef.current);
       toast({
         title: 'Vault Imported!',
         description: `${addedCount} shares loaded from "${fileName}". ${vaultData.label ? `Label: ${vaultData.label}` : ''} You need ${vaultData.requiredShares} of ${vaultData.totalShares} to restore.`,

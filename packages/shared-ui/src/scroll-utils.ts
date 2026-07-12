@@ -18,6 +18,7 @@ export function scrollToReveal(el: HTMLElement | null, settleMs = 800) {
   const started = performance.now();
   let lastTarget = -1;
 
+  let prevY = -1;
   const tick = () => {
     if (!el.isConnected) return;
     // scrollY needed to put the marker's bottom at the viewport bottom
@@ -25,10 +26,18 @@ export function scrollToReveal(el: HTMLElement | null, settleMs = 800) {
     const raw = window.scrollY + el.getBoundingClientRect().bottom - window.innerHeight;
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const target = Math.round(Math.min(Math.max(raw, 0), Math.max(max, 0)));
-    if (Math.abs(target - lastTarget) > 2) {
+    const y = Math.round(window.scrollY);
+    // Re-issue when the target moved (content grew), or when scrolling has
+    // STALLED short of the target — e.g. a closing dialog's body-scroll lock
+    // swallowed the first attempt. A smooth scroll in flight moves every
+    // frame, so the stall check never restarts a working animation.
+    const targetMoved = Math.abs(target - lastTarget) > 2;
+    const stalled = y === prevY && Math.abs(y - target) > 2;
+    if (targetMoved || stalled) {
       lastTarget = target;
       el.scrollIntoView({ behavior, block: 'end' });
     }
+    prevY = y;
     if (performance.now() - started < settleMs) requestAnimationFrame(tick);
   };
 
