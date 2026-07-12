@@ -46,7 +46,7 @@ Official release: coming soon — **<a href="https://seqrets.app" target="_blank
 - **Encrypt** any text secret with XChaCha20-Poly1305 + Argon2id, split into configurable Qards (2-of-3, 3-of-5, etc.)
 - **Restore** via drag & drop, camera scan, manual entry, vault file, or smart card
 - **BIP-39 optimization** — 24-word phrases compress from ~150 chars to 32 bytes
-- **SeedQR display** on restore — compatible with SeedSigner-style hardware wallets
+- **SeedQR display** on restore — Standard and Compact formats for scanning BIP-39 seeds into compatible hardware wallets
 - **Built-in inheritance planner** (desktop only) — comprehensive 9-section form that walks you through beneficiaries, secret sets, Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message. The plan is encrypted natively and fits on a smart card. No need to type sensitive information into external editors. Web and desktop can also encrypt any external file (PDF, DOCX, ODT, TXT) the same way.
 - **JavaCard smart card** storage (desktop only) — shares, vaults, keyfiles, or plans on JCOP3 hardware with optional PIN protection
 - **Optional keyfile** as a second factor in addition to the password
@@ -58,7 +58,7 @@ Official release: coming soon — **<a href="https://seqrets.app" target="_blank
 
 Even if **seQRets disappears** — the website goes down, the company dissolves, the app stops being updated — your secrets are still recoverable.
 
-**[seQRets Recover](https://github.com/seQRets/seQRets-Recover)** is an independent, single-file recovery tool for the seQRets share format. One HTML file, ~200 lines of TypeScript, no install, no network. Open it in any browser on any machine, offline, and paste your Qards in.
+**[seQRets Recover](https://github.com/seQRets/seQRets-Recover)** is an independent, single-file recovery tool for the seQRets share format. One HTML file with a small, self-contained codebase (~400-line crypto core), no install, no network. Open it in any browser on any machine, offline, and paste your Qards in.
 
 - 📥 **Download** `recover.html` from the [latest release](https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html)
 - 🔒 **Verify** — each release publishes a SHA-256 so you can confirm copies handed to heirs are untampered
@@ -69,7 +69,7 @@ Even if **seQRets disappears** — the website goes down, the company dissolves,
 
 ## 🔐 Security
 
-seQRets uses industry-standard primitives entirely client-side. **All cryptographic code lives in a single ~600-line file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts).** The desktop app additionally runs Argon2id + XChaCha20-Poly1305 natively in Rust via Tauri, so derived keys never enter the JS runtime.
+seQRets uses industry-standard primitives entirely client-side. **The core cryptographic primitives live in a single ~750-line file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts)** (with share-metadata and SeedQR helpers in [`restore.ts`](packages/crypto/src/restore.ts)). The desktop app additionally runs Argon2id + XChaCha20-Poly1305 natively in Rust via Tauri, so derived keys never enter the JS runtime.
 
 - **Key derivation:** Argon2id (64MB memory, 4 iterations)
 - **Encryption:** XChaCha20-Poly1305 (AEAD)
