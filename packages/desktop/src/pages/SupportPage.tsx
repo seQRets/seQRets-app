@@ -7,7 +7,10 @@ import { Header } from "@/components/header";
 import { useTheme } from "@/components/theme-provider";
 import logoLight from "@/assets/icons/logo-light.webp";
 import logoDark from "@/assets/icons/logo-dark.webp";
-import { BobChatInterface } from '@/components/bob-chat-interface';
+// Lazy: Bob's chunk loads after the page shell paints (item 1.5).
+const BobChatInterface = React.lazy(() =>
+  import('@/components/bob-chat-interface').then((m) => ({ default: m.BobChatInterface }))
+);
 import { AppFooter } from "@/components/app-footer";
 
 export default function SupportPage() {
@@ -53,7 +56,9 @@ export default function SupportPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow flex flex-col p-10 pt-0 min-h-0">
-                       <BobChatInterface initialMessage="How can I help you with seQRets today?" />
+                       <React.Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-muted-foreground">Waking Bob…</div>}>
+                         <BobChatInterface initialMessage="How can I help you with seQRets today?" />
+                       </React.Suspense>
                     </CardContent>
                 </Card>
                 <AppFooter />

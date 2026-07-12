@@ -40,7 +40,10 @@ import {
 import { AppFooter } from '@/components/app-footer';
 import { AppNavTabs } from '@/components/app-nav-tabs';
 import { BitcoinTicker } from '@/components/bitcoin-ticker';
-import { BobChatInterface } from '@/components/bob-chat-interface';
+// Lazy: Bob's chunk loads when the popover first opens, not on first paint (item 1.5).
+const BobChatInterface = React.lazy(() =>
+  import('@/components/bob-chat-interface').then((m) => ({ default: m.BobChatInterface }))
+);
 import logoLight from '@/assets/icons/logo-light.webp';
 import logoDark from '@/assets/icons/logo-dark.webp';
 
@@ -358,10 +361,12 @@ export default function InstructionsPage() {
                 </Button>
               </PopoverTrigger>
                <PopoverContent align="start" className="w-96 h-[32rem] dark:bg-[#2b2728]">
-                  <BobChatInterface
-                    initialMessage="Hi! I'm Bob, your AI assistant. How can I help you with seQRets today?"
-                    showLinkToFullPage={true}
-                  />
+                  <React.Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-muted-foreground">Waking Bob…</div>}>
+                    <BobChatInterface
+                      initialMessage="Hi! I'm Bob, your AI assistant. How can I help you with seQRets today?"
+                      showLinkToFullPage={true}
+                    />
+                  </React.Suspense>
                </PopoverContent>
             </Popover>
              <Button asChild size="icon" variant="outline" className="md:hidden inline-flex">

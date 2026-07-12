@@ -26,7 +26,14 @@ import type { RawInstruction, DecryptInstructionRequest } from '@/lib/types';
 import { AppFooter } from '../components/app-footer';
 import { AppNavTabs } from '../components/app-nav-tabs';
 import { BitcoinTicker } from '../components/bitcoin-ticker';
-import { BobChatInterface } from '../components/bob-chat-interface';
+import dynamic from "next/dynamic";
+
+// Deferred: Bob's chunk (markdown renderer + Gemini SDK) loads when the
+// popover first opens, not on first paint. Security item 1.5.
+const BobChatInterface = dynamic(
+  () => import('../components/bob-chat-interface').then((m) => m.BobChatInterface),
+  { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Waking Bob…</div> }
+);
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

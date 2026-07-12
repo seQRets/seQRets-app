@@ -11,7 +11,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { BobChatInterface } from "./components/bob-chat-interface";
+import dynamic from "next/dynamic";
+
+// Bob pulls in react-markdown + rehype-sanitize + the Gemini SDK — keep all of
+// it out of the first-paint bundle. The chunk loads when the popover first
+// opens (Radix doesn't mount PopoverContent until then). Security item 1.5.
+const BobChatInterface = dynamic(
+  () => import("./components/bob-chat-interface").then((m) => m.BobChatInterface),
+  { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Waking Bob…</div> }
+);
 import { BitcoinTicker } from "./components/bitcoin-ticker";
 import { AppFooter } from "./components/app-footer";
 import { WelcomeCards } from "./components/welcome-cards";

@@ -9,7 +9,14 @@ import { ArrowLeft, Bot } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "../components/header";
-import { BobChatInterface } from '../components/bob-chat-interface';
+import dynamic from "next/dynamic";
+
+// Deferred so Bob's chunk (markdown renderer + Gemini SDK) loads after first
+// paint instead of blocking it. Security item 1.5.
+const BobChatInterface = dynamic(
+  () => import('../components/bob-chat-interface').then((m) => m.BobChatInterface),
+  { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Waking Bob…</div> }
+);
 import { AppFooter } from "../components/app-footer";
 
 
