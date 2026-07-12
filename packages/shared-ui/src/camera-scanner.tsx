@@ -27,6 +27,13 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
   });
   const { toast } = useToast();
   const animationFrameId = useRef<number>();
+  // Once the camera is denied, stop retrying. The effect re-runs whenever the
+  // parent recreates `onScan` (it's rarely memoized), and the denial path
+  // calls toast() — which re-renders the parent — so without this guard a
+  // single "permission denied" spins into an infinite getUserMedia/toast loop.
+  // Reset only when the user actively picks a different camera; a full retry
+  // otherwise requires closing and reopening the scanner (which remounts this).
+  const permissionDeniedRef = useRef(false);
 
   useEffect(() => {
     let isComponentMounted = true;
@@ -92,6 +99,9 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
     };
 
     const startStream = async () => {
+      // Bail if this camera selection was already denied — don't hammer
+      // getUserMedia (each attempt re-toasts and re-renders → retry loop).
+      if (permissionDeniedRef.current) return;
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error("Camera access is not supported by your browser.");
@@ -149,6 +159,9 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         animationFrameId.current = requestAnimationFrame(tick);
       } catch (error) {
         console.error('Error accessing camera:', error);
+        // Record the denial so the guard above stops subsequent effect re-runs
+        // from retrying (and re-toasting) this same camera selection.
+        permissionDeniedRef.current = true;
         if(isComponentMounted){
             setHasCameraPermission(false);
             const errorMessage = error instanceof Error ? error.message : 'Please enable camera permissions in your browser settings.';
@@ -179,6 +192,8 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
   }, [onScan, toast, selectedDeviceId]);
 
   const handleDeviceChange = (deviceId: string) => {
+    // User actively chose a different camera — allow one fresh attempt.
+    permissionDeniedRef.current = false;
     setSelectedDeviceId(deviceId);
     try { localStorage.setItem(CAMERA_PREF_KEY, deviceId); } catch { /* ignore */ }
   };
