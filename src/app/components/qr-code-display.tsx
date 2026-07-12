@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Printer, FileArchive, TriangleAlert, Loader2, Lock, Save, Eye, EyeOff, ShieldCheck, ScanLine } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
-import JSZip from 'jszip';
 import { useToast } from '@/hooks/use-toast';
 import { CreateSharesResult, QrCodeData, EncryptedVaultFile } from '@/lib/types';
-import QRCode from 'qrcode';
+import { qardFileTitle, generateQardQrUris, renderQardToCanvas, buildQardsZip, buildVaultJson } from '@/components/ui/qard-render';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -68,10 +67,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     return () => vaultWorkerRef.current?.terminate();
   }, []);
 
-  const getShareTitle = (index: number) => {
-    const sanitizedLabel = label ? `${label.replace(/[^a-zA-Z0-9_-]/g, '')}-` : '';
-    return `seQRets-Qard-${sanitizedLabel}${String(index + 1).padStart(2, '0')}`;
-  }
+  const getShareTitle = (index: number) => qardFileTitle(label, index);
 
   // The print window is opened as about:blank, so relative URLs don't resolve —
   // fonts must be referenced by absolute same-origin URL. Self-hosted (L2):
@@ -199,144 +195,17 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
       }
   };
 
-  /**
-   * Pure Canvas 2D renderer for the Qard card layout.
-   * Draws the full "Secret Qard Backup" card programmatically without html2canvas,
-   * ensuring reliable cross-browser support (including Safari).
-   */
-  const renderCardToCanvas = (
-    index: number,
-    qrDataUrl: string,
-    scale: number = 4,
-  ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      // A5 dimensions at ~96 DPI
-      const W = 560;
-      const H = 794;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = W * scale;
-      canvas.height = H * scale;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error('Canvas 2d context unavailable')); return; }
-
-      ctx.scale(scale, scale);
-
-      // ── Background ──
-      ctx.fillStyle = '#fdfdfd';
-      ctx.fillRect(0, 0, W, H);
-
-      // ── Outer border ──
-      ctx.strokeStyle = '#d3cdc1';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
-
-      // ── Title ──
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#231f20';
-      ctx.font = 'bold 24px Inter, system-ui, -apple-system, sans-serif';
-      ctx.fillText('Secret Qard Backup', W / 2, 85);
-
-      // ── QR Code ──
-      const qrImgSize = 378; // ~10cm at 96 DPI
-      const qrPad = 10;
-      const qrBorder = 1;
-      const qrBoxSize = qrImgSize + (qrPad + qrBorder) * 2;
-      const qrBoxX = (W - qrBoxSize) / 2;
-      const qrBoxY = 140;
-
-      // QR border box
-      ctx.strokeStyle = '#d3cdc1';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(qrBoxX + 0.5, qrBoxY + 0.5, qrBoxSize - 1, qrBoxSize - 1);
-
-      // White background inside QR box
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(qrBoxX + qrBorder, qrBoxY + qrBorder, qrBoxSize - qrBorder * 2, qrBoxSize - qrBorder * 2);
-
-      // Load and draw the QR code image
-      const qrImg = new window.Image();
-      qrImg.onload = () => {
-        // Nearest-neighbour scaling for crisp QR modules
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(
-          qrImg,
-          qrBoxX + qrBorder + qrPad,
-          qrBoxY + qrBorder + qrPad,
-          qrImgSize,
-          qrImgSize,
-        );
-        ctx.imageSmoothingEnabled = true;
-
-        // ── Bottom info section ──
-        let y = qrBoxY + qrBoxSize + 30;
-
-        // Qard #N
-        ctx.fillStyle = '#231f20';
-        ctx.font = 'bold 20px Inter, system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`Qard #${index + 1}`, W / 2, y);
-        y += 28;
-
-        // Set ID
-        ctx.fillStyle = '#6b6567';
-        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`Set: ${setId}`, W / 2, y);
-        y += 24;
-
-        // Label (optional)
-        ctx.fillStyle = '#3e3739';
-        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        if (label) {
-          ctx.fillText(`Label: ${label}`, W / 2, y);
-          y += 22;
-        }
-
-        // Created date
-        const dateStr = new Date().toLocaleDateString('en-US');
-        ctx.fillText(`Created: ${dateStr}`, W / 2, y);
-        y += 30;
-
-        // Warning \u2014 emoji rendered larger than the text
-        {
-          const emoji = '\u26A0\uFE0F';
-          const text = ' Store securely and separately from other qards';
-          const emojiFont = '20px Inter, system-ui, -apple-system, sans-serif';
-          const textFont = '500 14px Inter, system-ui, -apple-system, sans-serif';
-
-          ctx.font = emojiFont;
-          const emojiW = ctx.measureText(emoji).width;
-          ctx.font = textFont;
-          const textW = ctx.measureText(text).width;
-
-          const startX = (W - (emojiW + textW)) / 2;
-
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#DC2626';
-
-          ctx.font = emojiFont;
-          ctx.fillText(emoji, startX, y);
-
-          ctx.font = textFont;
-          ctx.fillText(text, startX + emojiW, y);
-
-          ctx.textAlign = 'center';
-        }
-        y += 25;
-
-        // Footer
-        ctx.fillStyle = '#6b6567';
-        ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText('Scan QR with seQRets App to recover secret.', W / 2, y);
-
-        resolve(canvas.toDataURL('image/png'));
-      };
-      qrImg.onerror = () => reject(new Error('Failed to load QR code image'));
-      qrImg.src = qrDataUrl;
+  // Canvas card rendering lives in shared-ui (qard-render.ts). Web uses the
+  // classic layout (no fingerprint) with the web footer line.
+  const renderCardToCanvas = (index: number, qrDataUrl: string, scale: number = 4): Promise<string> =>
+    renderQardToCanvas(qrDataUrl, {
+      cardNumber: index + 1,
+      setId,
+      label,
+      dateStr: new Date().toLocaleDateString('en-US'),
+      footerText: 'Scan QR with seQRets App to recover secret.',
+      scale,
     });
-  };
 
   // Synchronous click handler — uses pre-generated card images so Safari
   // doesn't lose the user-gesture context (which blocks programmatic downloads).
@@ -393,24 +262,14 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         toast({ variant: "destructive", title: "Images not ready", description: "Not all Qard images have been generated yet." });
         return;
     }
-    const zip = new JSZip();
     try {
-        for(let i = 0; i < shares.length; i++) {
-            const title = getShareTitle(i);
-            zip.file(`${title}.txt`, shares[i]);
-
-            const pngDataUrl = !isTextOnly ? (cardDataUrls[i] || qrCodeUris[i]) : null;
-            if (pngDataUrl) {
-                const base64Data = pngDataUrl.substring(pngDataUrl.indexOf(',') + 1);
-                zip.file(`${title}.png`, base64Data, { base64: true });
-            }
-        }
-
-        if (encryptedInstructions) {
-            const instructionsContent = JSON.stringify(encryptedInstructions, null, 2);
-            zip.file('seqrets-instructions.json', instructionsContent);
-        }
-
+        const zip = await buildQardsZip({
+            shares,
+            label,
+            // Prefer the pre-rendered card image; fall back to the bare QR.
+            getPngDataUrl: (i) => (!isTextOnly ? (cardDataUrls[i] || qrCodeUris[i]) : null),
+            encryptedInstructions,
+        });
         const content = await zip.generateAsync({ type: 'blob' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(content);
@@ -438,20 +297,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     setIsVaultPasswordVisible(false);
   };
 
-  const getVaultJsonString = () => {
-    const vaultData = {
-      version: 1,
-      label: qrCodeData.label || 'Untitled',
-      setId: qrCodeData.setId,
-      shares: qrCodeData.shares,
-      requiredShares: qrCodeData.requiredShares,
-      totalShares: qrCodeData.totalShares,
-      createdAt: new Date().toISOString(),
-      encryptedInstructions: qrCodeData.encryptedInstructions || null,
-      keyfileUsed: keyfileUsed,
-    };
-    return JSON.stringify(vaultData, null, 2);
-  };
+  const getVaultJsonString = () => buildVaultJson(qrCodeData, keyfileUsed);
 
   const downloadVaultFile = (content: string, isEncrypted: boolean) => {
     const vaultLabel = qrCodeData.label || 'Untitled';
@@ -510,47 +356,16 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
       setIsLoadingImages(false);
       return;
     }
-
-    const generateQrUris = async () => {
-        setIsLoadingImages(true);
-        const uris = await Promise.all(
-            shares.map(async (share) => {
-                // Generate every Qard at M-level error correction (~15% recovery)
-                // for stronger physical durability — important for archival /
-                // inheritance use, where Qards may be stored for decades and
-                // accumulate light damage. M is the floor; we fall back to L
-                // (~7% recovery) per share only when the share is too large for
-                // M to encode at QR version 40 (the QR spec ceiling).
-                //
-                // Validated against payloads up to ~450-char encrypted multi-sig
-                // descriptors, including degraded photo-of-photo scan paths.
-                try {
-                    return await QRCode.toDataURL(share, {
-                        errorCorrectionLevel: 'M',
-                        margin: 2,
-                        width: 800,
-                    });
-                } catch (_) {
-                    try {
-                        const dataUrl = await QRCode.toDataURL(share, {
-                            errorCorrectionLevel: 'L',
-                            margin: 2,
-                            width: 800,
-                        });
-                        console.warn(`QR fell back to L for a ${share.length}-char share — M exceeded QR capacity.`);
-                        return dataUrl;
-                    } catch (errFallback) {
-                        console.error("QR generation failed at both M and L:", errFallback);
-                        return null;
-                    }
-                }
-            })
-        );
-        setQrCodeUris(uris);
-        setIsLoadingImages(false);
-    };
-
-    generateQrUris();
+    // Cancellation guard: if shares change (or we unmount) mid-generation,
+    // drop the stale batch instead of committing it over the new state.
+    let cancelled = false;
+    setIsLoadingImages(true);
+    generateQardQrUris(shares).then((uris) => {
+      if (cancelled) return;
+      setQrCodeUris(uris);
+      setIsLoadingImages(false);
+    });
+    return () => { cancelled = true; };
   }, [shares, isTextOnly]);
 
   // Pre-generate card images as data URLs after QR codes are ready.

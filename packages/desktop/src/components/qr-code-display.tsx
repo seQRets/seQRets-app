@@ -2,10 +2,9 @@ import { Button } from '@/components/ui/button';
 import { PRINT_FONT_CSS } from './print-fonts';
 import { Printer, FileArchive, TriangleAlert, Loader2, Lock, Save, Eye, EyeOff, ShieldCheck, CreditCard, ScanLine } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import JSZip from 'jszip';
 import { useToast } from '@/hooks/use-toast';
 import { CreateSharesResult, EncryptedVaultFile } from '@/lib/types';
-import QRCode from 'qrcode';
+import { qardFileTitle, generateQardQrUris, renderQardToCanvas, buildQardsZip, buildVaultJson } from '@/components/ui/qard-render';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -55,10 +54,19 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
   const isNearLimit = !isTextOnly && shares.length > 0 && shares[0].length > QR_CAPACITY_WARNING;
   const [showScanWarning, setShowScanWarning] = useState(isNearLimit);
 
-  const getShareTitle = (index: number) => {
-    const sanitizedLabel = label ? `${label.replace(/[^a-zA-Z0-9_-]/g, '')}-` : '';
-    return `seQRets-Qard-${sanitizedLabel}${String(index + 1).padStart(2, '0')}`;
-  }
+  const getShareTitle = (index: number) => qardFileTitle(label, index);
+
+  // Truncated SHA-256 fingerprint (premium) — read from the share's embedded
+  // sha256 segment (computed at generation over the FULL hash input,
+  // including any recovery metadata), falling back to recompute over
+  // salt|data for legacy hashless Qards. Guarantees the printed fingerprint
+  // matches the QR's contents byte-for-byte.
+  const getShareFingerprint = (index: number) => {
+    const parts = shares[index].split('|');
+    const embedded = parts.find(p => p.startsWith('sha256:'))?.slice(7);
+    const fullHash = embedded ?? computeShareHash(parts.slice(0, 3).join('|'));
+    return truncateHash(fullHash);
+  };
 
   const getPrintableStyles = (forPrintAll: boolean = false) => `
     ${PRINT_FONT_CSS}
@@ -112,16 +120,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
 
                 <p style="font-size: 14px; color: #3e3739; margin: 0 0 6px 0;">Set: ${escapeHtml(setId)}  &middot;  ${createdDate}</p>
 
-                <p style="font-size: 12px; color: #3e3739; margin: 0 0 16px 0;">SHA-256: ${(() => {
-                    // Read the hash already embedded in the share (computed at generation
-                    // time over the FULL hash input, including any recovery metadata) so
-                    // the printed fingerprint always matches the QR's contents byte-for-byte.
-                    // Falls back to recomputing for legacy hashless Qards.
-                    const parts = shares[index].split('|');
-                    const embedded = parts.find(p => p.startsWith('sha256:'))?.slice(7);
-                    const fullHash = embedded ?? computeShareHash(parts.slice(0, 3).join('|'));
-                    return truncateHash(fullHash);
-                })()}</p>
+                <p style="font-size: 12px; color: #3e3739; margin: 0 0 16px 0;">SHA-256: ${getShareFingerprint(index)}</p>
 
                 <div style="display: flex; align-items: center; justify-content: center; color: #DC2626; font-weight: 500; font-size: 14px; margin-bottom: 10px;">
                     <span style="margin-right: 6px; font-size: 16px;">⚠️</span>
@@ -182,154 +181,19 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     printContent(allSharesHtml, getPrintableStyles(true));
   };
 
-  /**
-   * Pure Canvas 2D renderer for the Qard card layout.
-   * Draws the full "Secret Qard Backup" card programmatically,
-   * ensuring reliable text spacing and crisp QR rendering.
-   */
-  const renderCardToCanvas = (
-    index: number,
-    qrDataUrl: string,
-    scale: number = 4,
-  ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      // A5 dimensions at ~96 DPI
-      const W = 560;
-      const H = 794;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = W * scale;
-      canvas.height = H * scale;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error('Canvas 2d context unavailable')); return; }
-
-      ctx.scale(scale, scale);
-
-      // ── Background ──
-      ctx.fillStyle = '#fdfdfd';
-      ctx.fillRect(0, 0, W, H);
-
-      // ── Outer border ──
-      ctx.strokeStyle = '#d3cdc1';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
-
-      // ── Title ──
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#231f20';
-      ctx.font = 'bold 24px Inter, system-ui, -apple-system, sans-serif';
-      ctx.fillText('Secret Qard Backup', W / 2, 85);
-
-      // ── QR Code ──
-      const qrImgSize = 378; // ~10cm at 96 DPI
-      const qrPad = 10;
-      const qrBorder = 1;
-      const qrBoxSize = qrImgSize + (qrPad + qrBorder) * 2;
-      const qrBoxX = (W - qrBoxSize) / 2;
-      const qrBoxY = 140;
-
-      // QR border box
-      ctx.strokeStyle = '#d3cdc1';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(qrBoxX + 0.5, qrBoxY + 0.5, qrBoxSize - 1, qrBoxSize - 1);
-
-      // White background inside QR box
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(qrBoxX + qrBorder, qrBoxY + qrBorder, qrBoxSize - qrBorder * 2, qrBoxSize - qrBorder * 2);
-
-      // Load and draw the QR code image
-      const qrImg = new window.Image();
-      qrImg.onload = () => {
-        // Nearest-neighbour scaling for crisp QR modules
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(
-          qrImg,
-          qrBoxX + qrBorder + qrPad,
-          qrBoxY + qrBorder + qrPad,
-          qrImgSize,
-          qrImgSize,
-        );
-        ctx.imageSmoothingEnabled = true;
-
-        // ── Bottom info section ──
-        let y = qrBoxY + qrBoxSize + 30;
-
-        // Qard #N
-        ctx.fillStyle = '#231f20';
-        ctx.font = 'bold 20px Inter, system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`Qard #${index + 1}`, W / 2, y);
-        y += 28;
-
-        // Label (optional)
-        if (label) {
-          ctx.fillStyle = '#3e3739';
-          ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-          ctx.fillText(`Label: ${label}`, W / 2, y);
-          y += 24;
-        }
-
-        // Set ID · Date (combined line)
-        const dateStr = new Date().toLocaleDateString('en-US');
-        ctx.fillStyle = '#3e3739';
-        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`Set: ${setId}  \u00B7  ${dateStr}`, W / 2, y);
-        y += 24;
-
-        // SHA-256 fingerprint — read from the share's embedded sha256 segment
-        // (computed at generation over the FULL hash input, including any
-        // recovery metadata), falling back to recompute over salt|data for
-        // legacy hashless Qards. Guarantees the printed fingerprint matches
-        // the QR's contents byte-for-byte.
-        const shareParts = shares[index].split('|');
-        const embeddedHash = shareParts.find(p => p.startsWith('sha256:'))?.slice(7);
-        const fullHash = embeddedHash ?? computeShareHash(shareParts.slice(0, 3).join('|'));
-        const displayHash = truncateHash(fullHash);
-        ctx.fillStyle = '#3e3739';
-        ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`SHA-256: ${displayHash}`, W / 2, y);
-        y += 28;
-
-        // Warning \u2014 emoji rendered larger than the text
-        {
-          const emoji = '\u26A0\uFE0F';
-          const text = ' Store securely and separately from other qards';
-          const emojiFont = '20px Inter, system-ui, -apple-system, sans-serif';
-          const textFont = '500 14px Inter, system-ui, -apple-system, sans-serif';
-
-          ctx.font = emojiFont;
-          const emojiW = ctx.measureText(emoji).width;
-          ctx.font = textFont;
-          const textW = ctx.measureText(text).width;
-
-          const startX = (W - (emojiW + textW)) / 2;
-
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#DC2626';
-
-          ctx.font = emojiFont;
-          ctx.fillText(emoji, startX, y);
-
-          ctx.font = textFont;
-          ctx.fillText(text, startX + emojiW, y);
-
-          ctx.textAlign = 'center';
-        }
-        y += 25;
-
-        // Footer
-        ctx.fillStyle = '#6b6567';
-        ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText('Scan with seQRets App to recover  \u2014  seqrets.app', W / 2, y);
-
-        resolve(canvas.toDataURL('image/png'));
-      };
-      qrImg.onerror = () => reject(new Error('Failed to load QR code image'));
-      qrImg.src = qrDataUrl;
+  // Canvas card rendering lives in shared-ui (qard-render.ts). Desktop uses
+  // the compact premium layout: the fingerprint switches on the combined
+  // "Set · date" line and the SHA-256 row, with the desktop footer.
+  const renderCardToCanvas = (index: number, qrDataUrl: string, scale: number = 4): Promise<string> =>
+    renderQardToCanvas(qrDataUrl, {
+      cardNumber: index + 1,
+      setId,
+      label,
+      dateStr: new Date().toLocaleDateString('en-US'),
+      fingerprint: getShareFingerprint(index),
+      footerText: 'Scan with seQRets App to recover  \u2014  seqrets.app',
+      scale,
     });
-  };
 
   const handleDownload = async (index: number) => {
     if (!isTextOnly && isLoadingImages) {
@@ -393,25 +257,15 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
         toast({ variant: "destructive", title: "Images not ready", description: "Not all Qard images have been generated yet." });
         return;
     }
-    const zip = new JSZip();
     try {
         await document.fonts.ready;
-        for(let i = 0; i < shares.length; i++) {
-            const title = getShareTitle(i);
-            zip.file(`${title}.txt`, shares[i]);
-
-            if (!isTextOnly && qrCodeUris[i]) {
-                const pngDataUrl = await renderCardToCanvas(i, qrCodeUris[i]!, 4);
-                const base64Data = pngDataUrl.substring(pngDataUrl.indexOf(',') + 1);
-                zip.file(`${title}.png`, base64Data, { base64: true });
-            }
-        }
-
-        if (encryptedInstructions) {
-            const instructionsContent = JSON.stringify(encryptedInstructions, null, 2);
-            zip.file('seqrets-instructions.json', instructionsContent);
-        }
-
+        const zip = await buildQardsZip({
+            shares,
+            label,
+            // Render each card on demand (no pre-generated cache on desktop).
+            getPngDataUrl: (i) => (!isTextOnly && qrCodeUris[i] ? renderCardToCanvas(i, qrCodeUris[i]!, 4) : null),
+            encryptedInstructions,
+        });
         const content = await zip.generateAsync({ type: 'uint8array' });
         const savedPath = await saveFileNative('seQRets-shares.zip', ZIP_FILTERS, content);
         if (savedPath) {
@@ -436,20 +290,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
     setIsVaultPasswordVisible(false);
   };
 
-  const getVaultJsonString = () => {
-    const vaultData = {
-      version: 1,
-      label: qrCodeData.label || 'Untitled',
-      setId: qrCodeData.setId,
-      shares: qrCodeData.shares,
-      requiredShares: qrCodeData.requiredShares,
-      totalShares: qrCodeData.totalShares,
-      createdAt: new Date().toISOString(),
-      encryptedInstructions: qrCodeData.encryptedInstructions || null,
-      keyfileUsed: keyfileUsed,
-    };
-    return JSON.stringify(vaultData, null, 2);
-  };
+  const getVaultJsonString = () => buildVaultJson(qrCodeData, keyfileUsed);
 
   const downloadVaultFile = async (content: string, isEncrypted: boolean) => {
     const vaultLabel = qrCodeData.label || 'Untitled';
@@ -514,47 +355,16 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed }: QrCodeDisplayProps) {
       setIsLoadingImages(false);
       return;
     }
-
-    const generateQrUris = async () => {
-        setIsLoadingImages(true);
-        const uris = await Promise.all(
-            shares.map(async (share) => {
-                // Generate every Qard at M-level error correction (~15% recovery)
-                // for stronger physical durability — important for archival /
-                // inheritance use, where Qards may be stored for decades and
-                // accumulate light damage. M is the floor; we fall back to L
-                // (~7% recovery) per share only when the share is too large for
-                // M to encode at QR version 40 (the QR spec ceiling).
-                //
-                // Validated against payloads up to ~450-char encrypted multi-sig
-                // descriptors, including degraded photo-of-photo scan paths.
-                try {
-                    return await QRCode.toDataURL(share, {
-                        errorCorrectionLevel: 'M',
-                        margin: 2,
-                        width: 800,
-                    });
-                } catch (_) {
-                    try {
-                        const dataUrl = await QRCode.toDataURL(share, {
-                            errorCorrectionLevel: 'L',
-                            margin: 2,
-                            width: 800,
-                        });
-                        console.warn(`QR fell back to L for a ${share.length}-char share — M exceeded QR capacity.`);
-                        return dataUrl;
-                    } catch (errFallback) {
-                        console.error("QR generation failed at both M and L:", errFallback);
-                        return null;
-                    }
-                }
-            })
-        );
-        setQrCodeUris(uris);
-        setIsLoadingImages(false);
-    };
-
-    generateQrUris();
+    // Cancellation guard: if shares change (or we unmount) mid-generation,
+    // drop the stale batch instead of committing it over the new state.
+    let cancelled = false;
+    setIsLoadingImages(true);
+    generateQardQrUris(shares).then((uris) => {
+      if (cancelled) return;
+      setQrCodeUris(uris);
+      setIsLoadingImages(false);
+    });
+    return () => { cancelled = true; };
   }, [shares, isTextOnly]);
 
 
