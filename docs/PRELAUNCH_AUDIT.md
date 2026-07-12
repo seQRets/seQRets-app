@@ -1,6 +1,6 @@
 # seQRets Pre-Launch Audit & Cleanup Plan
 
-**Status:** Working checklist · **Created:** 2026-07-04 · **Baseline:** v1.11.8 "🔥 Ignition"
+**Status:** ✅ All batches complete (Batch G finished 2026-07-12) · **Created:** 2026-07-04 · **Baseline:** v1.11.8 "🔥 Ignition"
 
 Full read-only review of the web (`src/`), desktop (`packages/desktop/`), shared crypto
 (`packages/crypto/`), shared UI (`packages/shared-ui/`), and JavaCard (`packages/javacard/`)
@@ -256,33 +256,35 @@ Committed as `f5f9fc0`. Verified: build:crypto ✅ · web tsc ✅ · desktop tsc
 
 ---
 
-## Batch G — Redundancy & drift refactor · *maintenance, post-launch*
+## Batch G — Redundancy & drift refactor · *COMPLETE (2026-07-12)*
 
 Largest bucket, least urgent — future bug-safety, not current risk. Core problem: **~13 web↔desktop
-file pairs have silently drifted beyond the 7 documented sync pairs**; drift already caused
+file pairs had silently drifted beyond the 7 documented sync pairs**; drift already caused
 regressions (desktop lost a camera `aria-label` + a `HelpHint`; `keyfile-generator` behaves
-differently; desktop's QR-gen effect is missing web's cancellation guard → stale-state race).
+differently; desktop's QR-gen effect was missing web's cancellation guard → stale-state race).
 
-Recommended order, lowest-risk first:
+Done, lowest-risk first. Each step [FULL-VERIFY]'d (7/7 Rust tests incl. TS↔Rust parity) plus, for
+crypto-adjacent moves, a scripted A/B harness (old code lifted verbatim from HEAD vs the new shared
+module on fixed vectors) and a live dev-server smoke — no big-bang commit.
 
-- [ ] 1. Unify desktop imports through `@seqrets/crypto` (`create-shares-form`,
-  `seed-phrase-generator`, `restore-secret-form` import `pako`/`@scure/bip39` directly), then drop
-  `pako`, `@types/pako`, `@scure/bip39` from `packages/desktop/package.json`.
-- [ ] 2. Move ≤12-diff-line twins to `packages/shared-ui`/shared lib: `clipboard-utils.ts`
-  (identical), `utils.ts`, `use-mobile`, `use-toast`, `camera-scanner` (8-diff), `password-generator`
-  (8), `bitcoin-ticker` (pass logo as prop), `seed-phrase-generator` (after step 1). ~1,000 dup
-  lines removed at near-zero behavioral risk. **Do NOT migrate smartcard-touching components.**
-- [ ] 3. Extract `DragDropZone` to shared-ui — web has it; desktop inlines the same ~40-line handler
-  in 3 components.
-- [ ] 4. Extract `qr-code-display` canvas/ZIP/vault-JSON core (~1,650 combined lines, biggest single
-  duplication) into a shared module; premium SHA-256 fingerprint passed in as optional field.
-- [ ] 5. Extract `restore-secret-form` pure logic (SeedQR helpers, `setSummaries`, `parseShareMeta`)
-  into `@seqrets/crypto`.
-- [ ] 6. Add every remaining un-tracked pair to the CLAUDE.md sync list as an interim guard.
-- [ ] 7. Re-sync Bob prompt drift: desktop plugs "seQRets Planner"; web never mentions it — decide
-  intent. Plus minor "needed" vs "required" wording forks.
-- **Verify (each step):** [FULL-VERIFY] + smoke the moved component in both dev servers. Small
-  separate commits, each independently verified — never one big refactor commit.
+- [x] 1. Unify desktop imports through `@seqrets/crypto` — dropped `pako`, `@types/pako`,
+  `@scure/bip39` from desktop. (cd136f6)
+- [x] 2. Move ≤12-diff-line twins to `packages/shared-ui`: `utils`, `clipboard-utils`, `use-mobile`,
+  `use-toast`, `camera-scanner`, `password-generator`, `seed-phrase-generator`, `bitcoin-ticker`
+  (logo as prop). ~1,000 dup lines removed; restored desktop's lost `aria-label` + `HelpHint`. (85514c6)
+- [x] 3. Extract `DragDropZone` to shared-ui; desktop's 3 inlined handlers refactored onto it. (c527535)
+- [x] 4. Extract `qr-code-display` canvas/ZIP/vault core → `shared-ui/qard-render.ts`; premium
+  fingerprint an optional field. Also fixed the QR-gen cancellation-guard race on BOTH platforms.
+  A/B harness 20/20 pixel-identical. (3ea2263)
+- [x] 5. Extract `restore-secret-form` pure logic (`parseShareMeta`, SeedQR helpers,
+  `summarizeShareSets`) → `@seqrets/crypto/restore.ts`. A/B harness 26/26 + full E2E restore. (b566ea2)
+- [x] 6. CLAUDE.md rewritten: "Shared Code (edit once)" section + interim-guard twin list.
+- [x] 7. Re-synced Bob prompt: added the seQRets Planner shop plug to web, aligned "needed"→"required".
+  Remaining forks (web desktop-upsell framing, API-key plumbing) are intentional.
+
+Bonus UX shipped alongside (user-requested during testing): shared `scroll-utils.ts` auto-scroll
+reveal after file drops / seed-apply / keyfile-toggle / every restore input method, with a
+dialog-close scroll-lock stall-retry fix.
 
 ---
 

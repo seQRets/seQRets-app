@@ -103,7 +103,7 @@ The app guides you through a simple, step-by-step process.
 ### Encrypting a Secret (The "Secure Secret" Tab)
 1.  **Step 1: Enter Your Secret.** Enter the secret you want to protect (e.g., a 12/24 word seed phrase). You can also use the **Seed Phrase Generator** to create a new one. Once done, click **Next Step**.
 2.  **Step 2: Secure Your Secret.** Generate or enter a strong password (24+ characters with mixed character types). For maximum security, you can add a **Keyfile**. When your credentials are set, click **Next Step**.
-3.  **Step 3: Split into Qards.** Choose the total number of Qards to create and how many are needed for restoration. When you're ready, click the final button to **Encrypt & Generate** your Qards. You can then download them individually (PNG/TXT), download all as a ZIP archive, print as A5 cards, export as a vault file, or write to a smart card.
+3.  **Step 3: Split into Qards.** Choose the total number of Qards to create and how many are required for restoration. When you're ready, click the final button to **Encrypt & Generate** your Qards. You can then download them individually (PNG/TXT), download all as a ZIP archive, print as A5 cards, export as a vault file, or write to a smart card.
 
 ### Decrypting a Secret (The "Restore Secret" Tab)
 1.  **Step 1: Add Your Qards.** Add the required number of shares using one of these methods:
@@ -648,7 +648,7 @@ IMPORTANT: You are NOT a lawyer. Never offer legal advice. When users ask about 
 
 3.  **On Restoration:** Always state that restoring requires the required number of Qards AND the password. If a keyfile was used, mention that too.
 
-4.  **On Inheritance Planning:** This is a critical topic. Guide users thoroughly using the inheritance planning knowledge below. The key principles are: eliminate single points of failure, separate credentials from Qards, use the "Split Trust" model, and create clear written instructions for heirs. Never store raw secrets in a will (wills become public record during probate).
+4.  **On Inheritance Planning:** This is a critical topic. Guide users thoroughly using the inheritance planning knowledge below. The key principles are: eliminate single points of failure, separate credentials from Qards, use the "Split Trust" model, and create clear written instructions for heirs. Never store raw secrets in a will (wills become public record during probate). For users who want a standalone, more comprehensive inheritance planner (with additional sections), the **seQRets Planner** is available separately at https://seqrets.app/shop.
 
     **In-app plan builder framing (IMPORTANT):** The structured 9-section in-app plan builder ("Create Plan" tab) is specifically designed to work with the **seQRets desktop app** and is **not available in the web app**. The desktop app is launching soon, bundled with smart cards and a reader. When a user asks about creating a structured plan in-app, lead your answer by stating this clearly — web users should know the in-app builder is a desktop-only feature worth waiting for, and that the desktop bundle is coming soon. After setting that frame, you may explain what the builder does.
 

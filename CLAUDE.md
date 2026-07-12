@@ -21,15 +21,24 @@ npx tsc --noEmit             # Web type check
 npx tsc --noEmit -p packages/desktop/tsconfig.json  # Desktop type check
 ```
 
+## Shared Code (edit once — no hand-sync)
+
+After the Batch G refactor, logic that used to be copy-pasted between web and desktop lives in one place. **Edit the shared source, not per-app copies:**
+
+- **`packages/shared-ui/src/`** — consumed by both apps via the `@/components/ui/*` alias. Besides the shadcn primitives it now holds: `camera-scanner`, `password-generator`, `seed-phrase-generator`, `bitcoin-ticker` (logo passed as a prop), `drag-drop-zone`, plus `qard-render.ts` (Qard canvas/ZIP/vault core), `scroll-utils.ts`, `utils.ts`, `clipboard-utils.ts`, `use-mobile`, `use-toast`. (Both Tailwind configs must include `packages/shared-ui/src/**` in content paths.)
+- **`@seqrets/crypto`** (`packages/crypto/src/`) — all crypto plus `restore.ts` (`parseShareMeta`, `toSeedQR`, `toCompactEntropy`, `summarizeShareSets`) and re-exported `gzip` / bip39 helpers. Desktop imports these instead of `pako`/`@scure/bip39` directly. Run `npm run build:crypto` after editing.
+
 ## Critical Sync Rules
 
-These files must stay in sync when modified:
+These files still have **no shared core** and must be hand-synced when modified:
 
-1. **Bob AI system prompt** — `src/ai/flows/ask-bob-flow.ts` ↔ `packages/desktop/src/lib/bob-api.ts`
+1. **Bob AI system prompt** — `src/ai/flows/ask-bob-flow.ts` ↔ `packages/desktop/src/lib/bob-api.ts`. The knowledge base is byte-identical; the only intentional forks are web's desktop-upsell framing (smart cards / in-app plan builder pitched as "desktop-only, coming soon") and the API-key storage plumbing (web session-memory vs desktop keychain). Keep everything else identical.
 2. **Welcome cards** — `src/app/components/welcome-cards.tsx` ↔ `packages/desktop/src/components/welcome-cards.tsx`
    - Web has desktop app upsell; desktop says "Native Rust crypto" + smart card features
    - localStorage key: `seQRets_skipWelcome`
 3. **Version bumps** — run `npm run bump -- <x.y.z> [codename]`. The script edits 5 mechanical files (root/workspace package.json × 3, Cargo.toml, tauri.conf.json) and regenerates lockfiles. UI footers, service worker, and Bob prompts read the version from `scripts/generate-version.mjs` output at build time — don't hand-edit. The bump script prints a stale-doc review checklist after running; eyeball those before tagging a release.
+
+**Interim-guard twin list** (still duplicated, no shared core yet — keep behavior aligned when touching either side): `create-shares-form`, `restore-secret-form` (shares `@seqrets/crypto` restore logic but keeps platform halves), `qr-code-display` (shares `qard-render` core), `header`, `app-nav-tabs`, `app-footer`, `bob-chat-interface`, `bob-setup-guide` (web "remember" checkbox vs desktop keychain — intentional), `connection-status`, `keyfile-generator`, `terms-gate`, `theme-provider`, and the `file-upload` / `keyfile-upload` / `instructions-file-upload` wrappers (drag logic shared via `drag-drop-zone`, upload handlers still twinned). Intentional divergences here must NOT be "unified": web's browser-safety tip in `create-shares-form`, the L2 print-font split in `qr-code-display`, and never migrating smartcard code to web.
 
 ## Key Architecture Differences: Web vs Desktop
 
