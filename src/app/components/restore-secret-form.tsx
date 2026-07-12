@@ -998,7 +998,7 @@ export function RestoreSecretForm() {
                                 If you attached a keyfile for extra security when creating the Qards, you must enable this and upload the exact same file now to restore your secret.
                             </HelpHint>
                         </div>
-                        <Switch id="use-keyfile-restore" checked={useKeyfile} onCheckedChange={setUseKeyfile} />
+                        <Switch id="use-keyfile-restore" checked={useKeyfile} onCheckedChange={(on) => { setUseKeyfile(on); if (on) scrollToReveal(endRef.current); }} />
                       </div>
                       {useKeyfile && (
                         <div className="pt-2">

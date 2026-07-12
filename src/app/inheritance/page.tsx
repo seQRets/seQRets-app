@@ -365,7 +365,7 @@ export default function InstructionsPage() {
                                 </Alert>
                               </HelpHint>
                             </div>
-                            <Switch id="use-keyfile-encrypt" checked={encryptUseKeyfile} onCheckedChange={setEncryptUseKeyfile} />
+                            <Switch id="use-keyfile-encrypt" checked={encryptUseKeyfile} onCheckedChange={(on) => { setEncryptUseKeyfile(on); if (on) scrollToReveal(flowEndRef.current); }} />
                           </div>
                           {encryptUseKeyfile && (
                             <div className="pt-2">
@@ -559,7 +559,7 @@ export default function InstructionsPage() {
                                 If you attached a keyfile for extra security when encrypting the plan, you must enable this and upload the exact same file now to decrypt.
                               </HelpHint>
                             </div>
-                            <Switch id="use-keyfile-decrypt" checked={decryptUseKeyfile} onCheckedChange={setDecryptUseKeyfile} />
+                            <Switch id="use-keyfile-decrypt" checked={decryptUseKeyfile} onCheckedChange={(on) => { setDecryptUseKeyfile(on); if (on) scrollToReveal(flowEndRef.current); }} />
                           </div>
                           {decryptUseKeyfile && (
                             <div className="pt-2">

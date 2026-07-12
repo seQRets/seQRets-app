@@ -433,7 +433,7 @@ export function CreateSharesForm() {
                                 </Alert>
                             </HelpHint>
                         </div>
-                        <Switch id="use-keyfile" checked={useKeyfile} onCheckedChange={setUseKeyfile} />
+                        <Switch id="use-keyfile" checked={useKeyfile} onCheckedChange={(on) => { setUseKeyfile(on); if (on) scrollToReveal(endRef.current); }} />
                       </div>
                       {useKeyfile && (
                         <div className="pt-2">
