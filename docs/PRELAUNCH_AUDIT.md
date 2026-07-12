@@ -133,16 +133,26 @@ so a compromised renderer can't touch arbitrary entries under the service. Behav
 from the webview) — the full fix (Rust proxy so the key never returns to the renderer) is scoped
 and tracked as a separate follow-up. Original finding below.
 
-### [ ] 1.3 — Remove `'unsafe-inline'` for scripts in prod CSP · *Medium* · web
-`layout.tsx:64` + Cloudflare `public/_headers` ship `script-src 'self' 'unsafe-inline'` in prod
-(verified), neutralizing CSP as an XSS backstop. Output is fully static → inline scripts knowable
-at build time.
-- Build post-step over `out/` computing `'sha256-…'` per inline script (move the SW-registration
-  block `layout.tsx:81-104` into a static `/register-sw.js`); switch to a hash-based policy in
-  the Cloudflare header (enforcing copy; also lets you add `frame-ancestors 'none'`). Keep the
-  meta tag + `_headers` byte-identical until then.
-- **Verify:** prod build; no CSP console violations, SW still registers; no `'unsafe-inline'` in
-  the emitted header. More involved — schedule deliberately.
+### [~] 1.3 — Remove `'unsafe-inline'` for scripts in prod CSP · *Medium* · web
+**1.3-LITE SHIPPED (2026-07-12, commit pending); full hash pipeline consciously deferred to
+post-launch** — decision after weighing security delta vs. operational risk with the user:
+- ✅ SW-registration block moved out of `layout.tsx` into static [`public/register-sw.js`](../public/register-sw.js)
+  (prod renders `<script src defer>`; dev keeps its inline SW-unregister healer). Verified in
+  `out/index.html`: zero first-party inline SW code, external script referenced. This is the
+  prerequisite for the full hash policy — nothing is thrown away.
+- ✅ `frame-ancestors 'none'` added to the header CSP (`_headers` reference updated; Cloudflare
+  Transform Rule must be updated by hand — header-only directive, ignored in meta tags).
+- ✅ User-facing browser-safety guidance added to `/about` ("Using seQRets in a Browser? Make It
+  as Safe as It Can Be"): extensions-off / dedicated browser or incognito, install as PWA,
+  desktop app for guarantees a browser can't make. Covers the extension threat CSP cannot.
+- ⏳ **Deferred (post-launch):** `'unsafe-inline'` still ships because Next's static export
+  embeds per-build inline bootstrap scripts (`self.__next_f.push`). Removing it needs a build
+  post-step hashing every inline script in `out/**/*.html` PLUS automated Cloudflare-rule
+  updates per deploy (free API token; the cost is pipeline fragility — a hash mismatch blanks
+  the whole site). Rationale: audit found zero XSS sinks, so this is defense-in-depth against
+  future bugs; the automation risk was judged too high for a solo operator right before launch.
+- **Verify (done for lite):** prod build clean; no first-party inline scripts in output; SW
+  registration code byte-identical to the previous inline version.
 
 ### [x] 1.4 — Argon2id off the Tauri main thread · ✅ DONE (2026-07-05, commit 4993a22) · **desktop-only**
 **Shipped:** all four crypto commands are now thin `async fn` wrappers dispatching to

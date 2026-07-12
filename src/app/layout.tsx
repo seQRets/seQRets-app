@@ -78,9 +78,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
+        {process.env.NODE_ENV === 'development' && (
         <script
           dangerouslySetInnerHTML={{
-            __html: process.env.NODE_ENV === 'development' ? `
+            __html: `
               // DEV ONLY: never run the service worker against the dev server.
               // Client navigations fetch RSC payloads (?_rsc=...) that the SW's
               // cache-first branch would keep across recompiles; once the chunk
@@ -99,28 +100,15 @@ export default function RootLayout({
                   });
                 }
               }
-            ` : `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    reg.addEventListener('updatefound', function() {
-                      var newSW = reg.installing;
-                      if (!newSW) return;
-                      newSW.addEventListener('statechange', function() {
-                        if (newSW.state === 'activated' && navigator.serviceWorker.controller) {
-                          var d = document.createElement('div');
-                          d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:40;background:#231f20;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-family:system-ui,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.3);display:flex;align-items:center;gap:12px';
-                          d.innerHTML = 'A new version is available <button style="background:#f59e0b;color:#231f20;border:none;padding:4px 12px;border-radius:4px;font-weight:600;cursor:pointer;font-size:13px" onclick="window.location.reload()">Refresh</button>';
-                          document.body.appendChild(d);
-                        }
-                      });
-                    });
-                  }).catch(function() {});
-                });
-              }
             `,
           }}
         />
+        )}
+        {/* Production SW registration is an external file so prod HTML carries
+            no first-party inline script (prep for hash-based CSP, item 1.3). */}
+        {process.env.NODE_ENV !== 'development' && (
+          <script src="/register-sw.js" defer />
+        )}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

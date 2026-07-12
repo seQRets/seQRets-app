@@ -4,7 +4,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Lock, Key, QrCode, Github, LifeBuoy } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Key, QrCode, Github, LifeBuoy, Puzzle, Download, Laptop } from "lucide-react";
 import Link from "next/link";
 import { Header } from "../components/header";
 import { AppFooter } from "../components/app-footer";
@@ -93,6 +93,42 @@ export default function AboutPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card className="mb-8">
+                    <CardHeader>
+                        <CardTitle>Using seQRets in a Browser? Make It as Safe as It Can Be</CardTitle>
+                        <CardDescription>Three small habits that meaningfully reduce risk</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm text-muted-foreground">
+                        <div className="flex items-start gap-2.5">
+                            <Puzzle className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary dark:text-[#fbbf24]" />
+                            <p>
+                                <span className="font-semibold text-foreground">Keep extensions away from your secrets.</span>
+                                {' '}Browser extensions can read whatever is on your screen — including a seed phrase.
+                                Use seQRets in a private/incognito window (where extensions are usually off), or in a
+                                separate browser you keep just for seQRets, with no extensions installed.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                            <Download className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary dark:text-[#34d399]" />
+                            <p>
+                                <span className="font-semibold text-foreground">Install it as an app.</span>
+                                {' '}Use your browser&apos;s &quot;Install&quot; or &quot;Add to Home Screen&quot; option. The installed
+                                app keeps its own copy of the code and works fully offline — you can even disconnect
+                                from the internet before typing your secret.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                            <Laptop className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary dark:text-[#38bdf8]" />
+                            <p>
+                                <span className="font-semibold text-foreground">Want guarantees a browser can&apos;t make?</span>
+                                {' '}The <Link href="/go-pro" className="underline text-foreground hover:text-primary">seQRets desktop app</Link> runs
+                                its cryptography in native code outside the browser entirely, stores keys in your
+                                computer&apos;s secure keychain, and supports smart cards.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <Card className="mb-8">
                     <CardHeader>

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -354,6 +355,13 @@ export function CreateSharesForm() {
                     {isSecretVisible ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
+                {/* Web-only, deliberately absent from the desktop twin: extensions
+                    are a browser threat the desktop app doesn't have. */}
+                <p className="text-xs text-muted-foreground/80 mt-1.5">
+                  Tip: a private window with no extensions is the safest place to type a
+                  secret — extensions can read this screen.{' '}
+                  <Link href="/about" className="underline hover:text-foreground">Safest setup</Link>
+                </p>
                 {seedValidationStatus !== 'unchecked' && (
                   <div className="text-xs text-muted-foreground mt-2 flex items-center">
                         {seedValidationStatus === 'valid' ?
