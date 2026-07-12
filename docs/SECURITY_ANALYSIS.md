@@ -1,7 +1,9 @@
 # seQRets Desktop App — Security Analysis
 
-> **Audit Date:** April 2026 · **App Version:** 1.10.7 · **Auditor:** Independent code review via Claude (Anthropic)
-> **Scope:** Full source audit of `packages/desktop/`, `packages/crypto/`, and `src-tauri/` (Rust backend)
+> **Baseline audit:** April 2026 @ v1.10.7 · **Maintained current through:** v1.12.0 (July 2026) · **Reviewer:** Source-code review via Claude (Anthropic)
+> **Scope:** Full source audit of `packages/desktop/`, `packages/crypto/`, and `src-tauri/` (Rust backend), plus the cross-cutting web + crypto items from the pre-launch hardening pass (see [Pre-Launch Hardening Pass](#pre-launch-hardening-pass-v1107--v1120) below and [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md) for the full checklist).
+>
+> This is a **living document**, not a frozen snapshot: the baseline finding set (11 items) was established at v1.10.7, and the doc is kept current as remediation lands. It reflects the codebase as of **v1.12.0**, at which point the pre-launch hardening pass is complete.
 
 ---
 
@@ -12,6 +14,8 @@ seQRets is a zero-knowledge cryptographic application for protecting sensitive s
 **Overall Security Posture: Strong**
 
 The application demonstrates excellent cryptographic engineering with proper algorithm selection, key zeroization, and defense-in-depth architecture. Derived encryption keys in the desktop app never enter the JavaScript heap — all key derivation and encryption runs in Rust with compiler-fence guaranteed memory erasure. The few issues identified are addressable and do not compromise the core cryptographic guarantees.
+
+**Pre-launch hardening (2026-07): complete.** Beyond the 11 baseline findings (all resolved), a comprehensive pre-launch pass was worked through incrementally and finished at v1.12.0 — honesty-of-claims corrections, additional memory zeroization, hardened input validation (share metadata bounds + a parse-size ceiling), a cross-version-verified `@noble/ciphers` upgrade with a **permanent TS↔Rust parity test**, web HTTP-layer hardening, and a large redundancy/drift refactor that also fixed a stale-state race in QR generation. Full itemized status in [Pre-Launch Hardening Pass](#pre-launch-hardening-pass-v1107--v1120). The only consciously-deferred item is a hash-based Content-Security-Policy for the web app (post-launch — zero XSS sinks today, automation fragility too risky for a solo operator pre-launch).
 
 ---
 
@@ -404,21 +408,24 @@ Recover mitigates but does not eliminate long-horizon risk. Users are still resp
 | `argon2` | 0.5 | Key derivation | ✅ Current, audited (RustCrypto) |
 | `chacha20poly1305` | 0.10 | AEAD encryption | ✅ Current, audited (RustCrypto) |
 | `zeroize` | 1.x | Memory erasure | ✅ Current, audited (RustCrypto) |
-| `rand` | 0.8 | CSPRNG | ✅ Current, audited |
+| `rand` | 0.9 | CSPRNG | ✅ Current, audited |
 | `pcsc` | 2.x | Smart card (PC/SC) | ✅ Current |
 | `flate2` | 1.x | Gzip compression | ✅ Current |
-| `tauri` | 2.10 | App framework | ✅ Current |
+| `tauri` | 2.11 | App framework | ✅ Current |
+| `keyring` | 3.x | OS keychain (API-key storage) | ✅ Current |
 | `base64` | 0.22 | Encoding | ✅ Current |
 
 ### JavaScript Dependencies (Crypto Package)
 
 | Package | Version | Purpose | Status |
 |---------|---------|---------|:------:|
-| `@noble/ciphers` | 0.4.0 | XChaCha20-Poly1305 | ✅ Audited (Paul Miller) |
-| `@noble/hashes` | ^1.4.0 | Argon2id, randomBytes | ✅ Audited (Paul Miller) |
-| `@scure/bip39` | ^1.3.0 | BIP-39 mnemonic validation | ✅ Audited (Paul Miller) |
-| `shamir-secret-sharing` | ^0.0.4 | Shamir's Secret Sharing | ✅ Audited (Cure53 + Zellic) |
-| `pako` | ^2.1.0 | Gzip compression | ✅ Widely used |
+| `@noble/ciphers` | 2.2.0 | XChaCha20-Poly1305 | ✅ Audited (Paul Miller) — see upgrade note |
+| `@noble/hashes` | 1.8.0 | Argon2id, randomBytes | ✅ Audited (Paul Miller) |
+| `@scure/bip39` | 1.6.0 | BIP-39 mnemonic validation | ✅ Audited (Paul Miller) |
+| `shamir-secret-sharing` | 0.0.4 | Shamir's Secret Sharing | ✅ Audited (Cure53 + Zellic) |
+| `pako` | 2.1.0 | Gzip compression | ✅ Widely used |
+
+> **`@noble/ciphers` 0.4.0 → 2.2.0 (v1.12.0, item F8):** major-version upgrade verified against silent-breakage risk — ciphertext produced by 0.4.0 decrypts cleanly on 2.2.0 (cross-version vectors, 5/5), the full XChaCha20-Poly1305 test suite passes (23/23), and Rust↔TS wire parity is asserted by a **permanent `cargo test`** (fixture: `src-tauri/tests/fixtures/ts-parity-vectors.json`). Import path moved to `@noble/ciphers/chacha.js` for the 2.x export map. Desktop no longer pulls `pako`/`@scure/bip39` directly — both route through `@seqrets/crypto`.
 
 ### Audit Results
 
@@ -547,6 +554,54 @@ This addresses F-06 from the v1.7.0 audit ("No CSP for web app on GitHub Pages")
 
 ---
 
+## Pre-Launch Hardening Pass (v1.10.7 → v1.12.0)
+
+Separate from the 11 baseline findings above, a comprehensive read-only security/quality review of the **whole** codebase (web + desktop + crypto + JavaCard applet) was run starting 2026-07-04 and worked through incrementally, each item verified before the next. Every item below shipped and is verified; the living checklist is [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md). **Guiding constraint throughout: never alter the cryptography or the parse-accept behavior of existing Qards** — live users' backups must keep restoring byte-for-byte.
+
+### Honesty of claims
+
+- **Share integrity hash reframed.** The per-Qard SHA-256 detects *accidental corruption* (a damaged printout, a bad scan) — it is **not** tamper-proofing, and the UI/marketing no longer implies otherwise. (Tier 0.1)
+- **Weak-randomness class ruled out and documented.** Seed phrases are generated from the OS CSPRNG (`@noble/hashes` `randomBytes` → `crypto.getRandomValues`), pulling full 128/256-bit entropy directly — it *throws* rather than degrading if the CSPRNG is unavailable. seQRets is **not** exposed to the "Milk Sad" / IllBloom weak-PRNG recovery-phrase vulnerability class. (re-verified 2026-07-05)
+
+### Input validation & resource safety
+
+- **Share metadata is bounds-checked before any crypto runs.** Recovery metadata (`t`/`n`/`i`) must be integers 1–255, with `t ≤ n` and `i ≤ n`; a partial or contradictory trio is nulled (restore still works, only the countdown UI is lost). A wrong file or malicious paste can no longer make the app grind through heavy key derivation.
+- **Parse-size ceiling.** `parseShare` rejects input > 256 KB (`MAX_SHARE_LENGTH`). This is deliberately generous — text-file backup Qards can legitimately exceed QR size — and must **never** be lowered or legitimate Qards strand; creation caps the compressed payload at 150 KB so generated Qards always stay under the ceiling.
+
+### Memory hygiene (additional to baseline L1)
+
+- Unencrypted payloads and seed-phrase entropy buffers are zeroed as soon as encryption/restore finishes with them; desktop PINs are zeroized immediately after use (`smartcard.rs`), and PIN input is restricted to printable ASCII so a PIN typed today types identically tomorrow. (Tier 1.6)
+
+### Crypto library currency
+
+- **`@noble/ciphers` 0.4.0 → 2.2.0** with the cross-version + permanent TS↔Rust parity proof described in [Dependency Security](#dependency-security). (F8)
+- Argon2id parameters (m = 64 MiB, t = 4, p = 1) confirmed **identical across the TS and Rust implementations** — now guarded by that permanent parity `cargo test`, not just a one-time check.
+
+### Desktop responsiveness & scope
+
+- Heavy key-derivation moved **off the UI thread** (`spawn_blocking`), so encryption no longer freezes the window; command bodies deduped into shared `encrypt_impl`/`decrypt_impl`. (Tier 1.4)
+- OS keychain access **namespace-locked** to the single key seQRets stores (`ALLOWED_KEYS`); file/URL opening scoped to known sites + the app's own print file + `$TEMP`. (Tier 1.2, 1.7, 0.3)
+
+### Bob AI boundaries
+
+- A `looksLikeSecret` detector in `@seqrets/crypto` **refuses to send** seed-phrase/Qard-shaped text to Gemini; chat history lives in `sessionStorage` (cleared on close) with an explicit "never paste secrets" disclaimer. Bob's chat chunk is now lazy-loaded off first paint. (Tier 1.1, 1.5)
+
+### Web HTTP-layer & supply-chain
+
+- CSP tightened (register-sw externalized so production HTML carries no first-party inline script; `frame-ancestors 'none'`); self-hosted fonts in both apps (no Google Fonts request on launch/print); spellcheck/autocorrect disabled on every secret input (some OSes upload spellchecked text). (1.3-lite, L2, Tier 0.4) — the CSP work is detailed in [Web App HTTP Security Hardening](#web-app-http-security-hardening-cloudflare-proxy) above.
+
+### Redundancy / drift refactor (Batch G) + a bug it flushed out
+
+- ~2,000 lines of copy-pasted web↔desktop code consolidated into shared sources (`packages/shared-ui/`, `@seqrets/crypto`). Drift between the two copies had previously caused small features to silently go missing on one side.
+- **Fixed a stale-state race:** the QR-generation effect was missing a cancellation guard on **both** platforms — changing inputs mid-generation could briefly commit an out-of-date QR image. Now guarded identically in both apps.
+- Because this touched the code that renders printable Qards, correctness was proven with an **A/B harness** (old code lifted verbatim from git vs. the new shared module on fixed vectors): card rendering **pixel-identical**, ZIP/vault output byte-identical, and the restore pure-logic 26/26 plus a full generate→restore round-trip of a freshly created share set.
+
+### JavaCard applet
+
+- PIN retry counter uses JavaCard's built-in **OwnerPIN** (tamper- and power-interruption-resistant on the card itself); flashed and verified on a demo card. (Tier 0.2)
+
+---
+
 ## Remediation Status
 
 ### Completed Fixes ✅
@@ -567,7 +622,7 @@ This addresses F-06 from the v1.7.0 audit ("No CSP for web app on GitHub Pages")
 
 ### Remaining (Roadmap)
 
-All 11 findings have been resolved. No items remain on the security roadmap.
+All 11 baseline findings are resolved, and the pre-launch hardening pass (above) is complete as of v1.12.0. **One item is consciously deferred post-launch:** a hash-based Content-Security-Policy for the web app (the current CSP is externalized-script + `frame-ancestors 'none'`; the full hash-based version is deferred because there are zero XSS sinks today and the automation fragility — a hash mismatch blanks the site — is too risky for a solo operator to run pre-launch). No other items remain.
 
 ---
 
@@ -580,8 +635,9 @@ The Rust backend includes unit tests verifying:
 - ✅ Round-trip encryption/decryption (with and without keyfile)
 - ✅ Wrong password correctly rejected (MAC verification failure)
 - ✅ Different encryptions of same data produce different ciphertexts (random salt + nonce)
-- ✅ Wire format compatibility between Rust and JavaScript implementations
+- ✅ Wire format compatibility between Rust and JavaScript implementations — **now a permanent parity test** (`ts-parity-vectors.json`) that runs on every `cargo test`, so a future divergence between the TS and Rust crypto fails CI rather than shipping
 - ✅ Compression/decompression integrity
+- ✅ `@noble/ciphers` cross-version decrypt (0.4.0-produced ciphertext decrypts on 2.2.0)
 
 ### End-to-End Test Suite (Playwright)
 
@@ -628,5 +684,5 @@ The cryptographic primitives (XChaCha20-Poly1305, Argon2id, Shamir's Secret Shar
 ---
 
 <p align="center">
-<em>This analysis was conducted through a full source code review of all Rust, TypeScript, and configuration files in the seQRets desktop application (v1.5.3). All 11 findings were remediated immediately following the audit. Comprehensive Playwright e2e test suites were added for both web (342 test runs across 3 browsers) and desktop (145 tests, 136 passing + 9 Tauri-IPC-only skipped) to verify ongoing correctness. The password generator character class guarantee was propagated from the web app to the desktop app. Last updated March 17, 2026.</em>
+<em>This analysis was conducted through a full source-code review of all Rust, TypeScript, and configuration files in the seQRets desktop application, with a whole-codebase pre-launch hardening pass (web + desktop + crypto + JavaCard) completed at v1.12.0. All 11 baseline findings were remediated immediately following the original audit; the pre-launch pass items are itemized above and tracked in <code>PRELAUNCH_AUDIT.md</code>. Cryptographic correctness is guarded by a permanent Rust↔TS parity test and end-to-end restore round-trips against every supported Qard layout. Last updated July 12, 2026 (v1.12.0 "🔥 Ignition").</em>
 </p>
