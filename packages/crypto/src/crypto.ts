@@ -1,5 +1,5 @@
 
-import { xchacha20poly1305 } from '@noble/ciphers/chacha';
+import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 import { argon2id } from '@noble/hashes/argon2';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes, concatBytes } from '@noble/hashes/utils';

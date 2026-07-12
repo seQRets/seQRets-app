@@ -305,6 +305,54 @@ mod tests {
         assert_eq!(decrypted, payload);
     }
 
+    // ── TS ↔ Rust wire-format parity ──────────────────────────────────────
+    // The fixture was encrypted by @seqrets/crypto (TypeScript, @noble/ciphers
+    // 2.2.0 + @noble/hashes argon2id). Decrypting it here proves the two
+    // implementations stay bit-compatible: base64(salt) +
+    // base64(nonce24 || xchacha20poly1305(gzip(json))), Argon2id m=65536 t=4
+    // p=1. Regenerate via the F8 notes in docs/PRELAUNCH_AUDIT.md if the TS
+    // side ever changes.
+    const TS_PARITY_FIXTURE: &str = include_str!("../tests/fixtures/ts-parity-vectors.json");
+
+    #[test]
+    fn test_ts_generated_blob_decrypts_no_keyfile() {
+        let fixture: serde_json::Value = serde_json::from_str(TS_PARITY_FIXTURE).unwrap();
+        let v = &fixture["no_keyfile"];
+        let json = decrypt_impl(
+            v["salt"].as_str().unwrap().to_string(),
+            v["data"].as_str().unwrap().to_string(),
+            v["password"].as_str().unwrap().to_string(),
+            None,
+        )
+        .expect("TS-encrypted blob must decrypt in Rust");
+        assert_eq!(json, v["expect_json"].as_str().unwrap());
+    }
+
+    #[test]
+    fn test_ts_generated_blob_decrypts_with_keyfile() {
+        let fixture: serde_json::Value = serde_json::from_str(TS_PARITY_FIXTURE).unwrap();
+        let v = &fixture["with_keyfile"];
+        let json = decrypt_impl(
+            v["salt"].as_str().unwrap().to_string(),
+            v["data"].as_str().unwrap().to_string(),
+            v["password"].as_str().unwrap().to_string(),
+            Some(v["keyfile_b64"].as_str().unwrap().to_string()),
+        )
+        .expect("TS-encrypted blob with keyfile must decrypt in Rust");
+        assert_eq!(json, v["expect_json"].as_str().unwrap());
+    }
+
+    // Reverse-direction generator for the Rust → TS parity check. Ignored by
+    // default; run `cargo test gen_rust_blob_for_ts -- --ignored --nocapture`
+    // and decrypt the printed blob with @seqrets/crypto decryptVault.
+    #[test]
+    #[ignore]
+    fn gen_rust_blob_for_ts() {
+        let payload = r#"{"parity":"rust-to-ts","n":9}"#.to_string();
+        let result = encrypt_impl(payload, "parity-password-3".to_string(), None).unwrap();
+        println!("RUST_BLOB salt={} data={}", result.salt, result.data);
+    }
+
     #[test]
     fn test_wrong_password_fails() {
         let payload = r#"{"secret":"my secret","isMnemonic":false}"#.to_string();
