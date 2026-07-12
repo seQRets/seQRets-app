@@ -1,6 +1,6 @@
 {
   "name": "@seqrets/desktop",
-  "version": "1.11.9",
+  "version": "1.12.0",
   "private": true,
   "type": "module",
   "scripts": {
