@@ -1,4 +1,4 @@
-import React, { useState, DragEvent } from 'react';
+import React, { useState, useRef, useEffect, DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import { Header } from '@/components/header';
 import { InstructionsFileUpload } from '@/components/instructions-file-upload';
+import { scrollToReveal } from '@/components/ui/scroll-utils';
 import { KeyfileUpload } from '@/components/keyfile-upload';
 import { KeyfileGenerator } from '@/components/keyfile-generator';
 import { PasswordGenerator } from '@/components/ui/password-generator';
@@ -100,6 +101,17 @@ export default function InstructionsPage() {
   const [decryptedPlan, setDecryptedPlan] = useState<InheritancePlan | null>(null);
   const [showPlanViewer, setShowPlanViewer] = useState(false);
   const [showReminderPrompt, setShowReminderPrompt] = useState(false);
+
+  // End-of-flow marker for the active tab (only one TabsContent is mounted
+  // at a time). Newly revealed steps render below the fold, so scroll them
+  // into view on step advances and after a file is picked.
+  const flowEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (encryptStep > 1) scrollToReveal(flowEndRef.current);
+  }, [encryptStep]);
+  useEffect(() => {
+    if (decryptStep > 1) scrollToReveal(flowEndRef.current);
+  }, [decryptStep]);
 
   // No Worker setup needed — crypto runs natively in Rust via Tauri IPC.
 
@@ -235,6 +247,7 @@ export default function InstructionsPage() {
       setDecryptFile(file);
       setDecryptFileName(file.name);
       playFileDropSound();
+      scrollToReveal(flowEndRef.current);
     } else {
       toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .json instructions file.' });
     }
@@ -437,7 +450,13 @@ export default function InstructionsPage() {
                     <p className="text-sm text-muted-foreground">
                       Select the file you want to encrypt (e.g. a pdf, docx, odt, ods, odp, json, or txt file with instructions for your heirs). Max 50MB.
                     </p>
-                    <InstructionsFileUpload onFileSelected={setInstructionsFile} selectedFile={instructionsFile} />
+                    <InstructionsFileUpload
+                      onFileSelected={(file) => {
+                        setInstructionsFile(file);
+                        if (file) scrollToReveal(flowEndRef.current);
+                      }}
+                      selectedFile={instructionsFile}
+                    />
                     {encryptStep === 1 && (
                       <div className="flex justify-end pt-2">
                         <Button onClick={() => setEncryptStep(2)} disabled={!instructionsFile} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
@@ -610,6 +629,7 @@ export default function InstructionsPage() {
                     </div>
                   );
                 })()}
+                <div ref={flowEndRef} aria-hidden="true" />
               </TabsContent>
 
               {/* ════════ Create Plan Tab ════════ */}
@@ -761,6 +781,7 @@ export default function InstructionsPage() {
                     </div>
                   );
                 })()}
+                <div ref={flowEndRef} aria-hidden="true" />
               </TabsContent>
 
               {/* ════════ Decrypt Tab ════════ */}
@@ -979,6 +1000,7 @@ export default function InstructionsPage() {
                     </div>
                   </div>
                 )}
+                <div ref={flowEndRef} aria-hidden="true" />
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { CameraScanner } from '@/components/ui/camera-scanner';
+import { scrollToReveal } from '@/components/ui/scroll-utils';
 import { Switch } from '@/components/ui/switch';
 import { KeyfileUpload } from './keyfile-upload';
 import { HelpHint } from '@/components/ui/help-hint';
@@ -284,6 +285,8 @@ export function RestoreSecretForm() {
 
     Promise.all(filePromises).finally(() => {
         setIsScanning(false);
+        // Reveal the newly added Qard rows and the progress countdown.
+        scrollToReveal(endRef.current);
     });
 };
 

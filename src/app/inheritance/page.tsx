@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Header } from '../components/header';
 import { InstructionsFileUpload } from '../components/instructions-file-upload';
+import { scrollToReveal } from '@/components/ui/scroll-utils';
 import { KeyfileUpload } from '../components/keyfile-upload';
 import { KeyfileGenerator } from '../components/keyfile-generator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -75,6 +76,17 @@ export default function InstructionsPage() {
   const [isDecrypting, setIsDecrypting] = useState(false);
 
   const cryptoWorkerRef = useRef<Worker>();
+
+  // End-of-flow marker for the active tab (only one TabsContent is mounted
+  // at a time). Newly revealed steps render below the fold, so scroll them
+  // into view on step advances and after a file is picked.
+  const flowEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (encryptStep > 1) scrollToReveal(flowEndRef.current);
+  }, [encryptStep]);
+  useEffect(() => {
+    if (decryptStep > 1) scrollToReveal(flowEndRef.current);
+  }, [decryptStep]);
 
   useEffect(() => {
     cryptoWorkerRef.current = new Worker(new URL('@/lib/crypto.worker.ts', import.meta.url));
@@ -179,6 +191,7 @@ export default function InstructionsPage() {
       setDecryptFile(file);
       setDecryptFileName(file.name);
       playFileDropSound();
+      scrollToReveal(flowEndRef.current);
     } else {
       toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .json instructions file.' });
     }
@@ -301,7 +314,13 @@ export default function InstructionsPage() {
                     <p className="text-sm text-muted-foreground">
                       Select the file you want to encrypt (e.g. a pdf, docx, odt, ods, odp, json, or txt file with instructions for your heirs). Max 50MB.
                     </p>
-                    <InstructionsFileUpload onFileSelected={setInstructionsFile} selectedFile={instructionsFile} />
+                    <InstructionsFileUpload
+                      onFileSelected={(file) => {
+                        setInstructionsFile(file);
+                        if (file) scrollToReveal(flowEndRef.current);
+                      }}
+                      selectedFile={instructionsFile}
+                    />
                     <p className="text-xs text-muted-foreground/70">
                       Want a guided plan builder? The{' '}
                       <a href="/go-pro" className="underline underline-offset-2 hover:text-primary">seQRets desktop app</a>{' '}
@@ -411,6 +430,7 @@ export default function InstructionsPage() {
                     </div>
                   </div>
                 )}
+                <div ref={flowEndRef} aria-hidden="true" />
               </TabsContent>
 
               {/* ════════ Decrypt Tab ════════ */}
@@ -593,6 +613,7 @@ export default function InstructionsPage() {
                     </div>
                   </div>
                 )}
+                <div ref={flowEndRef} aria-hidden="true" />
               </TabsContent>
             </Tabs>
           </CardContent>

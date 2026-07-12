@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { CreateSharesRequest, CreateSharesResult } from '@/lib/types';
 import { SeedPhraseGenerator } from '@/components/ui/seed-phrase-generator';
+import { scrollToReveal } from '@/components/ui/scroll-utils';
 import { gzip, tryGetEntropy } from '@seqrets/crypto';
 import { HelpHint } from '@/components/ui/help-hint';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -326,6 +327,7 @@ export function CreateSharesForm() {
                           setSecret(phrase);
                           setIsSecretVisible(false);
                           setShowSeedGenerator(false);
+                          scrollToReveal(endRef.current);
                       }} />
                   </div>
                 )}
