@@ -5,7 +5,7 @@ import { useRef } from 'react';
 import { Camera, FileUp, FolderOpen, TextCursorInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HelpHint } from '@/components/ui/help-hint';
-import { DragDropZone } from './drag-drop-zone';
+import { DragDropZone } from '@/components/ui/drag-drop-zone';
 
 interface FileUploadProps {
   onFilesAdded: (files: File[]) => void;

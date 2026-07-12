@@ -5,7 +5,7 @@ import { useCallback, useRef } from 'react';
 import { FileText, FileUp, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { DragDropZone } from './drag-drop-zone';
+import { DragDropZone } from '@/components/ui/drag-drop-zone';
 import { playFileDropSound } from '@/lib/play-sound';
 
 interface InstructionsFileUploadProps {

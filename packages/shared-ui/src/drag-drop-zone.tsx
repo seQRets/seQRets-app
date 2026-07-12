@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, DragEvent, useCallback, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from './utils';
 import { FileUp } from 'lucide-react';
 
 interface DragDropZoneProps {
@@ -23,6 +23,10 @@ interface DragDropZoneProps {
   paddingClassName?: string;
   /** aria-label for the hidden file input */
   inputAriaLabel?: string;
+  /** Extra content rendered inside the zone (e.g. an alternate-source button).
+   *  Interactive children must call e.stopPropagation() in their onClick so
+   *  they don't also open the file dialog. */
+  children?: ReactNode;
 }
 
 export function DragDropZone({
@@ -35,6 +39,7 @@ export function DragDropZone({
   iconClassName = 'w-10 h-10',
   paddingClassName = 'p-6',
   inputAriaLabel,
+  children,
 }: DragDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +119,7 @@ export function DragDropZone({
         onChange={handleFileSelect}
         aria-label={inputAriaLabel}
       />
+      {children}
     </div>
   );
 }

@@ -1,8 +1,7 @@
-import { useState, useRef, DragEvent } from 'react';
-import { cn } from '@/lib/utils';
 import { Camera, CreditCard, FileUp, FolderOpen, TextCursorInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HelpHint } from '@/components/ui/help-hint';
+import { DragDropZone } from '@/components/ui/drag-drop-zone';
 
 interface FileUploadProps {
   onFilesAdded: (files: File[]) => void;
@@ -13,81 +12,18 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onFilesAdded, onCameraOpen, onManualOpen, onImportVault, onSmartCardRead }: FileUploadProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files && files.length > 0) {
-      onFilesAdded(files);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files && files.length > 0) {
-      onFilesAdded(files);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
-  };
-
   return (
     <div className="space-y-4">
-        <div
-            className={cn(
-                'group relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ease-in-out',
-                isDragging ? 'bg-[#cbc5ba] border-black dark:bg-black dark:border-primary/60' : 'bg-muted border-muted-foreground/40 hover:bg-[#cbc5ba] hover:border-black dark:border-primary/60 dark:hover:bg-black dark:hover:border-primary/60'
-            )}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={openFileDialog}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFileDialog(); } }}
-        >
-            <FileUp className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Drag & drop QR code images here</p>
-            <p className="text-muted-foreground ">or click to browse files</p>
-            <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
-            />
-        </div>
+        <DragDropZone
+          onFiles={onFilesAdded}
+          multiple
+          accept="image/*"
+          label="Drag & drop QR code images here"
+          hint="or click to browse files"
+          icon={<FileUp className="w-12 h-12 text-muted-foreground mb-4" />}
+          paddingClassName="p-8"
+          inputAriaLabel="Upload QR code images"
+        />
         <div className="flex items-center justify-center gap-2">
           <p className="text-sm text-muted-foreground">or use another method:</p>
           <HelpHint label="What's the difference?">
