@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { PasswordGenerator } from './password-generator';
+import { PasswordGenerator } from '@/components/ui/password-generator';
 import { QrCodeDisplay } from './qr-code-display';
 import { Spline, Loader2, RefreshCcw, Eye, EyeOff, Paperclip, Wand, CheckCircle, AlertCircle, FileText, HelpCircle, TriangleAlert, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { CreateSharesRequest, CreateSharesResult } from '@/lib/types';
-import { SeedPhraseGenerator } from './seed-phrase-generator';
+import { SeedPhraseGenerator } from '@/components/ui/seed-phrase-generator';
 import { gzip, tryGetEntropy } from '@seqrets/crypto';
 import { HelpHint } from '@/components/ui/help-hint';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';

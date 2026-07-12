@@ -14,7 +14,7 @@ import { KeyfileUpload } from '../components/keyfile-upload';
 import { KeyfileGenerator } from '../components/keyfile-generator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { playFileDropSound } from '@/lib/play-sound';
-import { PasswordGenerator } from '../components/password-generator';
+import { PasswordGenerator } from '@/components/ui/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import jsQR from 'jsqr';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Camera } from 'lucide-react';

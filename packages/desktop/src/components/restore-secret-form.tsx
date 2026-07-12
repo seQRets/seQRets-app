@@ -18,7 +18,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { CameraScanner } from './camera-scanner';
+import { CameraScanner } from '@/components/ui/camera-scanner';
 import { Switch } from '@/components/ui/switch';
 import { KeyfileUpload } from './keyfile-upload';
 import { HelpHint } from '@/components/ui/help-hint';

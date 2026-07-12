@@ -1,13 +1,15 @@
+
+'use client';
+
 import { useState } from 'react';
-import { copyWithAutoClear } from '@/lib/clipboard-utils';
+import { copyWithAutoClear } from './clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { generateMnemonic, validateMnemonic, bip39Wordlist as wordlist } from '@seqrets/crypto';
 import { Copy, RefreshCw, CheckCircle, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { cn } from './utils';
 
 interface SeedPhraseGeneratorProps {
   onPhraseGenerated: (phrase: string) => void;

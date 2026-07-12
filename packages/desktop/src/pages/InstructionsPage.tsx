@@ -11,7 +11,7 @@ import { Header } from '@/components/header';
 import { InstructionsFileUpload } from '@/components/instructions-file-upload';
 import { KeyfileUpload } from '@/components/keyfile-upload';
 import { KeyfileGenerator } from '@/components/keyfile-generator';
-import { PasswordGenerator } from '@/components/password-generator';
+import { PasswordGenerator } from '@/components/ui/password-generator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

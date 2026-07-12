@@ -1,11 +1,14 @@
+
+'use client';
+
 import { useTransition, useEffect, useState } from 'react';
-import { copyWithAutoClear } from '@/lib/clipboard-utils';
+import { copyWithAutoClear } from './clipboard-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Copy, KeyRound, Loader2, Wand2, Eye, EyeOff } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { useToast } from './use-toast';
+import { cn } from './utils';
 import { HelpHint } from '@/components/ui/help-hint';
 
 interface PasswordGeneratorProps {
@@ -105,7 +108,7 @@ export function PasswordGenerator({ value, onValueChange, onValidationChange, pl
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Label htmlFor="password">Required Password</Label>
-        <HelpHint>
+        <HelpHint label="Help: password requirements">
             <ul className="list-disc space-y-1 pl-4">
                 <li>Must be at least 24 characters long.</li>
                 <li>Must include uppercase and lowercase letters.</li>
