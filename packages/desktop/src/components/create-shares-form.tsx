@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { CreateSharesResult } from '@/lib/types';
 import { createShares } from '@/lib/desktop-crypto';
 import { SeedPhraseGenerator } from './seed-phrase-generator';
-import { gzip } from 'pako';
+import { gzip } from '@seqrets/crypto';
 import { tryGetEntropy } from '@/lib/crypto';
 import { HelpHint } from '@/components/ui/help-hint';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
