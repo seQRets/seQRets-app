@@ -9,7 +9,7 @@ import { FileUpload } from './file-upload';
 import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
-import { parseShare, mnemonicToEntropy, bip39Wordlist as wordlist } from '@seqrets/crypto';
+import { parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets } from '@seqrets/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
@@ -132,24 +132,13 @@ export function RestoreSecretForm() {
       return;
     }
 
-    // Determine SHA-256 verification status and capture optional recovery metadata
-    let verified: boolean | null = null;
-    let setId: string | null = null;
-    let threshold: number | null = null;
-    let total: number | null = null;
-    let index: number | null = null;
+    // Reject QR codes that aren't seQRets Qards (WiFi logins, URLs, other
+    // apps' codes) right here, instead of accepting them and failing
+    // cryptically at restore time.
     if (success && data) {
       try {
-        const parsed = parseShare(data);
-        verified = parsed.hashValid;
-        setId = parsed.salt.substring(0, 8);
-        threshold = parsed.threshold;
-        total = parsed.total;
-        index = parsed.index;
+        parseShare(data);
       } catch {
-        // parseShare threw — a QR code WAS decoded, it just isn't a Qard
-        // (WiFi login, URL, another app's code). Say so specifically instead
-        // of the misleading "QR Code Not Found", and don't add a row.
         toast({
           variant: "destructive",
           title: "Not a seQRets Qard",
@@ -158,8 +147,9 @@ export function RestoreSecretForm() {
         return;
       }
     }
+    const meta = success && data ? parseShareMeta(data) : { setId: null, threshold: null, total: null, index: null, hashValid: null };
 
-    const newShare: DecodedShare = { id: `${Date.now()}-${Math.random()}`, data, fileName, success, verified, setId, threshold, total, index };
+    const newShare: DecodedShare = { id: `${Date.now()}-${Math.random()}`, data, fileName, success, verified: meta.hashValid, setId: meta.setId, threshold: meta.threshold, total: meta.total, index: meta.index };
     setDecodedShares(prev => [...prev, newShare]);
 
     if (success) {
@@ -547,13 +537,7 @@ export function RestoreSecretForm() {
 
   // ── QR display helpers ───────────────────────────────────────────
 
-  /** Encode a single BIP-39 phrase as a SeedQR numeric string (4-digit zero-padded word indices). */
-  const toSeedQR = (phrase: string): string =>
-    phrase.split(/\s+/).map(word => wordlist.indexOf(word).toString().padStart(4, '0')).join('');
-
-  /** Encode a BIP-39 phrase as CompactSeedQR (raw entropy bytes, byte-mode QR). */
-  const toCompactEntropy = (phrase: string): Uint8Array =>
-    new Uint8Array(mnemonicToEntropy(phrase.trim(), wordlist));
+  // SeedQR encoders live in @seqrets/crypto (toSeedQR / toCompactEntropy).
 
   const mnemonicResult = restoredSecret ? tryGetEntropy(restoredSecret) : null;
   const isMnemonic = mnemonicResult !== null;
@@ -621,40 +605,8 @@ export function RestoreSecretForm() {
 
   const uniqueSharesCount = new Set(decodedShares.filter(s => s.success).map(s => s.data)).size;
 
-  // Per-set summary used for the recovery countdown UI. We group successful
-  // shares by setId, then read threshold/total from any share in the group
-  // that carries the optional recovery metadata. This produces messages like
-  // "Set ABC12345 — 2 of 3 added (1 more required)" or, for legacy/non-embed
-  // shares without metadata, just "Set ABC12345 — 2 added".
-  const setSummaries = useMemo(() => {
-    const successful = decodedShares.filter(s => s.success);
-    if (successful.length === 0) return [] as Array<{
-      setId: string;
-      droppedCount: number;
-      threshold: number | null;
-      total: number | null;
-    }>;
-
-    const bySet = new Map<string, DecodedShare[]>();
-    for (const s of successful) {
-      const key = s.setId ?? '(unrecognized)';
-      const list = bySet.get(key) ?? [];
-      list.push(s);
-      bySet.set(key, list);
-    }
-
-    return Array.from(bySet.entries()).map(([setId, list]) => {
-      // Count by unique share data so duplicate drops aren't double-counted.
-      const droppedCount = new Set(list.map(s => s.data)).size;
-      const ref = list.find(s => s.threshold !== null);
-      return {
-        setId,
-        droppedCount,
-        threshold: ref?.threshold ?? null,
-        total: ref?.total ?? null,
-      };
-    });
-  }, [decodedShares]);
+  // Per-set recovery countdown — computed by @seqrets/crypto.
+  const setSummaries = useMemo(() => summarizeShareSets(decodedShares), [decodedShares]);
 
   const isRestoreButtonDisabled =
     isScanning ||

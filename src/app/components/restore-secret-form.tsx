@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
 import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
-import { validateMnemonic, bip39Wordlist as wordlist, parseShare, mnemonicToEntropy } from '@seqrets/crypto';
+import { validateMnemonic, parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets } from '@seqrets/crypto';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
@@ -36,21 +36,6 @@ interface DecodedShare {
     total: number | null;     // N, if the share was generated with embedRecoveryInfo
     index: number | null;     // 1-based card index, if embedRecoveryInfo
     hashValid: boolean | null; // integrity hash: true=valid, false=mismatch, null=absent (legacy Qard)
-}
-
-function parseShareMeta(data: string) {
-    try {
-        const parsed = parseShare(data);
-        return {
-            setId: parsed.salt.substring(0, 8),
-            threshold: parsed.threshold,
-            total: parsed.total,
-            index: parsed.index,
-            hashValid: parsed.hashValid,
-        };
-    } catch {
-        return { setId: null, threshold: null, total: null, index: null, hashValid: null };
-    }
 }
 
 export function RestoreSecretForm() {
@@ -475,13 +460,7 @@ export function RestoreSecretForm() {
 
   // ── QR display helpers ───────────────────────────────────────────
 
-  /** Encode a single BIP-39 phrase as a SeedQR numeric string (4-digit zero-padded word indices). */
-  const toSeedQR = (phrase: string): string =>
-    phrase.split(/\s+/).map(word => wordlist.indexOf(word).toString().padStart(4, '0')).join('');
-
-  /** Encode a BIP-39 phrase as CompactSeedQR (raw entropy bytes, byte-mode QR). */
-  const toCompactEntropy = (phrase: string): Uint8Array =>
-    new Uint8Array(mnemonicToEntropy(phrase.trim(), wordlist));
+  // SeedQR encoders live in @seqrets/crypto (toSeedQR / toCompactEntropy).
 
   const mnemonicResult = restoredSecret ? tryGetEntropy(restoredSecret) : null;
   const isMnemonic = mnemonicResult !== null;
@@ -549,37 +528,8 @@ export function RestoreSecretForm() {
 
   const uniqueSharesCount = new Set(decodedShares.filter(s => s.success).map(s => s.data)).size;
 
-  // Per-set summary used for the recovery countdown UI. We group successful
-  // shares by setId, then read threshold/total from any share in the group
-  // that carries the optional recovery metadata.
-  const setSummaries = useMemo(() => {
-    const successful = decodedShares.filter(s => s.success);
-    if (successful.length === 0) return [] as Array<{
-      setId: string;
-      droppedCount: number;
-      threshold: number | null;
-      total: number | null;
-    }>;
-
-    const bySet = new Map<string, DecodedShare[]>();
-    for (const s of successful) {
-      const key = s.setId ?? '(unrecognized)';
-      const list = bySet.get(key) ?? [];
-      list.push(s);
-      bySet.set(key, list);
-    }
-
-    return Array.from(bySet.entries()).map(([setId, list]) => {
-      const droppedCount = new Set(list.map(s => s.data)).size;
-      const ref = list.find(s => s.threshold !== null);
-      return {
-        setId,
-        droppedCount,
-        threshold: ref?.threshold ?? null,
-        total: ref?.total ?? null,
-      };
-    });
-  }, [decodedShares]);
+  // Per-set recovery countdown — computed by @seqrets/crypto.
+  const setSummaries = useMemo(() => summarizeShareSets(decodedShares), [decodedShares]);
 
   const isRestoreButtonDisabled =
     isScanning ||
