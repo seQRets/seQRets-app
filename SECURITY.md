@@ -55,7 +55,7 @@ seQRets has **not undergone a formal third-party security audit**. However, an i
 
 ## Cryptographic Source
 
-All cryptographic code lives in a single file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts) (~450 lines). Reviewers should start there — it contains every call to the underlying primitives. The desktop app additionally runs Argon2id and XChaCha20-Poly1305 natively in Rust via [`packages/desktop/src-tauri/src/crypto.rs`](packages/desktop/src-tauri/src/crypto.rs); derived keys never cross the JS/Rust boundary on desktop.
+All cryptographic code lives in a single file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts) (~750 lines). Reviewers should start there — it contains every call to the underlying primitives. The desktop app additionally runs Argon2id and XChaCha20-Poly1305 natively in Rust via [`packages/desktop/src-tauri/src/crypto.rs`](packages/desktop/src-tauri/src/crypto.rs); derived keys never cross the JS/Rust boundary on desktop.
 
 ### Cryptographic Dependencies
 

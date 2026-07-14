@@ -2,7 +2,7 @@
 
 All cryptographic operations in seQRets run **entirely on your device**. Your secrets never leave your machine.
 
-> 📂 **All cryptography lives in a single ~600-line file:** [`packages/crypto/src/crypto.ts`](../packages/crypto/src/crypto.ts). Reviewers and auditors: start there. The desktop app delegates the hot path (Argon2id + XChaCha20-Poly1305) to native Rust — see [`packages/desktop/src-tauri/src/crypto.rs`](../packages/desktop/src-tauri/src/crypto.rs).
+> 📂 **All cryptography lives in a single ~750-line file:** [`packages/crypto/src/crypto.ts`](../packages/crypto/src/crypto.ts). Reviewers and auditors: start there. The desktop app delegates the hot path (Argon2id + XChaCha20-Poly1305) to native Rust — see [`packages/desktop/src-tauri/src/crypto.rs`](../packages/desktop/src-tauri/src/crypto.rs).
 
 ## How seQRets Works
 
