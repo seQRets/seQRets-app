@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
 import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
-import { validateMnemonic, parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets } from '@seqrets/crypto';
+import { validateMnemonic, parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets, detectSlip39 } from '@seqrets/crypto';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
@@ -473,6 +473,32 @@ export function RestoreSecretForm() {
     ? mnemonicResult.chunks.map(chunk => masterFingerprint(chunk))
     : [];
 
+  // SLIP-39 (Trezor-style) recognition — display only. No SeedQR is offered
+  // for SLIP-39: SeedQR is a BIP-39-only format, and SLIP-39 wallets restore
+  // by typing the words, so we show a numbered word grid instead.
+  const slip39Result = restoredSecret && !isMnemonic ? detectSlip39(restoredSecret) : null;
+  const slip39Shares = slip39Result?.status === 'valid' ? slip39Result.shares : null;
+
+  // Numbered word grids shown in the reveal area — one grid per BIP-39 phrase
+  // or per SLIP-39 share, for reading off while typing into a hardware wallet.
+  const revealWordGroups = mnemonicResult
+    ? mnemonicResult.chunks.map(chunk => chunk.split(' '))
+    : slip39Shares
+      ? slip39Shares.map(share => share.words)
+      : null;
+  const revealGroupLabel = isMnemonic ? 'Phrase' : 'Share';
+  const revealBadgeText = mnemonicResult
+    ? (mnemonicResult.chunks.length === 1
+        ? 'Valid BIP-39 seed phrase — checksum verified.'
+        : `${mnemonicResult.chunks.length} valid BIP-39 seed phrases — checksums verified.`)
+    : slip39Shares
+      ? (slip39Shares.length === 1
+          ? (slip39Shares[0].memberThreshold === 1 && slip39Shares[0].groupCount === 1
+              ? 'Valid SLIP-39 backup (Trezor-style) — checksum verified. These words alone restore the wallet.'
+              : `Valid SLIP-39 recovery share — checksum verified. Restoring the wallet needs ${slip39Shares[0].memberThreshold} shares from this set.`)
+          : `${slip39Shares.length} valid SLIP-39 recovery shares — all checksums verified.`)
+      : null;
+
   const ensureDataQr = async () => {
     if (qrDataUri) return;
     try {
@@ -589,6 +615,33 @@ export function RestoreSecretForm() {
                         !isSecretVisible && "blur-md"
                     )}
                 />
+                {revealWordGroups && revealBadgeText && (
+                  <div className="space-y-3">
+                    <div className="text-xs text-muted-foreground flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 mr-2 shrink-0 text-green-500" />
+                      {revealBadgeText}
+                    </div>
+                    {isSecretVisible && revealWordGroups.map((words, si) => (
+                      <div key={si} className="rounded-md border p-4 text-left">
+                        {revealWordGroups.length > 1 && <p className="text-xs font-semibold mb-2">{revealGroupLabel} {si + 1}</p>}
+                        <ol className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-sm font-mono">
+                          {words.map((w, wi) => (
+                            <li key={wi} className="flex gap-1.5">
+                              <span className="text-muted-foreground w-6 text-right select-none">{wi + 1}.</span>
+                              <span>{w}</span>
+                            </li>
+                          ))}
+                        </ol>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Read the numbered words in order when typing them into your hardware wallet.
+                          {isMnemonic && fingerprints[si] && (
+                            <> After import, your wallet should show fingerprint <span className="font-mono font-semibold text-foreground">{fingerprints[si]}</span>.</>
+                          )}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row justify-center gap-2">
                     <Button
                         onClick={() => setIsSecretVisible(!isSecretVisible)}

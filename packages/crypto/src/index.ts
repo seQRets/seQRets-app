@@ -1,5 +1,6 @@
 export * from './crypto';
 export * from './restore';
+export * from './slip39';
 export * from './types';
 
 // Re-export utilities so the web app doesn't need to duplicate these dependencies

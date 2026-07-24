@@ -23,6 +23,7 @@ seQRets is available as a web app (Next.js) and a native desktop app (Tauri).
 - **Password Generator:** A built-in tool to generate a high-entropy, 32-character password. Passwords must be at least 24 characters and include uppercase, lowercase, numbers, and special characters. The password field shows green when valid, red when not.
 - **Seed Phrase Generator:** A tool to generate a new 12 or 24-word BIP-39 mnemonic seed phrase.
 - **BIP-39 Optimization:** Seed phrases are automatically detected and converted to compact binary entropy before encryption. A 24-word phrase (~150 characters) becomes just 32 bytes, dramatically reducing QR code size.
+- **SLIP-39 Detection:** Trezor-style SLIP-39 recovery shares (20 or 33 words — the format Trezor Suite now creates by default) are automatically recognized and checksum-validated when entered, so a mistyped word is caught before encryption. They are stored exactly as entered (no compression). After restoration, the share is checksum-verified again and shown as a numbered word list for easy typing into the hardware wallet. SeedQR display is not offered for SLIP-39 — SeedQR is a BIP-39-only format, and SLIP-39 wallets restore by typing words, not scanning.
 - **Optional Keyfile:** For enhanced security, you can use any file as an additional "key." Both the password AND the keyfile are required for recovery. Users can generate a keyfile and either download it or save it to a smart card. Keyfiles can also be loaded from a smart card anywhere keyfiles are accepted (desktop only).
 - **Export Vault File:** Export your encrypted Qards as a local .seqrets file for safekeeping in iCloud, Google Drive, or a USB drive. Vault files can optionally be encrypted with their own password (separate from the secret's encryption password) for an additional layer of protection.
 - **Import Vault File:** Import a previously exported .seqrets file to restore your Qards into the app.
@@ -223,6 +224,7 @@ const cryptoDetails = `
     *   **Library:** @scure/bip39
     *   Generates 12-word (128-bit) or 24-word (256-bit) mnemonic phrases based on the BIP-39 standard.
     *   Seed phrases are automatically detected and converted to compact binary entropy before encryption (BIP-39 optimization).
+    *   SLIP-39 recovery shares (Trezor-style, 20/33 words) are detected and RS1024-checksum-validated on entry and after restoration; they are stored as plain text (no compression).
 
 *   **Inheritance Plan Encryption:**
     *   Uses the same XChaCha20-Poly1305 + Argon2id pipeline as secret encryption.
@@ -534,6 +536,8 @@ Anyone who obtains the seed phrase can regenerate every key and spend every coin
 - WARNING: There is no "wrong passphrase" error — any passphrase produces a valid (but different) wallet. A typo means a different, empty wallet, not an error message. Users must remember the exact passphrase.
 
 **seQRets BIP-39 optimization:** When seQRets detects a valid BIP-39 mnemonic, it converts it to compact binary entropy before encryption. A 24-word phrase (~150 characters of text) becomes just 32 bytes of entropy, dramatically reducing QR code size while preserving all information. On restoration, the entropy is converted back to the original words.
+
+**SLIP-39 (Shamir Backup):** SLIP-39 is a different standard from BIP-39, created by SatoshiLabs (Trezor). It encodes a wallet's master secret as one or more "recovery shares" of 20 words (128-bit) or 33 words (256-bit), drawn from its own 1024-word list (NOT the BIP-39 list). Trezor Suite now creates a single 20-word SLIP-39 share as its default backup; advanced setups split the secret into multiple shares with a threshold (for example 2-of-3). Each share carries a strong RS1024 checksum, so a single mistyped word is always detected. Key facts: a SLIP-39 share is NOT a BIP-39 phrase and cannot be converted to one; the two formats' word counts never overlap (BIP-39: 12/15/18/21/24 — SLIP-39: 20/33); SLIP-39 wallets restore by typing the words into the device, not by scanning a QR. seQRets detects SLIP-39 shares, validates their checksums on entry (catching typos before encryption) and again after restoration, and displays restored shares as a numbered word list. seQRets stores SLIP-39 shares exactly as entered and does not split or combine them itself — combining shares back into a wallet happens on the hardware wallet. Note the naming coincidence: both SLIP-39 and seQRets use Shamir's Secret Sharing, but at different layers — SLIP-39 splits the wallet secret into word-shares, while seQRets encrypts whatever you give it (including a SLIP-39 share) and splits the ENCRYPTED result into Qards.
 
 ### BIP-32: Hierarchical Deterministic (HD) Wallets
 

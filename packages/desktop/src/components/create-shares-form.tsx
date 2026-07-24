@@ -15,7 +15,7 @@ import { CreateSharesResult } from '@/lib/types';
 import { createShares } from '@/lib/desktop-crypto';
 import { SeedPhraseGenerator } from '@/components/ui/seed-phrase-generator';
 import { scrollToReveal } from '@/components/ui/scroll-utils';
-import { gzip } from '@seqrets/crypto';
+import { gzip, detectSlip39 } from '@seqrets/crypto';
 import { tryGetEntropy } from '@/lib/crypto';
 import { HelpHint } from '@/components/ui/help-hint';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -50,7 +50,10 @@ export function CreateSharesForm() {
   const [showKeyfileWriteSmartCard, setShowKeyfileWriteSmartCard] = useState(false);
   const [keyfileWriteLabel, setKeyfileWriteLabel] = useState('Keyfile');
   const [showSeedGenerator, setShowSeedGenerator] = useState(false);
-  const [seedValidationStatus, setSeedValidationStatus] = useState<'valid' | 'invalid' | 'unchecked'>('unchecked');
+  // 'valid' = BIP-39 (compressed to entropy) · 'valid-slip39' = SLIP-39 share(s),
+  // stored as plain text · 'invalid-slip39' = SLIP-39-shaped but checksum failed
+  // (almost certainly a typo) · 'invalid' = seed-like but neither format validates.
+  const [seedValidationStatus, setSeedValidationStatus] = useState<'valid' | 'valid-slip39' | 'invalid' | 'invalid-slip39' | 'unchecked'>('unchecked');
   const [estimatedShareSize, setEstimatedShareSize] = useState(0);
 
   // New state for progressive reveal
@@ -118,7 +121,16 @@ export function CreateSharesForm() {
         const isPotentiallyMnemonic = words.length >= 12 && words.every(w => /^[a-z]+$/.test(w));
 
         if (isPotentiallyMnemonic) {
-            setSeedValidationStatus(tryGetEntropy(cleanSecret) ? 'valid' : 'invalid');
+            if (tryGetEntropy(cleanSecret)) {
+                setSeedValidationStatus('valid');
+            } else {
+                // Not BIP-39 — check for SLIP-39 (Trezor Suite's default backup:
+                // 20-word shares; advanced setups use 20/33-word K-of-N sets).
+                const slip = detectSlip39(cleanSecret);
+                if (slip.status === 'valid') setSeedValidationStatus('valid-slip39');
+                else if (slip.status === 'checksum-fail') setSeedValidationStatus('invalid-slip39');
+                else setSeedValidationStatus('invalid');
+            }
         } else {
             setSeedValidationStatus('unchecked');
         }
@@ -156,11 +168,13 @@ export function CreateSharesForm() {
       });
       return;
     }
-    if (seedValidationStatus === 'invalid') {
+    if (seedValidationStatus === 'invalid' || seedValidationStatus === 'invalid-slip39') {
         toast({
             variant: 'destructive',
             title: 'Invalid Seed Phrase',
-            description: 'The entered text appears to contain an invalid mnemonic phrase. Please verify your data.',
+            description: seedValidationStatus === 'invalid-slip39'
+                ? 'This looks like a SLIP-39 backup, but one of the words appears to be mistyped. Please check each word.'
+                : 'The entered text appears to contain an invalid mnemonic phrase. Please verify your data.',
         });
         return;
     }
@@ -256,10 +270,13 @@ export function CreateSharesForm() {
   }, [useKeyfile]);
 
 
+  const isSeedValid = seedValidationStatus === 'valid' || seedValidationStatus === 'valid-slip39';
+  const isSeedInvalid = seedValidationStatus === 'invalid' || seedValidationStatus === 'invalid-slip39';
+
   const getSecretBorderColor = () => {
     if (!secret) return 'border-input focus-within:ring-ring';
-    if (seedValidationStatus === 'valid') return 'border-green-500 focus-within:ring-green-500';
-    if (seedValidationStatus === 'invalid') return 'border-red-500 focus-within:ring-red-500';
+    if (isSeedValid) return 'border-green-500 focus-within:ring-green-500';
+    if (isSeedInvalid) return 'border-red-500 focus-within:ring-red-500';
     return 'border-input focus-within:ring-ring';
   };
 
@@ -271,7 +288,7 @@ export function CreateSharesForm() {
     isGenerating ||
     !secret ||
     !password ||
-    seedValidationStatus === 'invalid' ||
+    isSeedInvalid ||
     !isPasswordValid ||
     (useKeyfile && !keyfile);
 
@@ -309,7 +326,7 @@ export function CreateSharesForm() {
                     <div className="flex items-center gap-2">
                       <Label htmlFor="secret">Your Secret Text</Label>
                       <HelpHint>
-                          Enter the secret you want to protect. This could be a 12/24-word BIP-39 seed phrase, a private key, or any other important text. The app will automatically detect valid seed phrases for better storage efficiency.
+                          Enter the secret you want to protect. This could be a 12/24-word BIP-39 seed phrase, a 20-word Trezor-style (SLIP-39) backup, a private key, or any other important text. The app will automatically detect valid seed phrases and check them for typos.
                       </HelpHint>
                   </div>
                   <Button onClick={() => setShowSeedGenerator(!showSeedGenerator)} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
@@ -355,11 +372,14 @@ export function CreateSharesForm() {
                 </div>
                 {seedValidationStatus !== 'unchecked' && (
                   <div className="text-xs text-muted-foreground mt-2 flex items-center">
-                        {seedValidationStatus === 'valid' ?
+                        {isSeedValid ?
                           <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> :
                           <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
                         }
-                      {seedValidationStatus === 'valid' ? 'Valid BIP-39 mnemonic phrase(s) detected. (Optimized)' : 'This looks like a seed phrase, but it has an invalid word count or checksum.'}
+                      {seedValidationStatus === 'valid' && 'Valid BIP-39 mnemonic phrase(s) detected. (Optimized)'}
+                      {seedValidationStatus === 'valid-slip39' && 'Valid SLIP-39 recovery share(s) detected (Trezor-style backup).'}
+                      {seedValidationStatus === 'invalid-slip39' && 'This looks like a SLIP-39 backup, but a word appears to be mistyped — check each word carefully.'}
+                      {seedValidationStatus === 'invalid' && 'This looks like a seed phrase, but it has an invalid word count or checksum.'}
                   </div>
                 )}
                 {secret && (
@@ -385,7 +405,7 @@ export function CreateSharesForm() {
                     <div className="flex justify-end pt-2">
                         <Button
                             onClick={() => setStep(2)}
-                            disabled={!secret.trim() || seedValidationStatus === 'invalid'}
+                            disabled={!secret.trim() || isSeedInvalid}
                             className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md"
                         >
                             Next Step <ArrowDown className="ml-2 h-4 w-4" />
