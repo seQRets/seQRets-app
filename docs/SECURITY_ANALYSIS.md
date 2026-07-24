@@ -1,6 +1,6 @@
 # seQRets Desktop App — Security Analysis
 
-> **Baseline audit:** April 2026 @ v1.10.7 · **Maintained current through:** v1.12.0 (July 2026) · **Reviewer:** Source-code review via Claude (Anthropic)
+> **Baseline audit:** April 2026 @ v1.10.7 · **Maintained current through:** v1.13.0 (July 2026) · **Reviewer:** Source-code review via Claude (Anthropic)
 > **Scope:** Full source audit of `packages/desktop/`, `packages/crypto/`, and `src-tauri/` (Rust backend), plus the cross-cutting web + crypto items from the pre-launch hardening pass (see [Pre-Launch Hardening Pass](#pre-launch-hardening-pass-v1107--v1120) below and [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md) for the full checklist).
 >
 > This is a **living document**, not a frozen snapshot: the baseline finding set (11 items) was established at v1.10.7, and the doc is kept current as remediation lands. It reflects the codebase as of **v1.12.0**, at which point the pre-launch hardening pass is complete.
@@ -602,6 +602,15 @@ Separate from the 11 baseline findings above, a comprehensive read-only security
 
 ---
 
+## Post-Audit Changes (v1.13.0)
+
+**SLIP-39 share detection & validation** (`packages/crypto/src/slip39.ts`, new) — recognizes Trezor-style SLIP-39 recovery shares (20/33 words) on entry and after restore, validating their RS1024 checksum so a mistyped word is caught before encryption. Security-relevant properties:
+
+- **Validation-only.** No new encryption, key derivation, splitting, or share-format code paths — the module reads and verifies word sequences; it never handles derived keys or ciphertext. The cryptographic pipeline audited above is untouched, and SLIP-39 secrets are stored as plain text inside the existing (audited) payload envelope, so the seQRets-Recover lifeboat required no change.
+- **Zero new dependencies.** The 1024-word official wordlist is embedded verbatim (fetched from `trezor/python-shamir-mnemonic`, cross-verified byte-identical against `satoshilabs/slips`), and the RS1024 checksum (~30 lines) follows the reference implementation exactly, including both customization strings (`shamir` / `shamir_extendable`).
+- **Reference-vector verified.** All 45 official SatoshiLabs test vectors pass (every share-level defect class rejected: bad checksum, bad padding, bad length, inconsistent group parameters); 53/53 single-word mutation tests are caught.
+- Incidentally fixes an availability bug: 20-word phrases previously matched the "looks like a seed" heuristic, failed the BIP-39 check, and were blocked from encryption entirely.
+
 ## Remediation Status
 
 ### Completed Fixes ✅
@@ -684,5 +693,5 @@ The cryptographic primitives (XChaCha20-Poly1305, Argon2id, Shamir's Secret Shar
 ---
 
 <p align="center">
-<em>This analysis was conducted through a full source-code review of all Rust, TypeScript, and configuration files in the seQRets desktop application, with a whole-codebase pre-launch hardening pass (web + desktop + crypto + JavaCard) completed at v1.12.0. All 11 baseline findings were remediated immediately following the original audit; the pre-launch pass items are itemized above and tracked in <code>PRELAUNCH_AUDIT.md</code>. Cryptographic correctness is guarded by a permanent Rust↔TS parity test and end-to-end restore round-trips against every supported Qard layout. Last updated July 12, 2026 (v1.12.0 "🔥 Ignition").</em>
+<em>This analysis was conducted through a full source-code review of all Rust, TypeScript, and configuration files in the seQRets desktop application, with a whole-codebase pre-launch hardening pass (web + desktop + crypto + JavaCard) completed at v1.12.0. All 11 baseline findings were remediated immediately following the original audit; the pre-launch pass items are itemized above and tracked in <code>PRELAUNCH_AUDIT.md</code>. Cryptographic correctness is guarded by a permanent Rust↔TS parity test and end-to-end restore round-trips against every supported Qard layout. Last updated July 24, 2026 (v1.13.0 "🔥 Ignition").</em>
 </p>
