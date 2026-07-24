@@ -2,13 +2,13 @@
 
 All cryptographic operations in seQRets run **entirely on your device**. Your secrets never leave your machine.
 
-> 📂 **All cryptography lives in a single ~750-line file:** [`packages/crypto/src/crypto.ts`](../packages/crypto/src/crypto.ts). Reviewers and auditors: start there. The desktop app delegates the hot path (Argon2id + XChaCha20-Poly1305) to native Rust — see [`packages/desktop/src-tauri/src/crypto.rs`](../packages/desktop/src-tauri/src/crypto.rs).
+> 📂 **All cryptography lives in a single ~750-line file:** [`packages/crypto/src/crypto.ts`](../packages/crypto/src/crypto.ts). Reviewers and auditors: start there. The desktop app delegates the hot path (Argon2id + XChaCha20-Poly1305) to native Rust — see [`packages/desktop/src-tauri/src/crypto.rs`](../packages/desktop/src-tauri/src/crypto.rs). The crypto package's companion modules contain no encryption code: [`restore.ts`](../packages/crypto/src/restore.ts) holds share-metadata/SeedQR helpers and [`slip39.ts`](../packages/crypto/src/slip39.ts) holds validation-only SLIP-39 share detection (wordlist + RS1024 checksum).
 
 ## How seQRets Works
 
 ### 🔒 Securing a Secret
 
-1. **Detect** — if your secret is a BIP-39 seed phrase, it is converted to compact binary entropy (e.g., 24 words → 32 bytes) before processing
+1. **Detect** — if your secret is a BIP-39 seed phrase, it is converted to compact binary entropy (e.g., 24 words → 32 bytes) before processing; Trezor-style SLIP-39 recovery shares are recognized and checksum-validated (a mistyped word is caught here), then kept as plain text
 2. **Compress** — gzip (level 9) reduces the payload size to minimize QR code density
 3. **Derive key** — your password + optional keyfile are run through Argon2id (64MB memory, 4 iterations) to produce a 256-bit encryption key
 4. **Encrypt** — XChaCha20-Poly1305 encrypts the compressed data using a randomly generated 128-bit salt and 192-bit nonce
@@ -140,6 +140,10 @@ No `Math.random()` or any other weak PRNG is used for any security-critical oper
 ## BIP-39 Optimization
 
 Seed phrases are automatically detected and converted to compact binary entropy before encryption. A 24-word phrase (~150 characters) becomes just 32 bytes, dramatically reducing QR code size.
+
+## SLIP-39 Detection
+
+Trezor-style SLIP-39 recovery shares (20 or 33 words, including multi-share sets entered one per line) are recognized on entry and validated against their built-in RS1024 checksum — any single mistyped word is caught before encryption, and the checksum is verified again after restore. Unlike BIP-39, SLIP-39 phrases are **stored as plain text** rather than converted to entropy: each share carries metadata (identifier, group parameters, iteration exponent) that must be reproduced exactly, and gzip already compresses share sets efficiently, so conversion would add share-format risk for negligible size benefit. The detection module ([`slip39.ts`](../packages/crypto/src/slip39.ts)) is validation-only — it embeds the official 1024-word wordlist verbatim, adds zero dependencies, is verified against all 45 official SatoshiLabs test vectors, and never splits, combines, or otherwise handles key material. No SeedQR is offered for SLIP-39 (SeedQR is a BIP-39-only format); restored shares display as a numbered word grid for typing into a hardware wallet.
 
 ---
 

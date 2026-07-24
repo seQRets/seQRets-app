@@ -46,6 +46,7 @@ Official release: coming soon — **<a href="https://seqrets.app" target="_blank
 - **Encrypt** any text secret with XChaCha20-Poly1305 + Argon2id, split into configurable Qards (2-of-3, 3-of-5, etc.)
 - **Restore** via drag & drop, camera scan, manual entry, vault file, or smart card
 - **BIP-39 optimization** — 24-word phrases compress from ~150 chars to 32 bytes
+- **SLIP-39 detection** — Trezor-style recovery shares (20/33 words) are recognized and checksum-validated on entry and on restore, so a mistyped word is caught before encryption; restored shares display as a numbered word list for easy re-entry into a hardware wallet
 - **SeedQR display** on restore — Standard and Compact formats for scanning BIP-39 seeds into compatible hardware wallets
 - **Built-in inheritance planner** (desktop only) — comprehensive 9-section form that walks you through beneficiaries, secret sets, Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message. The plan is encrypted natively and fits on a smart card. No need to type sensitive information into external editors. Web and desktop can also encrypt any external file (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50 MB) the same way.
 - **JavaCard smart card** storage (desktop only) — shares, vaults, keyfiles, or plans on JCOP3 hardware with optional PIN protection
@@ -69,7 +70,7 @@ Even if **seQRets disappears** — the website goes down, the company dissolves,
 
 ## 🔐 Security
 
-seQRets uses industry-standard primitives entirely client-side. **The core cryptographic primitives live in a single ~750-line file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts)** (with share-metadata and SeedQR helpers in [`restore.ts`](packages/crypto/src/restore.ts)). The desktop app additionally runs Argon2id + XChaCha20-Poly1305 natively in Rust via Tauri, so derived keys never enter the JS runtime.
+seQRets uses industry-standard primitives entirely client-side. **The core cryptographic primitives live in a single ~750-line file: [`packages/crypto/src/crypto.ts`](packages/crypto/src/crypto.ts)** (with share-metadata and SeedQR helpers in [`restore.ts`](packages/crypto/src/restore.ts), and validation-only SLIP-39 share detection in [`slip39.ts`](packages/crypto/src/slip39.ts)). The desktop app additionally runs Argon2id + XChaCha20-Poly1305 natively in Rust via Tauri, so derived keys never enter the JS runtime.
 
 - **Key derivation:** Argon2id (64MB memory, 4 iterations)
 - **Encryption:** XChaCha20-Poly1305 (AEAD)

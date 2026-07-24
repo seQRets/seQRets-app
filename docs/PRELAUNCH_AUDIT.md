@@ -360,11 +360,11 @@ dialog-close scroll-lock stall-retry fix.
 
 ## Very Optional — nice-to-smooth-out, not launch-blocking
 
-- **Move remaining blocking commands off the main thread** (desktop) — follow-on from 1.4. That item
-  moved the four crypto commands to `spawn_blocking` so Argon2id no longer freezes the window. The same
-  main-thread-blocking pattern remains in `qr.rs` `qr_decode` (CPU-heavy image decode of large Qard
-  PNGs, can take a beat) and the 13 `smartcard.rs` PC/SC commands (blocking reader I/O); `review_reminder.rs`
-  file I/O is low-risk. Apply the same treatment where a user would notice — at minimum `qr_decode`,
-  ideally the smartcard commands — and promote `crypto.rs`'s private `run_blocking` helper to a shared
-  `pub(crate)` helper (with a parameterized error label) rather than duplicating it. Rust-only; frontend
-  already `await`s all invokes. Purely a smoothness win — nothing is broken today.
+- **Move remaining blocking commands off the main thread** (desktop) — **CLOSED: WON'T-DO (owner
+  decision, 2026-07-17).** Follow-on from 1.4, which moved the four crypto commands to `spawn_blocking`
+  so Argon2id no longer freezes the window — that part stays. The same main-thread-blocking pattern
+  remains in `qr.rs` `qr_decode` and the 14 `smartcard.rs` PC/SC commands (`review_reminder.rs` file
+  I/O is negligible), but this is now **intentional**: the desktop UX deliberately gates the interface
+  behind a blur + busy indicator while backend work runs — the front end is *not supposed to* remain
+  interactive. Offloading these commands for responsiveness would work against that design. Do not
+  re-propose. Nothing is broken; all failure paths behave identically.
