@@ -74,6 +74,6 @@
     "fast-xml-parser": "5.3.4",
     "dompurify": "^3.4.12",
     "postcss": "^8.5.23",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.4"
   }
 }
