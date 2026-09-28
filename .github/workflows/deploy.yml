@@ -40,10 +40,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # Node 22: wrangler 4.x refuses to run on anything older.
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
