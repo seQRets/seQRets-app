@@ -1,18 +1,20 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Reference-only. Not the active source of headers.
+# AUTHORITATIVE source of HTTP security headers for app.seqrets.app.
 #
-# app.seqrets.app is hosted on GitHub Pages (which does NOT honor _headers)
-# and proxied through Cloudflare. The security headers below are served by a
-# Cloudflare Response Header Transform Rule named "app.seqrets.app security
-# headers" scoped to (http.host eq "app.seqrets.app").
+# app.seqrets.app is hosted on Cloudflare Pages (project "seqrets-app"),
+# deployed by direct upload of the static export from
+# .github/workflows/deploy.yml. Next.js copies this file into out/, and
+# Cloudflare Pages applies it natively. Editing this file and deploying IS
+# how headers change. Don't also set them in a Cloudflare Transform Rule for
+# this host: a rule silently overrides this file and the two will drift.
 #
-# This file is kept in sync with the Cloudflare rule as documentation, so the
-# repo and production stay in agreement. If you change headers in Cloudflare,
-# update this file too. If you change this file, it has no effect until the
-# Cloudflare rule is updated to match.
+# The CSP is duplicated as a <meta http-equiv> tag in src/app/layout.tsx
+# (defense-in-depth in case the host ever stops sending headers).
+# Keep the two in sync. The one intended difference: frame-ancestors appears
+# ONLY here, because browsers ignore it inside a <meta> CSP. Any new outbound
+# fetch origin must be added to connect-src in BOTH places.
 #
-# Base HSTS (max-age only) is also served by GitHub Pages' default
-# configuration; the Cloudflare rule adds the includeSubDomains directive.
+# HSTS deliberately omits "preload". Don't add it without an explicit decision.
 # ─────────────────────────────────────────────────────────────────────────────
 
 /*
