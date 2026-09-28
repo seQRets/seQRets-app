@@ -574,23 +574,29 @@ now leads the card-setup flow.
 
 ---
 
-## Web App HTTP Security Hardening (Cloudflare Proxy)
+## Web App HTTP Security Hardening (Cloudflare Pages)
 
 ### Background
 
-The audit above focused on the desktop app and the shared cryptographic library. The web app at `app.seqrets.app` is hosted on **GitHub Pages**, which serves a fixed, minimal set of HTTP response headers and does not honor custom header configuration. This left the web app's HTTP layer thinner than the desktop app's WebView policy, with its security depending entirely on the in-document `<meta http-equiv="Content-Security-Policy">` tag defined in `src/app/layout.tsx`.
+The audit above focused on the desktop app and the shared cryptographic library. The web app at `app.seqrets.app` was originally hosted on **GitHub Pages**, which serves a fixed, minimal set of HTTP response headers and does not honor custom header configuration. That left the web app's HTTP layer thinner than the desktop app's WebView policy, with its security depending entirely on the in-document `<meta http-equiv="Content-Security-Policy">` tag defined in `src/app/layout.tsx`.
 
-A March 2026 attempt to migrate the web app to Cloudflare Pages — which would have enabled the repo's `public/_headers` file natively — was abandoned after the build broke in ways that could not be reconciled with the project's Next.js static-export configuration.
+### History
 
-### Solution: Cloudflare proxy in front of GitHub Pages (April 2026)
+- **March 2026: first Cloudflare Pages attempt, abandoned.** Cloudflare's own build pipeline could not build the Next.js static export. This was a build failure, not a security concern.
+- **April 2026: Cloudflare proxy in front of GitHub Pages.** The `app` record was switched to proxied (orange cloud), and a Response Header Transform Rule scoped to `(http.host eq "app.seqrets.app")` injected the security headers at the edge. This delivered the headers without touching the build, but it had a flaw: GitHub Pages renews its Let's Encrypt certificate with an HTTP-01 challenge, which the proxy blocks. The origin certificate silently lapsed every ~90 days, and Cloudflare's Full (strict) mode then returned **526** (a total outage) until the record was grey-clouded, the custom domain re-issued, and the proxy re-enabled by hand. This happened on 2026-07-26 and was caught early on 2026-09-28.
+- **2026-09-28: migrated to Cloudflare Pages by direct upload.** CI builds the static export itself (as it always did) and uploads the finished `out/` directory with `wrangler pages deploy`, so Cloudflare never builds Next.js. Cloudflare now owns both the edge and the origin, so there is no origin certificate to lapse.
 
-Rather than migrating hosting, `app.seqrets.app` was switched from grey-cloud (DNS only) to orange-cloud (proxied) in Cloudflare. GitHub Pages continues to serve the static bundle as origin; Cloudflare sits at the edge and injects security headers via a **Response Header Transform Rule** scoped to `(http.host eq "app.seqrets.app")`. The rule does not affect the landing page at the apex.
+### Current setup
 
-### Headers now served at the HTTP layer
+- **Hosting:** Cloudflare Pages project `seqrets-app`, custom domain `app.seqrets.app`. The edge certificate is issued and renewed automatically by Cloudflare.
+- **Deploy:** `.github/workflows/deploy.yml` runs the crypto test suite, builds the static export, then runs a pinned `wrangler pages deploy`. It authenticates with an account-owned API token limited to *Cloudflare Pages: Edit*, stored as a repo secret.
+- **Headers:** `public/_headers` is the **authoritative** source. Next.js copies it into `out/`, and Cloudflare Pages applies it natively, so headers are versioned, reviewed and deployed with the code. No Transform Rule sets headers for this host; one would silently override the file.
+
+### Headers served at the HTTP layer
 
 | Header | Value | Purpose |
 |---|---|---|
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.coinbase.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'` | Identical to `layout.tsx` meta CSP; belt-and-suspenders. No `unsafe-eval`, narrow `connect-src` allowlist. |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.coinbase.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'` | Mirrors the `layout.tsx` meta CSP (belt-and-suspenders). The one intended difference is `frame-ancestors 'none'`, which browsers ignore inside a meta tag and so can only be set here. No `unsafe-eval`, narrow `connect-src` allowlist, fonts are self-hosted. |
 | `X-Frame-Options` | `DENY` | Clickjacking protection (header-only directive, not available via meta) |
 | `X-Content-Type-Options` | `nosniff` | Blocks MIME sniffing |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
@@ -600,19 +606,19 @@ Rather than migrating hosting, `app.seqrets.app` was switched from grey-cloud (D
 
 ### Additional hardening
 
-- **SSL/TLS mode: Full (strict).** Cloudflare validates the origin's certificate chain (GitHub Pages serves a valid Let's Encrypt cert with auto-renewal).
-- **Cloudflare Web Analytics disabled.** Prior to this work, Cloudflare was auto-injecting a `cloudflareinsights.com` beacon script into proxied pages, violating both the app's strict CSP and the README's "no telemetry" claim. The site was removed from Web Analytics entirely. Zero third-party beacons are now injected.
-- **`public/_headers` in repo kept in sync** with the live Cloudflare rule, marked as reference-only documentation.
+- **SSL/TLS mode: Full (strict), zone-wide.** Unchanged by the migration.
+- **Cloudflare Web Analytics disabled.** Cloudflare had been auto-injecting a `cloudflareinsights.com` beacon script into proxied pages, violating both the app's strict CSP and the README's "no telemetry" claim. The site was removed from Web Analytics entirely. Zero third-party beacons are injected.
+- **Service worker served uncached.** Cloudflare Pages sends `cache-control: public, max-age=0, must-revalidate`, so a new `sw.js` reaches users on their next load instead of after a CDN cache window.
 
 ### Operational notes
 
-- **Reversibility.** The entire setup rolls back with a single DNS toggle: set the `app` CNAME from orange-cloud back to grey-cloud in Cloudflare DNS. Within ~60 seconds the site returns to direct GitHub Pages serving. No code, no build, no deploy pipeline is involved.
-- **Scope isolation.** The Transform Rule is filtered by hostname, so the landing page at `seqrets.app` (hosted on Cloudflare Pages with its own `_headers` file) is completely unaffected by this change.
+- **Rollback.** Pages keeps every deployment, so a bad release is reverted from the project's *Deployments* tab without a rebuild.
+- **Scope isolation.** The landing page at `seqrets.app` is a separate Cloudflare Pages project with its own `_headers` file and is unaffected.
 - **HSTS preload.** The `preload` directive was deliberately omitted. Modern browsers auto-upgrade HTTP→HTTPS regardless, making preload a marginal security improvement in exchange for a permanent, hard-to-reverse commitment across all subdomains. Revisit when the subdomain topology is stable.
 
 ### What this closes
 
-This addresses F-06 from the v1.7.0 audit ("No CSP for web app on GitHub Pages") — previously marked as *Won't fix / accepted risk*, now **resolved**. The web app's HTTP-layer security is no longer gated by the hosting platform's limitations.
+This addresses F-06 from the v1.7.0 audit ("No CSP for web app on GitHub Pages") — previously marked as *Won't fix / accepted risk*, now **resolved**. The migration also removes the recurring 90-day certificate outage that the proxy setup introduced.
 
 ---
 
@@ -650,7 +656,7 @@ Separate from the 11 baseline findings above, a comprehensive read-only security
 
 ### Web HTTP-layer & supply-chain
 
-- CSP tightened (register-sw externalized so production HTML carries no first-party inline script; `frame-ancestors 'none'`); self-hosted fonts in both apps (no Google Fonts request on launch/print); spellcheck/autocorrect disabled on every secret input (some OSes upload spellchecked text). (1.3-lite, L2, Tier 0.4) — the CSP work is detailed in [Web App HTTP Security Hardening](#web-app-http-security-hardening-cloudflare-proxy) above.
+- CSP tightened (register-sw externalized so production HTML carries no first-party inline script; `frame-ancestors 'none'`); self-hosted fonts in both apps (no Google Fonts request on launch/print); spellcheck/autocorrect disabled on every secret input (some OSes upload spellchecked text). (1.3-lite, L2, Tier 0.4) — the CSP work is detailed in [Web App HTTP Security Hardening](#web-app-http-security-hardening-cloudflare-pages) above.
 
 ### Redundancy / drift refactor (Batch G) + a bug it flushed out
 
