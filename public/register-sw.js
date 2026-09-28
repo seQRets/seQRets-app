@@ -7,12 +7,16 @@
 // per-build hash.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Snapshot BEFORE registering: sw.js calls clients.claim() on activate, so
+    // on a first visit a controller exists by the time the new worker reaches
+    // 'activated' — checking then would show the update toast to everyone.
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('/sw.js').then(function (reg) {
       reg.addEventListener('updatefound', function () {
         var newSW = reg.installing;
         if (!newSW) return;
         newSW.addEventListener('statechange', function () {
-          if (newSW.state === 'activated' && navigator.serviceWorker.controller) {
+          if (newSW.state === 'activated' && hadController) {
             var d = document.createElement('div');
             d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:40;background:#231f20;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-family:system-ui,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.3);display:flex;align-items:center;gap:12px';
             d.innerHTML = 'A new version is available <button style="background:#f59e0b;color:#231f20;border:none;padding:4px 12px;border-radius:4px;font-weight:600;cursor:pointer;font-size:13px" onclick="window.location.reload()">Refresh</button>';
