@@ -27,6 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KeyfileUpload } from './keyfile-upload';
 
 
+// Above this, show a neutral "larger QR" note (not a warning): a 2-of-3
+// multisig descriptor (~945 chars, 117×117 modules) scans fine at the
+// printed ~10 cm size. Above QR_CAPACITY_LIMIT, only text files are made.
 const QR_CAPACITY_WARNING = 900;
 const QR_CAPACITY_LIMIT = 1400;
 
@@ -177,9 +180,12 @@ export function CreateSharesForm() {
         }
         const paddedSize = Math.max(PAYLOAD_PAD_BUCKET, Math.ceil(compressedSize / PAYLOAD_PAD_BUCKET) * PAYLOAD_PAD_BUCKET);
 
-        // ×1.33 = base64 expansion; +154 covers the envelope segments
-        // (seQRets| + salt + v=1 + t/n/i + sha256:) and the nonce/tag bytes.
-        const finalSize = (paddedSize * 1.33) + 154;
+        // Exact share length: the padded payload plus the 24-byte nonce and
+        // 16-byte tag, base64-encoded; +121 is the fixed envelope —
+        // "seQRets|" (8) + base64 salt (24) + "|" (1) + "|v=1" (4) +
+        // "|t=K|n=N|i=I" (12, the default embed with single-digit counts) +
+        // "|sha256:" (8) + hash (64).
+        const finalSize = Math.ceil((paddedSize + 40) / 3) * 4 + 121;
         setEstimatedShareSize(Math.ceil(finalSize));
 
     } else {
@@ -306,7 +312,6 @@ export function CreateSharesForm() {
 
   const getCapacityColor = () => {
     if (estimatedShareSize > QR_CAPACITY_LIMIT) return 'bg-red-500';
-    if (estimatedShareSize > QR_CAPACITY_WARNING) return 'bg-yellow-500';
     return 'bg-green-500';
   }
 
@@ -433,10 +438,10 @@ export function CreateSharesForm() {
                           />
                       </div>
                       {estimatedShareSize > QR_CAPACITY_WARNING && (
-                          <p className={cn("text-xs", isTextOnly ? "text-red-500" : "text-yellow-600")}>
+                          <p className={cn("text-xs", isTextOnly ? "text-red-500" : "text-muted-foreground")}>
                               {isTextOnly
                                   ? "Secret is too large for QR codes. Only text file backups will be generated."
-                                  : "Secret is large. QR codes may be complex and difficult to scan."
+                                  : "Larger QR code, which is normal for a multisig wallet descriptor. It prints and scans fine at the normal size — just don't shrink it when printing."
                               }
                           </p>
                       )}

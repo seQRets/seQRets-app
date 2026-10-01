@@ -110,9 +110,14 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         // Build constraints based on selection.
         // If user has picked a specific camera, request it exactly.
         // Otherwise prefer rear-facing on mobile, fall back to any camera.
+        // Ask for 1080p: with no size hint many browsers hand over 640×480,
+        // which leaves a dense Qard (e.g. a 2-of-3 multisig descriptor,
+        // 117×117 modules) at ~3 px per module — the decoder's floor. `ideal`
+        // never fails; cameras that can't do 1080p get their closest mode.
+        const resolution = { width: { ideal: 1920 }, height: { ideal: 1080 } };
         const constraints: MediaStreamConstraints = selectedDeviceId
-          ? { video: { deviceId: { exact: selectedDeviceId } } }
-          : { video: { facingMode: { ideal: 'environment' } } };
+          ? { video: { deviceId: { exact: selectedDeviceId }, ...resolution } }
+          : { video: { facingMode: { ideal: 'environment' }, ...resolution } };
 
         try {
             stream = await navigator.mediaDevices.getUserMedia(constraints);
