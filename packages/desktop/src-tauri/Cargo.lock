@@ -3580,7 +3580,7 @@ dependencies = [
 
 [[package]]
 name = "seqrets-desktop"
-version = "1.15.1"
+version = "1.15.2"
 dependencies = [
  "argon2",
  "base64 0.22.1",
