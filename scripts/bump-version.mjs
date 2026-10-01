@@ -89,7 +89,11 @@ console.log('\nRegenerating package-lock.json...');
 execSync('npm install --package-lock-only', { cwd: ROOT, stdio: 'inherit' });
 
 console.log('\nRegenerating Cargo.lock...');
-execSync('cargo generate-lockfile', { cwd: join(ROOT, 'packages/desktop/src-tauri'), stdio: 'inherit' });
+// `--workspace` re-locks only our own crate's version. `cargo generate-lockfile`
+// re-resolved EVERY dependency to latest-compatible, so each bump silently
+// smuggled unreviewed Rust upgrades (incl. under the crypto code) into the
+// release commit. Rust dep updates belong in their own reviewed commit.
+execSync('cargo update --workspace', { cwd: join(ROOT, 'packages/desktop/src-tauri'), stdio: 'inherit' });
 
 console.log(`\n✅ Bumped to v${newVersion} "${newCodename}".`);
 
