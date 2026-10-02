@@ -3,6 +3,7 @@
 import { Lock, FileText, Combine } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { scrollToWorkArea } from "@/components/ui/scroll-utils";
 
 type ActivePage = "create" | "plan" | "restore";
 
@@ -21,6 +22,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
   ];
 
   const handleClick = (value: ActivePage) => {
+    scrollToWorkArea();
     if (value === "plan") {
       // Navigation handled by Link
       return;
@@ -63,7 +65,7 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
 
         if (needsLink(tab.value)) {
           return (
-            <Link key={tab.value} href={getHref(tab.value)} className={className}>
+            <Link key={tab.value} href={getHref(tab.value)} className={className} onClick={() => scrollToWorkArea()}>
               {content}
             </Link>
           );

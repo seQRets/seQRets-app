@@ -2,6 +2,7 @@ import { Lock, FileText, Combine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getReminderState } from "@/lib/review-reminder";
+import { scrollToWorkArea } from "@/components/ui/scroll-utils";
 
 type ActivePage = "create" | "plan" | "restore";
 
@@ -36,6 +37,9 @@ export function AppNavTabs({ activePage, onHomeTabChange }: AppNavTabsProps) {
   ];
 
   const handleClick = (value: ActivePage) => {
+    // Every tab click (even the active one) brings the working area into
+    // view with the Ask Bob row just below the top edge.
+    scrollToWorkArea();
     if (value === "plan") {
       if (activePage !== "plan") navigate("/inheritance");
     } else {

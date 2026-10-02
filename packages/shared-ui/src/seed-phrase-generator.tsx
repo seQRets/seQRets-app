@@ -21,9 +21,14 @@ import { cn } from './utils';
 
 interface SeedPhraseGeneratorProps {
   onPhraseGenerated: (phrase: string) => void;
+  /** Fires after "Generate New Phrase" draws a phrase — the panel grows, so
+   *  the host can scroll its flow back into view. Not fired for the SeedQR
+   *  panel: that QR is tall enough that scrolling to the page bottom would
+   *  push its top out of view. */
+  onGenerate?: () => void;
 }
 
-export function SeedPhraseGenerator({ onPhraseGenerated }: SeedPhraseGeneratorProps) {
+export function SeedPhraseGenerator({ onPhraseGenerated, onGenerate }: SeedPhraseGeneratorProps) {
   const [phrase, setPhrase] = useState('');
   const [wordCount, setWordCount] = useState<'12' | '24'>('12');
   const [isValid, setIsValid] = useState(false);
@@ -67,6 +72,7 @@ export function SeedPhraseGenerator({ onPhraseGenerated }: SeedPhraseGeneratorPr
     setShowSeedQr(false);
     setSeedQrUri(null);
     setIsSeedQrRevealed(false);
+    onGenerate?.();
   };
 
   const handleCopy = () => {

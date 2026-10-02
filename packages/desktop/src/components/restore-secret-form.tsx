@@ -58,13 +58,9 @@ export function RestoreSecretForm() {
   // revealed step/section comes fully into view (respects reduced-motion).
   useEffect(() => {
     if (step <= 1) return;
-    const el = endRef.current;
-    if (!el) return;
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const id = requestAnimationFrame(() =>
-      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
-    );
-    return () => cancelAnimationFrame(id);
+    // Shared helper: re-targets while the new step finishes rendering, so
+    // the scroll reaches the real page bottom instead of stopping short.
+    scrollToReveal(endRef.current);
   }, [step]);
   const [decodedShares, setDecodedShares] = useState<DecodedShare[]>([]);
   const [password, setPassword] = useState('');

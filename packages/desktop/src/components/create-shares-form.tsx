@@ -70,13 +70,9 @@ export function CreateSharesForm() {
   // revealed step/section comes fully into view (respects reduced-motion).
   useEffect(() => {
     if (step <= 1) return;
-    const el = endRef.current;
-    if (!el) return;
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const id = requestAnimationFrame(() =>
-      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
-    );
-    return () => cancelAnimationFrame(id);
+    // Shared helper: re-targets while the new step finishes rendering, so
+    // the scroll reaches the real page bottom instead of stopping short.
+    scrollToReveal(endRef.current);
   }, [step]);
 
   const isTextOnly = estimatedShareSize > QR_CAPACITY_LIMIT;
@@ -363,7 +359,7 @@ export function CreateSharesForm() {
                             straight in.
                         </p>
                     </HelpHint>
-                    <Button onClick={() => setShowSeedGenerator(!showSeedGenerator)} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
+                    <Button onClick={() => { const opening = !showSeedGenerator; setShowSeedGenerator(opening); if (opening) scrollToReveal(endRef.current); }} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
                         <Wand className="mr-2 h-4 w-4" />
                         {showSeedGenerator ? 'Hide Generator' : 'Generate Seed Phrase'}
                     </Button>
@@ -371,7 +367,7 @@ export function CreateSharesForm() {
                 </div>
                 {showSeedGenerator && (
                   <div className="p-4 border rounded-lg bg-muted/50 my-2">
-                      <SeedPhraseGenerator onPhraseGenerated={(phrase) => {
+                      <SeedPhraseGenerator onGenerate={() => scrollToReveal(endRef.current)} onPhraseGenerated={(phrase) => {
                           setSecret(phrase);
                           setIsSecretVisible(false);
                           setShowSeedGenerator(false);
