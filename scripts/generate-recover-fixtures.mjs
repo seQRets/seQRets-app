@@ -40,7 +40,10 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createShares, encryptInstructions, appendShareHash } from '@seqrets/crypto';
+import {
+  createShares, encryptInstructions, appendShareHash,
+  generateLockerKey, sealLocker, serializeLockerFile, LOCKER_INNER_FILENAME, LOCKER_INNER_FILETYPE,
+} from '@seqrets/crypto';
 
 // Primitives, used ONLY to hand-build the historical share shapes that the
 // current createShares can no longer emit (pre-v1.9 hashless, v1.11.0
@@ -288,7 +291,118 @@ async function legacyBlob(secret, password, label) {
   });
 }
 
-// ── 4. negative cases — these MUST fail, and fail legibly ────────────
+// ── 4. Locker ────────────────────────────────────────────────────────
+//
+// A Locker is a file opened by an internal key; the key is the secret inside
+// an ordinary Qard set. What an heir does in Recover TODAY, with no Locker
+// support at all: restore the Qards (Recover shows the key), then drop in the
+// Locker file and paste the key as its password. The Locker file is the
+// encrypted-plan { salt, data } shape plus clear-text fields Recover ignores.
+
+/** Mint Qards whose secret is `key`, as the desktop app does for a Locker. */
+async function lockerQards(key, password, total, required, keyfile) {
+  return createShares({
+    secret: key, password, totalShares: total, requiredShares: required,
+    keyfile, embedRecoveryInfo: true,
+  });
+}
+
+function lockerExpect(key, content) {
+  return {
+    key,
+    fileName: LOCKER_INNER_FILENAME,
+    fileType: LOCKER_INNER_FILETYPE,
+    content,
+  };
+}
+
+const LOCKER_CONTENT = {
+  letter: 'If you are reading this, the Locker opened. — fixture',
+  secrets: [
+    { name: 'Fixture wallet', seed: MNEMONIC_12 },
+    { name: 'Fixture account', password: 'not-a-real-password-ünïcode-🔐' },
+  ],
+};
+
+{
+  const id = 'locker-2of3';
+  log(id);
+  const key = generateLockerKey();
+  const password = 'fixture-password-locker';
+  const set = await lockerQards(key, password, 3, 2);
+  const file = await sealLocker({ content: LOCKER_CONTENT, key, setId: set.setId, seq: 3 });
+  cases.push({
+    id,
+    description: 'Locker: 2-of-3 Qards hold the internal key; the Locker file is sealed with it '
+      + '(TypeScript path). Recover restores the key from Qards #2 and #3, then opens the file '
+      + 'through its plain encrypted-plan path.',
+    kind: 'locker', password, keyfile: null,
+    shares: set.shares, useShares: [1, 2],
+    lockerFile: serializeLockerFile(file),
+    expect: lockerExpect(key, LOCKER_CONTENT),
+  });
+}
+
+{
+  const id = 'locker-keyfile';
+  log(id);
+  const key = generateLockerKey();
+  const password = 'fixture-password-locker-keyfile';
+  const set = await lockerQards(key, password, 2, 2, KEYFILE_B64);
+  const file = await sealLocker({ content: LOCKER_CONTENT, key, setId: set.setId, seq: 1 });
+  cases.push({
+    id,
+    description: 'Locker whose Qards are protected by password + keyfile (Advanced). The keyfile '
+      + 'guards the Qards only; the Locker file itself opens with the internal key alone.',
+    kind: 'locker', password, keyfile: KEYFILE_B64,
+    shares: set.shares, useShares: [0, 1],
+    lockerFile: serializeLockerFile(file),
+    expect: lockerExpect(key, LOCKER_CONTENT),
+  });
+}
+
+{
+  // The desktop app seals Lockers with its Rust crypto (crypto_encrypt_blob).
+  // This file was produced by exactly that path — see crypto.rs
+  // write_rust_locker_vector — so Recover is proven against what the app ships.
+  const id = 'locker-rust-sealed';
+  log(id);
+  const vector = JSON.parse(readFileSync(
+    resolve(ROOT, 'packages', 'desktop', 'src-tauri', 'tests', 'fixtures', 'rust-locker-vector.json'), 'utf8'));
+  const password = 'fixture-password-locker-rust';
+  const set = await lockerQards(vector.key, password, 2, 2);
+  cases.push({
+    id,
+    description: 'Locker file sealed by the desktop app\'s Rust crypto (committed vector), opened '
+      + 'with a key restored from Qards. Proves a Locker made by the shipped desktop path opens here.',
+    kind: 'locker', password, keyfile: null,
+    shares: set.shares, useShares: [0, 1],
+    lockerFile: vector.locker_file,
+    expect: lockerExpect(vector.key, vector.expect_content),
+  });
+}
+
+{
+  const id = 'negative-locker-other-set';
+  log(id);
+  const password = 'fixture-password-locker-mismatch';
+  const keyA = generateLockerKey();
+  const setA = await lockerQards(keyA, password, 2, 2);
+  const keyB = generateLockerKey();
+  const fileB = await sealLocker({ content: { letter: 'Locker B' }, key: keyB, setId: 'LockerBB', seq: 1 });
+  cases.push({
+    id,
+    description: 'Qards from Locker A with the file from Locker B. The key restores fine, but the '
+      + 'file must fail closed at the AEAD tag — never open with the wrong set.',
+    kind: 'locker', password, keyfile: null,
+    shares: setA.shares, useShares: [0, 1],
+    lockerFile: serializeLockerFile(fileB),
+    expect: lockerExpect(keyA, null),
+    expectError: 'could not decrypt',
+  });
+}
+
+// ── 5. negative cases — these MUST fail, and fail legibly ────────────
 
 {
   const id = 'negative-tampered-data';
