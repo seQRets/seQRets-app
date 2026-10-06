@@ -317,16 +317,13 @@ describe('Locker create / unlock / save', () => {
     assert.equal(reopened.content.plan.personalMessage, 'Edited');
   });
 
-  it('upgrades an older plan stored inside a Locker', async () => {
-    const old = createBlankPlan();
-    old.version = 6;
-    delete old.otherSecrets;
-    delete old.documents;
-    const content = { ...created.content, plan: old };
-    const saved = await saveLocker({ key: created.key, content, setId: created.qards.setId, previousSeq: 1 });
-    const unlocked = await unlockLocker({ fileText: saved.text, shares: created.qards.shares.slice(0, 2), password: PASSWORD });
-    assert.equal(unlocked.content.plan.version, INHERITANCE_PLAN_VERSION);
-    assert.deepEqual(unlocked.content.plan.documents, []);
+  it('says "update the app" for a plan from a newer app version', async () => {
+    const newer = { ...createBlankPlan(), version: INHERITANCE_PLAN_VERSION + 1 };
+    const saved = await saveLocker({ key: created.key, content: { ...created.content, plan: newer }, setId: created.qards.setId, previousSeq: 1 });
+    await assert.rejects(
+      unlockLocker({ fileText: saved.text, shares: created.qards.shares.slice(0, 2), password: PASSWORD }),
+      expectLockerError('newer-version'),
+    );
   });
 
   it('fails on a wrong password without opening anything', async () => {

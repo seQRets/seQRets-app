@@ -1,12 +1,7 @@
 // ── Inheritance Plan ────────────────────────────────────────────────
-// The data model for the in-app inheritance plan builder, plus the
-// serializer and the v1→current migration chain. Plans are serialized to
-// JSON, encrypted via the existing encryptInstructions pipeline, and stored
-// on smart card or file.
-//
-// Lives in @seqrets/crypto (not the desktop app) so the migration chain —
-// which decides whether an heir's years-old plan still opens — is covered
-// by `npm test`. Pure: no DOM, no React.
+// The data model for the inheritance plan kept inside a Locker, plus its
+// serializer and validator. Lives in @seqrets/crypto (not the desktop app)
+// so it is covered by `npm test`. Pure: no DOM, no React.
 
 import { Buffer } from 'buffer';
 import type { RawInstruction } from './types';
@@ -24,7 +19,7 @@ export interface PlanInfo {
    * the plan was reviewed. Distinct from `lastUpdated`, which tracks the
    * last edit. This is the authoritative "cold storage" copy of the review
    * timestamp — the sidecar in app data is a cache that can be rebuilt
-   * from this field when missing. Introduced in plan schema v5.
+   * from this field when missing.
    */
   lastReviewedAt: string;
   reviewSchedule: string;
@@ -54,14 +49,13 @@ export interface SecretSet {
   description: string;
   password: string;
   /**
-   * v6: true when the `password` field holds a hint rather than the actual
+   * True when the `password` field holds a hint rather than the actual
    * password. Disambiguates for heirs — typing a hint verbatim as the
    * password fails with an error indistinguishable from a wrong password.
    */
   passwordIsHint: boolean;
   /**
-   * v6: explicit keyfile usage — '' = not specified (legacy plans),
-   * 'yes' / 'no'. Removes the blank-field ambiguity: without this, a
+   * Explicit keyfile usage — '' = not answered yet, 'yes' / 'no'. Removes the blank-field ambiguity: without this, a
    * missing keyfile fails decryption with what looks like a wrong-password
    * error, and heirs cannot tell whether a keyfile was ever involved.
    */
@@ -85,34 +79,34 @@ export interface DigitalAsset {
   approxValue: string;
   twoFactorMethod: string;
   recoverySeed: string;
-  /** v6: single-sig / multisig / hardware wallet / custodial exchange / other. */
+  /** Single-sig / multisig / hardware wallet / custodial exchange / other. */
   walletKind: string;
   /**
-   * v6: whether the wallet uses an added BIP-39 passphrase ("25th word").
+   * Whether the wallet uses an added BIP-39 passphrase ("25th word").
    * '' = not specified, 'yes' / 'no'. A seed restored without its
    * passphrase opens an EMPTY wallet — the most common self-inflicted
    * inheritance loss in self-custody. The question itself is the guard.
    */
   usesPassphrase: '' | 'yes' | 'no';
-  /** v6: derivation path / script type (e.g. Native SegWit, m/84'/0'/0'). */
+  /** Derivation path / script type (e.g. Native SegWit, m/84'/0'/0'). */
   derivationPath: string;
-  /** v6: where the multisig wallet descriptor / config file is stored. */
+  /** Where the multisig wallet descriptor / config file is stored. */
   multisigDescriptorLocation: string;
-  /** v6: who holds which key in a multisig setup (free text, kept for older plans). */
+  /** Who holds which key in a multisig setup (free text). */
   multisigCosigners: string;
   /**
-   * v7: the BIP-39 passphrase itself (single-sig). A Locker holds secrets,
-   * not just pointers to them; `usesPassphrase` still records yes/no.
+   * The BIP-39 passphrase itself (single-sig). A Locker holds secrets,
+   * not just pointers to them; `usesPassphrase` records yes/no.
    */
   passphrase: string;
-  /** v7: the multisig wallet descriptor text itself. */
+  /** The multisig wallet descriptor text itself. */
   multisigDescriptor: string;
-  /** v7: one entry per multisig key — any key may have its own passphrase. */
+  /** One entry per multisig key — any key may have its own passphrase. */
   multisigKeys: MultisigKey[];
   specialInstructions: string;
 }
 
-/** v7: one key of a multisig wallet. */
+/** One key of a multisig wallet. */
 export interface MultisigKey {
   id: string;
   label: string;
@@ -122,7 +116,7 @@ export interface MultisigKey {
   notes: string;
 }
 
-/** v7: a generic secret that is neither a wallet nor an account (PIN, safe combination, recovery code). */
+/** A generic secret that is neither a wallet nor an account (PIN, safe combination, recovery code). */
 export interface OtherSecret {
   id: string;
   title: string;
@@ -130,7 +124,7 @@ export interface OtherSecret {
   notes: string;
 }
 
-/** v7: a file kept inside the plan (will, deed, wallet backup file). */
+/** A file kept inside the plan (will, deed, wallet backup file). */
 export interface PlanDocument {
   id: string;
   name: string;
@@ -175,9 +169,7 @@ export interface InheritancePlan {
   secretSets: SecretSet[];
   deviceAccounts: DeviceAccount[];
   digitalAssets: DigitalAsset[];
-  /** v7 */
   otherSecrets: OtherSecret[];
-  /** v7 */
   documents: PlanDocument[];
   howToRestore: string;
   professionalContacts: ProfessionalContact[];
@@ -313,110 +305,38 @@ export function isInheritancePlan(instruction: RawInstruction): boolean {
 /**
  * Parse the base64 fileContent of a RawInstruction back into an
  * InheritancePlan object. Returns null if parsing or validation fails.
- * Handles migrations from v1/v2/v3/v4/v5/v6 → v7.
  */
 export function rawInstructionToPlan(instruction: RawInstruction): InheritancePlan | null {
   try {
     const jsonString = Buffer.from(instruction.fileContent, 'base64').toString('utf8');
-    return migratePlan(JSON.parse(jsonString));
+    return validatePlan(JSON.parse(jsonString));
   } catch {
     return null;
   }
 }
 
+const PLAN_ARRAY_FIELDS = [
+  'beneficiaries', 'secretSets', 'deviceAccounts', 'digitalAssets',
+  'otherSecrets', 'documents', 'professionalContacts',
+] as const;
+
 /**
- * Upgrade a parsed plan object of any schema version to the current one,
- * in place. Returns null if the object is not an inheritance plan. Used for
- * plan files (via rawInstructionToPlan) and for the plan inside a Locker.
+ * Check a parsed plan object against the current schema. Returns null if it
+ * is not a current-version plan. There is no migration chain: the app had
+ * no users before plan schema v7, so every plan ever saved is v7.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function migratePlan(parsed: any): InheritancePlan | null {
-  if (parsed && typeof parsed.version === 'number' && parsed.planInfo && parsed.digitalAssets) {
-    // v1 → v2 migration: add deviceAccounts if missing
-    if (!Array.isArray(parsed.deviceAccounts)) {
-      parsed.deviceAccounts = [];
-    }
-    // v2/v3 → v4 migration: add beneficiaries, emergency access, plan version
-    if (!Array.isArray(parsed.beneficiaries)) {
-      parsed.beneficiaries = [];
-      parsed.distributionInstructions = parsed.distributionInstructions ?? '';
-    }
-    if (!parsed.emergencyAccess) {
-      parsed.emergencyAccess = { emergencyContact: '', triggerConditions: '', accessProcedure: '', immediateActions: '', scopeLimitations: '' };
-    }
-    if (parsed.planInfo && !('planVersion' in parsed.planInfo)) {
-      parsed.planInfo.planVersion = '';
-      parsed.planInfo.changeLog = '';
-    }
-
-    // v4 → v5 migration: add lastReviewedAt, defaulting to the most
-    // reasonable existing timestamp on the plan so reconciliation with
-    // the sidecar has something to anchor against.
-    if (parsed.planInfo && !('lastReviewedAt' in parsed.planInfo)) {
-      const today = new Date().toISOString().split('T')[0];
-      parsed.planInfo.lastReviewedAt =
-        parsed.planInfo.lastUpdated || parsed.planInfo.dateCreated || today;
-    }
-
-    // v2/v3 → v4 migration: merge recoveryCredentials + qardConfig into secretSets
-    if (!Array.isArray(parsed.secretSets)) {
-      const creds = parsed.recoveryCredentials ?? {};
-      const qards = parsed.qardConfig ?? {};
-      const migratedSet: SecretSet = {
-        id: crypto.randomUUID(),
-        description: '',
-        password: creds.password ?? '',
-        passwordIsHint: false,
-        keyfileUsed: '',
-        keyfilePrimaryLocation: creds.keyfilePrimaryLocation ?? '',
-        keyfileBackupLocation: creds.keyfileBackupLocation ?? '',
-        configuration: qards.configuration ?? '2-of-3',
-        label: qards.label ?? '',
-        qardLocations: Array.isArray(qards.locations) ? qards.locations : [],
-        vaultFileLocation: qards.vaultFileLocation ?? '',
-        smartCardPin: qards.smartCardPin ?? '',
-        smartCardReaderModel: qards.smartCardReaderModel ?? '',
-      };
-      parsed.secretSets = [migratedSet];
-      // Clean up old fields
-      delete parsed.recoveryCredentials;
-      delete parsed.qardConfig;
-    }
-
-    // v5 → v6 migration: password-hint flag, explicit keyfile usage, and
-    // per-asset wallet-recovery fields. All default to "not specified" —
-    // a legacy plan makes no claim either way.
-    if (Array.isArray(parsed.secretSets)) {
-      for (const set of parsed.secretSets) {
-        if (typeof set.passwordIsHint !== 'boolean') set.passwordIsHint = false;
-        if (typeof set.keyfileUsed !== 'string') set.keyfileUsed = '';
-      }
-    }
-    if (Array.isArray(parsed.digitalAssets)) {
-      for (const asset of parsed.digitalAssets) {
-        if (typeof asset.walletKind !== 'string') asset.walletKind = '';
-        if (typeof asset.usesPassphrase !== 'string') asset.usesPassphrase = '';
-        if (typeof asset.derivationPath !== 'string') asset.derivationPath = '';
-        if (typeof asset.multisigDescriptorLocation !== 'string') asset.multisigDescriptorLocation = '';
-        if (typeof asset.multisigCosigners !== 'string') asset.multisigCosigners = '';
-        // v6 → v7: the secrets themselves, next to where they're kept.
-        if (typeof asset.passphrase !== 'string') asset.passphrase = '';
-        if (typeof asset.multisigDescriptor !== 'string') asset.multisigDescriptor = '';
-        if (!Array.isArray(asset.multisigKeys)) asset.multisigKeys = [];
-      }
-    }
-
-    // v6 → v7 migration: generic secrets and attached documents.
-    if (!Array.isArray(parsed.otherSecrets)) parsed.otherSecrets = [];
-    if (!Array.isArray(parsed.documents)) parsed.documents = [];
-
-    parsed.version = INHERITANCE_PLAN_VERSION;
-    return parsed as InheritancePlan;
+export function validatePlan(parsed: any): InheritancePlan | null {
+  if (!parsed || typeof parsed !== 'object' || parsed.version !== INHERITANCE_PLAN_VERSION) return null;
+  if (!parsed.planInfo || typeof parsed.planInfo !== 'object') return null;
+  if (!parsed.emergencyAccess || typeof parsed.emergencyAccess !== 'object') return null;
+  for (const field of PLAN_ARRAY_FIELDS) {
+    if (!Array.isArray(parsed[field])) return null;
   }
-  return null;
+  return parsed as InheritancePlan;
 }
 
-// ── v7 helpers ───────────────────────────────────────────────────────
+// ── helpers ──────────────────────────────────────────────────────────
 
 export function createBlankDigitalAsset(): DigitalAsset {
   return {

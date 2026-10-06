@@ -34,7 +34,7 @@
 import { randomBytes } from '@noble/hashes/utils';
 import { Buffer } from 'buffer';
 import { encryptInstructions, decryptInstructions, createShares, restoreSecret, parseShare } from './crypto';
-import { migratePlan } from './plan';
+import { validatePlan, INHERITANCE_PLAN_VERSION } from './plan';
 import type { InheritancePlan } from './plan';
 import type {
     RawInstruction,
@@ -409,7 +409,7 @@ export interface UnlockedLocker extends LockerMeta {
     editedOutsideApp: boolean;
 }
 
-/** Validate and upgrade decrypted Locker contents. */
+/** Validate decrypted Locker contents. */
 function toLockerContent(raw: any): LockerContent {
     if (!raw || typeof raw !== 'object' || !Number.isSafeInteger(raw.contentVersion)) {
         throw new LockerError('not-a-locker', 'This Locker file is damaged.');
@@ -417,12 +417,10 @@ function toLockerContent(raw: any): LockerContent {
     if (raw.contentVersion > LOCKER_CONTENT_VERSION) {
         throw new LockerError('newer-version', 'This Locker was created by a newer version of seQRets. Please update the app to open it.');
     }
-    let plan: InheritancePlan | null = null;
-    try {
-        plan = migratePlan(raw.plan);
-    } catch {
-        plan = null;
+    if (raw.plan && Number.isSafeInteger(raw.plan.version) && raw.plan.version > INHERITANCE_PLAN_VERSION) {
+        throw new LockerError('newer-version', 'This Locker was created by a newer version of seQRets. Please update the app to open it.');
     }
+    const plan: InheritancePlan | null = validatePlan(raw.plan);
     const q = raw.qards;
     if (!plan || !q || typeof q.setId !== 'string' || !Array.isArray(q.shares)) {
         throw new LockerError('not-a-locker', 'This Locker file is damaged.');
