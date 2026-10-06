@@ -1,9 +1,11 @@
 // Emit packages/desktop/src/components/print-fonts.ts with Inter embedded as
 // base64 data: URLs (variable font — one file covers all weights).
 import { readFileSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-const ROOT = '/Users/macuser/Documents/Dev/seQRets App';
-const b64 = (f) => readFileSync(`${ROOT}/public/fonts/${f}`).toString('base64');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const b64 = (f) => readFileSync(`${ROOT}/packages/desktop/public/fonts/${f}`).toString('base64');
 
 const latin = b64('inter-latin.woff2');
 const latinExt = b64('inter-latin-ext.woff2');
@@ -17,9 +19,9 @@ const out = `// GENERATED — do not hand-edit the base64 blobs.
 // in the user's default browser, which cannot reach the app's own assets —
 // embedding is the only way the printed Qards keep their typeface offline
 // without loading from Google Fonts (security item L2).
-// Source files: public/fonts/inter-latin(.ext).woff2, fetched 2026-07-11 from
+// Source files: packages/desktop/public/fonts/inter-latin(.ext).woff2, fetched 2026-07-11 from
 // fonts.gstatic.com (Inter v20, SIL Open Font License).
-// Regenerate with: node scratchpad/gen-print-fonts.mjs (see PRELAUNCH_AUDIT L2).
+// Regenerate with: node scripts/generate-print-fonts.mjs (see PRELAUNCH_AUDIT L2).
 
 export const PRINT_FONT_CSS = \`
     @font-face {

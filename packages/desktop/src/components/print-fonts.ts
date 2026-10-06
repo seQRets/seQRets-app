@@ -4,7 +4,7 @@
 // in the user's default browser, which cannot reach the app's own assets —
 // embedding is the only way the printed Qards keep their typeface offline
 // without loading from Google Fonts (security item L2).
-// Source files: public/fonts/inter-latin(.ext).woff2, fetched 2026-07-11 from
+// Source files: packages/desktop/public/fonts/inter-latin(.ext).woff2, fetched 2026-07-11 from
 // fonts.gstatic.com (Inter v20, SIL Open Font License).
 // Regenerate with: node scripts/generate-print-fonts.mjs (see PRELAUNCH_AUDIT L2).
 

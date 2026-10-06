@@ -1,6 +1,5 @@
 /**
- * Shared Tailwind theme tokens. Imported by both the web and desktop
- * tailwind configs so tokens stay in sync.
+ * Tailwind theme tokens, imported by packages/desktop/tailwind.config.ts.
  */
 module.exports = {
   fontFamily: {

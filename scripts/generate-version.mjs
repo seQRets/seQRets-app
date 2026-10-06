@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 /**
- * Reads version + codename from the root package.json and writes
- * typed version modules into each workspace's src/generated/ directory.
+ * Reads version + codename from the root package.json and writes a typed
+ * version module for the desktop app:
  *
- * Outputs:
- *   src/generated/version.ts                    (web)
- *   packages/desktop/src/generated/version.ts   (desktop)
+ *   packages/desktop/src/generated/version.ts
  *
- * Both export: VERSION, CODENAME, VERSION_STRING.
+ * Exports: VERSION, CODENAME, VERSION_STRING.
  *
- * Runs before dev, build, and type-check scripts in both workspaces.
- * Generated files are gitignored; regenerating is cheap (<10 ms).
+ * Runs before the desktop dev and build scripts. The generated file is
+ * gitignored; regenerating is cheap (<10 ms).
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -37,21 +35,8 @@ export const CODENAME = ${JSON.stringify(CODENAME)};
 export const VERSION_STRING = ${JSON.stringify(VERSION_STRING)};
 `;
 
-const targets = [
-  join(repoRoot, 'src', 'generated', 'version.ts'),
-  join(repoRoot, 'packages', 'desktop', 'src', 'generated', 'version.ts'),
-];
+const target = join(repoRoot, 'packages', 'desktop', 'src', 'generated', 'version.ts');
+mkdirSync(dirname(target), { recursive: true });
+writeFileSync(target, moduleContent);
 
-for (const target of targets) {
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, moduleContent);
-}
-
-// Service worker: substitute __VERSION__ in the template and write public/sw.js.
-// The web app's service worker needs the version baked in at build time for
-// cache-busting; templating it keeps the bump scope down to root package.json.
-const swTemplate = readFileSync(join(repoRoot, 'public', 'sw.template.js'), 'utf8');
-const swOutput = swTemplate.replaceAll('__VERSION__', VERSION);
-writeFileSync(join(repoRoot, 'public', 'sw.js'), swOutput);
-
-console.log(`generate-version: wrote ${VERSION_STRING} to ${targets.length} targets + sw.js`);
+console.log(`generate-version: wrote ${VERSION_STRING} to ${target.slice(repoRoot.length + 1)}`);
