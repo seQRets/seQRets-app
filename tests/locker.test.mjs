@@ -27,6 +27,12 @@ import {
   LOCKER_KEY_PREFIX,
   LOCKER_INNER_FILENAME,
   LOCKER_INNER_FILETYPE,
+  LOCKER_CONTENT_VERSION,
+  createLocker,
+  unlockLocker,
+  saveLocker,
+  createBlankPlan,
+  INHERITANCE_PLAN_VERSION,
 } from '@seqrets/crypto';
 
 // Throwaway test values — never a real secret.
@@ -256,5 +262,97 @@ describe('Rust-sealed Locker vector', () => {
     assert.deepEqual(opened.content, vector.expect_content);
     assert.equal(opened.seq, 1);
     assert.equal(opened.editedOutsideApp, false);
+  });
+});
+
+// ── create → unlock → save (the steps the Locker tab runs) ───────────
+
+describe('Locker create / unlock / save', () => {
+  const NOW = '2026-10-06T15:00:00.000Z';
+  let created;
+  let plan;
+
+  before(async () => {
+    plan = createBlankPlan();
+    plan.personalMessage = 'Hello from inside a Locker 🔐';
+    created = await createLocker({ plan, password: PASSWORD, totalShares: 3, requiredShares: 2, now: NOW });
+  });
+
+  it('creates a 2-of-3 set whose secret is the Locker key, and a matching file', () => {
+    assert.ok(isLockerKey(created.key));
+    assert.equal(created.qards.shares.length, 3);
+    assert.equal(created.file.setId, created.qards.setId);
+    assert.equal(created.file.seq, 1);
+    assert.equal(created.file.savedAt, NOW);
+    assert.equal(parseLockerFile(created.text).setId, created.qards.setId);
+  });
+
+  it('keeps a copy of its own Qards and records inside', () => {
+    const c = created.content;
+    assert.equal(c.contentVersion, LOCKER_CONTENT_VERSION);
+    assert.deepEqual(c.qards.shares, created.qards.shares);
+    assert.equal(c.qards.requiredShares, 2);
+    assert.equal(c.qards.totalShares, 3);
+    assert.equal(c.qards.keyfileUsed, false);
+    assert.equal(c.qards.createdAt, NOW);
+    assert.deepEqual(c.previousKeys, []);
+  });
+
+  it('unlocks with any 2 Qards and the password, then saves as the next version', async () => {
+    const unlocked = await unlockLocker({ fileText: created.text, shares: [created.qards.shares[2], created.qards.shares[0]], password: PASSWORD });
+    assert.equal(unlocked.key, created.key);
+    assert.equal(unlocked.seq, 1);
+    assert.equal(unlocked.editedOutsideApp, false);
+    assert.deepEqual(unlocked.content.plan, plan);
+    assert.deepEqual(unlocked.content.qards.shares, created.qards.shares);
+
+    unlocked.content.plan.personalMessage = 'Edited';
+    const saved = await saveLocker({ key: unlocked.key, content: unlocked.content, setId: unlocked.setId, previousSeq: unlocked.seq });
+    assert.equal(saved.file.seq, 2);
+    assert.equal(saved.file.setId, created.qards.setId);
+
+    // The same Qards open the new version — the key never changes on save.
+    const reopened = await openLocker(saved.text, created.key, { expectedSetId: created.qards.setId });
+    assert.equal(reopened.seq, 2);
+    assert.equal(reopened.content.plan.personalMessage, 'Edited');
+  });
+
+  it('upgrades an older plan stored inside a Locker', async () => {
+    const old = createBlankPlan();
+    old.version = 6;
+    delete old.otherSecrets;
+    delete old.documents;
+    const content = { ...created.content, plan: old };
+    const saved = await saveLocker({ key: created.key, content, setId: created.qards.setId, previousSeq: 1 });
+    const unlocked = await unlockLocker({ fileText: saved.text, shares: created.qards.shares.slice(0, 2), password: PASSWORD });
+    assert.equal(unlocked.content.plan.version, INHERITANCE_PLAN_VERSION);
+    assert.deepEqual(unlocked.content.plan.documents, []);
+  });
+
+  it('fails on a wrong password without opening anything', async () => {
+    await assert.rejects(unlockLocker({ fileText: created.text, shares: created.qards.shares.slice(0, 2), password: 'wrong password' }));
+  });
+
+  it('says "different Locker" for Qards from another Locker', async () => {
+    const other = await createShares({ secret: generateLockerKey(), password: PASSWORD, totalShares: 2, requiredShares: 2 });
+    await assert.rejects(
+      unlockLocker({ fileText: created.text, shares: other.shares, password: PASSWORD }),
+      expectLockerError('wrong-set'),
+    );
+  });
+
+  it('recognizes Qards that hold a single secret', async () => {
+    const single = await createShares({ secret: 'just one secret', password: PASSWORD, totalShares: 2, requiredShares: 2 });
+    await assert.rejects(
+      unlockLocker({ fileText: created.text, shares: single.shares, password: PASSWORD }),
+      expectLockerError('not-a-locker-key'),
+    );
+  });
+
+  it('refuses a non-Locker file before spending any key derivation', async () => {
+    await assert.rejects(
+      unlockLocker({ fileText: '{"salt":"x","data":"y"}', shares: created.qards.shares, password: PASSWORD }),
+      expectLockerError('not-a-locker'),
+    );
   });
 });

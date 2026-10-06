@@ -318,94 +318,102 @@ export function isInheritancePlan(instruction: RawInstruction): boolean {
 export function rawInstructionToPlan(instruction: RawInstruction): InheritancePlan | null {
   try {
     const jsonString = Buffer.from(instruction.fileContent, 'base64').toString('utf8');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parsed: any = JSON.parse(jsonString);
-    if (parsed && typeof parsed.version === 'number' && parsed.planInfo && parsed.digitalAssets) {
-      // v1 → v2 migration: add deviceAccounts if missing
-      if (!Array.isArray(parsed.deviceAccounts)) {
-        parsed.deviceAccounts = [];
-      }
-      // v2/v3 → v4 migration: add beneficiaries, emergency access, plan version
-      if (!Array.isArray(parsed.beneficiaries)) {
-        parsed.beneficiaries = [];
-        parsed.distributionInstructions = parsed.distributionInstructions ?? '';
-      }
-      if (!parsed.emergencyAccess) {
-        parsed.emergencyAccess = { emergencyContact: '', triggerConditions: '', accessProcedure: '', immediateActions: '', scopeLimitations: '' };
-      }
-      if (parsed.planInfo && !('planVersion' in parsed.planInfo)) {
-        parsed.planInfo.planVersion = '';
-        parsed.planInfo.changeLog = '';
-      }
-
-      // v4 → v5 migration: add lastReviewedAt, defaulting to the most
-      // reasonable existing timestamp on the plan so reconciliation with
-      // the sidecar has something to anchor against.
-      if (parsed.planInfo && !('lastReviewedAt' in parsed.planInfo)) {
-        const today = new Date().toISOString().split('T')[0];
-        parsed.planInfo.lastReviewedAt =
-          parsed.planInfo.lastUpdated || parsed.planInfo.dateCreated || today;
-      }
-
-      // v2/v3 → v4 migration: merge recoveryCredentials + qardConfig into secretSets
-      if (!Array.isArray(parsed.secretSets)) {
-        const creds = parsed.recoveryCredentials ?? {};
-        const qards = parsed.qardConfig ?? {};
-        const migratedSet: SecretSet = {
-          id: crypto.randomUUID(),
-          description: '',
-          password: creds.password ?? '',
-          passwordIsHint: false,
-          keyfileUsed: '',
-          keyfilePrimaryLocation: creds.keyfilePrimaryLocation ?? '',
-          keyfileBackupLocation: creds.keyfileBackupLocation ?? '',
-          configuration: qards.configuration ?? '2-of-3',
-          label: qards.label ?? '',
-          qardLocations: Array.isArray(qards.locations) ? qards.locations : [],
-          vaultFileLocation: qards.vaultFileLocation ?? '',
-          smartCardPin: qards.smartCardPin ?? '',
-          smartCardReaderModel: qards.smartCardReaderModel ?? '',
-        };
-        parsed.secretSets = [migratedSet];
-        // Clean up old fields
-        delete parsed.recoveryCredentials;
-        delete parsed.qardConfig;
-      }
-
-      // v5 → v6 migration: password-hint flag, explicit keyfile usage, and
-      // per-asset wallet-recovery fields. All default to "not specified" —
-      // a legacy plan makes no claim either way.
-      if (Array.isArray(parsed.secretSets)) {
-        for (const set of parsed.secretSets) {
-          if (typeof set.passwordIsHint !== 'boolean') set.passwordIsHint = false;
-          if (typeof set.keyfileUsed !== 'string') set.keyfileUsed = '';
-        }
-      }
-      if (Array.isArray(parsed.digitalAssets)) {
-        for (const asset of parsed.digitalAssets) {
-          if (typeof asset.walletKind !== 'string') asset.walletKind = '';
-          if (typeof asset.usesPassphrase !== 'string') asset.usesPassphrase = '';
-          if (typeof asset.derivationPath !== 'string') asset.derivationPath = '';
-          if (typeof asset.multisigDescriptorLocation !== 'string') asset.multisigDescriptorLocation = '';
-          if (typeof asset.multisigCosigners !== 'string') asset.multisigCosigners = '';
-          // v6 → v7: the secrets themselves, next to where they're kept.
-          if (typeof asset.passphrase !== 'string') asset.passphrase = '';
-          if (typeof asset.multisigDescriptor !== 'string') asset.multisigDescriptor = '';
-          if (!Array.isArray(asset.multisigKeys)) asset.multisigKeys = [];
-        }
-      }
-
-      // v6 → v7 migration: generic secrets and attached documents.
-      if (!Array.isArray(parsed.otherSecrets)) parsed.otherSecrets = [];
-      if (!Array.isArray(parsed.documents)) parsed.documents = [];
-
-      parsed.version = INHERITANCE_PLAN_VERSION;
-      return parsed as InheritancePlan;
-    }
-    return null;
+    return migratePlan(JSON.parse(jsonString));
   } catch {
     return null;
   }
+}
+
+/**
+ * Upgrade a parsed plan object of any schema version to the current one,
+ * in place. Returns null if the object is not an inheritance plan. Used for
+ * plan files (via rawInstructionToPlan) and for the plan inside a Locker.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function migratePlan(parsed: any): InheritancePlan | null {
+  if (parsed && typeof parsed.version === 'number' && parsed.planInfo && parsed.digitalAssets) {
+    // v1 → v2 migration: add deviceAccounts if missing
+    if (!Array.isArray(parsed.deviceAccounts)) {
+      parsed.deviceAccounts = [];
+    }
+    // v2/v3 → v4 migration: add beneficiaries, emergency access, plan version
+    if (!Array.isArray(parsed.beneficiaries)) {
+      parsed.beneficiaries = [];
+      parsed.distributionInstructions = parsed.distributionInstructions ?? '';
+    }
+    if (!parsed.emergencyAccess) {
+      parsed.emergencyAccess = { emergencyContact: '', triggerConditions: '', accessProcedure: '', immediateActions: '', scopeLimitations: '' };
+    }
+    if (parsed.planInfo && !('planVersion' in parsed.planInfo)) {
+      parsed.planInfo.planVersion = '';
+      parsed.planInfo.changeLog = '';
+    }
+
+    // v4 → v5 migration: add lastReviewedAt, defaulting to the most
+    // reasonable existing timestamp on the plan so reconciliation with
+    // the sidecar has something to anchor against.
+    if (parsed.planInfo && !('lastReviewedAt' in parsed.planInfo)) {
+      const today = new Date().toISOString().split('T')[0];
+      parsed.planInfo.lastReviewedAt =
+        parsed.planInfo.lastUpdated || parsed.planInfo.dateCreated || today;
+    }
+
+    // v2/v3 → v4 migration: merge recoveryCredentials + qardConfig into secretSets
+    if (!Array.isArray(parsed.secretSets)) {
+      const creds = parsed.recoveryCredentials ?? {};
+      const qards = parsed.qardConfig ?? {};
+      const migratedSet: SecretSet = {
+        id: crypto.randomUUID(),
+        description: '',
+        password: creds.password ?? '',
+        passwordIsHint: false,
+        keyfileUsed: '',
+        keyfilePrimaryLocation: creds.keyfilePrimaryLocation ?? '',
+        keyfileBackupLocation: creds.keyfileBackupLocation ?? '',
+        configuration: qards.configuration ?? '2-of-3',
+        label: qards.label ?? '',
+        qardLocations: Array.isArray(qards.locations) ? qards.locations : [],
+        vaultFileLocation: qards.vaultFileLocation ?? '',
+        smartCardPin: qards.smartCardPin ?? '',
+        smartCardReaderModel: qards.smartCardReaderModel ?? '',
+      };
+      parsed.secretSets = [migratedSet];
+      // Clean up old fields
+      delete parsed.recoveryCredentials;
+      delete parsed.qardConfig;
+    }
+
+    // v5 → v6 migration: password-hint flag, explicit keyfile usage, and
+    // per-asset wallet-recovery fields. All default to "not specified" —
+    // a legacy plan makes no claim either way.
+    if (Array.isArray(parsed.secretSets)) {
+      for (const set of parsed.secretSets) {
+        if (typeof set.passwordIsHint !== 'boolean') set.passwordIsHint = false;
+        if (typeof set.keyfileUsed !== 'string') set.keyfileUsed = '';
+      }
+    }
+    if (Array.isArray(parsed.digitalAssets)) {
+      for (const asset of parsed.digitalAssets) {
+        if (typeof asset.walletKind !== 'string') asset.walletKind = '';
+        if (typeof asset.usesPassphrase !== 'string') asset.usesPassphrase = '';
+        if (typeof asset.derivationPath !== 'string') asset.derivationPath = '';
+        if (typeof asset.multisigDescriptorLocation !== 'string') asset.multisigDescriptorLocation = '';
+        if (typeof asset.multisigCosigners !== 'string') asset.multisigCosigners = '';
+        // v6 → v7: the secrets themselves, next to where they're kept.
+        if (typeof asset.passphrase !== 'string') asset.passphrase = '';
+        if (typeof asset.multisigDescriptor !== 'string') asset.multisigDescriptor = '';
+        if (!Array.isArray(asset.multisigKeys)) asset.multisigKeys = [];
+      }
+    }
+
+    // v6 → v7 migration: generic secrets and attached documents.
+    if (!Array.isArray(parsed.otherSecrets)) parsed.otherSecrets = [];
+    if (!Array.isArray(parsed.documents)) parsed.documents = [];
+
+    parsed.version = INHERITANCE_PLAN_VERSION;
+    return parsed as InheritancePlan;
+  }
+  return null;
 }
 
 // ── v7 helpers ───────────────────────────────────────────────────────

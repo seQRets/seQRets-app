@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Desktop-only.** The app is `packages/desktop/` (Tauri 2 + Vite + React). The Next.js web app at app.seqrets.app was retired on 2026-10-06; that domain now serves the static holding page in `holding/`. Don't reintroduce web-app code.
 - **Monorepo** (npm workspaces): `packages/desktop/` (the app), `packages/crypto/` (`@seqrets/crypto`), `packages/shared-ui/` (shadcn primitives + shared components, resolved via the `@/components/ui/*` path alias — not a workspace; its dependencies are declared in `packages/desktop/package.json` and must stay hoisted to the root `node_modules`), `packages/javacard/` (smart card applet), `holding/` (static holding page for app.seqrets.app)
 - **License**: AGPL-3.0-or-later
-- **Tests**: `npm test` (crypto core, ~30s) · `npm run test:all` adds the Rust suite
+- **Tests**: `npm test` (crypto core + plan + Locker, ~50s) · `npm run test:all` adds the Rust suite
 
 ## Dev Commands
 
@@ -19,7 +19,7 @@ npm run desktop:build        # Full Tauri production build
 npm run build:crypto         # Build @seqrets/crypto (prerequisite for other builds)
 npm run build --workspace=@seqrets/desktop          # Desktop tsc + Vite production build (fast check)
 npx tsc --noEmit -p packages/desktop/tsconfig.json  # Desktop type check
-npm test                     # Crypto core suite (TS, ~30s) — builds @seqrets/crypto first
+npm test                     # Crypto core suite (TS, ~50s) — builds @seqrets/crypto first
 npm run test:rust            # Rust crypto suite incl. TS↔Rust parity vectors
 npm run test:all             # Both
 ```

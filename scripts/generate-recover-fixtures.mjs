@@ -43,6 +43,7 @@ import { fileURLToPath } from 'node:url';
 import {
   createShares, encryptInstructions, appendShareHash,
   generateLockerKey, sealLocker, serializeLockerFile, LOCKER_INNER_FILENAME, LOCKER_INNER_FILETYPE,
+  createLocker, createBlankPlan,
 } from '@seqrets/crypto';
 
 // Primitives, used ONLY to hand-build the historical share shapes that the
@@ -316,48 +317,46 @@ function lockerExpect(key, content) {
   };
 }
 
-const LOCKER_CONTENT = {
-  letter: 'If you are reading this, the Locker opened. — fixture',
-  secrets: [
-    { name: 'Fixture wallet', seed: MNEMONIC_12 },
-    { name: 'Fixture account', password: 'not-a-real-password-ünïcode-🔐' },
-  ],
-};
+/** A plan with real content, as the Locker tab would save it. */
+function lockerPlan(note) {
+  const plan = createBlankPlan();
+  plan.planInfo.preparedBy = 'Sam Fixture';
+  plan.personalMessage = `If you are reading this, the Locker opened. — ${note}`;
+  plan.digitalAssets[0] = { ...plan.digitalAssets[0], name: 'Fixture wallet', recoverySeed: MNEMONIC_12, passphrase: 'fixture passphrase' };
+  plan.otherSecrets = [{ id: 'o1', title: 'Safe combination', secret: '12-34-56', notes: '' }];
+  return plan;
+}
 
 {
   const id = 'locker-2of3';
   log(id);
-  const key = generateLockerKey();
   const password = 'fixture-password-locker';
-  const set = await lockerQards(key, password, 3, 2);
-  const file = await sealLocker({ content: LOCKER_CONTENT, key, setId: set.setId, seq: 3 });
+  const created = await createLocker({ plan: lockerPlan('2-of-3'), password, totalShares: 3, requiredShares: 2 });
   cases.push({
     id,
-    description: 'Locker: 2-of-3 Qards hold the internal key; the Locker file is sealed with it '
-      + '(TypeScript path). Recover restores the key from Qards #2 and #3, then opens the file '
-      + 'through its plain encrypted-plan path.',
+    description: 'Locker made by createLocker (the Locker tab\'s own step): 2-of-3 Qards hold the '
+      + 'internal key; the file holds the plan plus the Locker\'s records. Recover restores the key '
+      + 'from Qards #2 and #3, then opens the file through its plain encrypted-plan path.',
     kind: 'locker', password, keyfile: null,
-    shares: set.shares, useShares: [1, 2],
-    lockerFile: serializeLockerFile(file),
-    expect: lockerExpect(key, LOCKER_CONTENT),
+    shares: created.qards.shares, useShares: [1, 2],
+    lockerFile: created.text,
+    expect: lockerExpect(created.key, created.content),
   });
 }
 
 {
   const id = 'locker-keyfile';
   log(id);
-  const key = generateLockerKey();
   const password = 'fixture-password-locker-keyfile';
-  const set = await lockerQards(key, password, 2, 2, KEYFILE_B64);
-  const file = await sealLocker({ content: LOCKER_CONTENT, key, setId: set.setId, seq: 1 });
+  const created = await createLocker({ plan: lockerPlan('keyfile'), password, keyfile: KEYFILE_B64, totalShares: 2, requiredShares: 2 });
   cases.push({
     id,
     description: 'Locker whose Qards are protected by password + keyfile (Advanced). The keyfile '
       + 'guards the Qards only; the Locker file itself opens with the internal key alone.',
     kind: 'locker', password, keyfile: KEYFILE_B64,
-    shares: set.shares, useShares: [0, 1],
-    lockerFile: serializeLockerFile(file),
-    expect: lockerExpect(key, LOCKER_CONTENT),
+    shares: created.qards.shares, useShares: [0, 1],
+    lockerFile: created.text,
+    expect: lockerExpect(created.key, created.content),
   });
 }
 

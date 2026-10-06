@@ -33,12 +33,18 @@
 
 import { randomBytes } from '@noble/hashes/utils';
 import { Buffer } from 'buffer';
-import { encryptInstructions, decryptInstructions } from './crypto';
+import { encryptInstructions, decryptInstructions, createShares, restoreSecret, parseShare } from './crypto';
+import { migratePlan } from './plan';
+import type { InheritancePlan } from './plan';
 import type {
     RawInstruction,
     EncryptedInstruction,
     DecryptInstructionRequest,
     DecryptInstructionResult,
+    CreateSharesRequest,
+    CreateSharesResult,
+    RestoreSecretRequest,
+    RestoreSecretResult,
 } from './types';
 
 export const LOCKER_FORMAT = 'seqrets-locker';
@@ -294,4 +300,181 @@ export async function openLocker<T = unknown>(
         content: inner.content as T,
         editedOutsideApp,
     };
+}
+
+// ── Locker contents and the create / unlock / save steps ─────────────
+//
+// What a Locker holds: the owner's plan, plus the Locker's own records.
+// The records are bookkeeping the app needs later — they are safe inside
+// the Locker because anyone who can open it already has everything the
+// Qards protect.
+
+export const LOCKER_CONTENT_VERSION = 1;
+
+/** The Qard set that opens this Locker. A copy of each Qard enables exact reprints. */
+export interface LockerQardSet {
+    setId: string;
+    requiredShares: number;
+    totalShares: number;
+    /** Every Qard of the set, exactly as made (for reprints). */
+    shares: string[];
+    /** ISO time the Qards were made. */
+    createdAt: string;
+    /** Whether the Qards need a keyfile as well as the password. */
+    keyfileUsed: boolean;
+}
+
+/** An internal key from an earlier Qard set (password change / new set), kept so past versions still open. */
+export interface RetiredLockerKey {
+    key: string;
+    setId: string;
+    retiredAt: string;
+}
+
+export interface LockerContent {
+    contentVersion: number;
+    plan: InheritancePlan;
+    qards: LockerQardSet;
+    previousKeys: RetiredLockerKey[];
+}
+
+/** The crypto steps a Locker needs. Desktop passes its Rust-backed versions. */
+export interface LockerCrypto {
+    createShares: (request: CreateSharesRequest) => Promise<CreateSharesResult>;
+    restoreSecret: (request: RestoreSecretRequest) => Promise<RestoreSecretResult>;
+    encryptInstructions: LockerEncryptFn;
+    decryptInstructions: LockerDecryptFn;
+}
+
+/** The TypeScript implementation (tests, Recover fixtures). */
+export const tsLockerCrypto: LockerCrypto = { createShares, restoreSecret, encryptInstructions, decryptInstructions };
+
+export interface CreatedLocker {
+    /** The internal key. Held in memory only while the Locker is open. */
+    key: string;
+    /** The new Qards, for printing / saving (QrCodeDisplay). */
+    qards: CreateSharesResult;
+    content: LockerContent;
+    file: LockerFile;
+    /** The Locker file's text, ready to save. */
+    text: string;
+}
+
+/**
+ * Create a Locker: make a fresh internal key, protect it with an ordinary
+ * Qard set (password [+ keyfile], K-of-N), and seal the plan with it.
+ */
+export async function createLocker(
+    args: {
+        plan: InheritancePlan;
+        password: string;
+        keyfile?: string;
+        totalShares: number;
+        requiredShares: number;
+        now?: string;
+    },
+    crypto: LockerCrypto = tsLockerCrypto,
+): Promise<CreatedLocker> {
+    const now = args.now ?? new Date().toISOString();
+    const key = generateLockerKey();
+    const qards = await crypto.createShares({
+        secret: key,
+        password: args.password,
+        keyfile: args.keyfile,
+        totalShares: args.totalShares,
+        requiredShares: args.requiredShares,
+        embedRecoveryInfo: true,
+    });
+    const content: LockerContent = {
+        contentVersion: LOCKER_CONTENT_VERSION,
+        plan: args.plan,
+        qards: {
+            setId: qards.setId,
+            requiredShares: qards.requiredShares,
+            totalShares: qards.totalShares,
+            shares: [...qards.shares],
+            createdAt: now,
+            keyfileUsed: !!args.keyfile,
+        },
+        previousKeys: [],
+    };
+    const file = await sealLocker({ content, key, setId: qards.setId, seq: 1, savedAt: now }, crypto.encryptInstructions);
+    return { key, qards, content, file, text: serializeLockerFile(file) };
+}
+
+export interface UnlockedLocker extends LockerMeta {
+    key: string;
+    content: LockerContent;
+    /** True when the file's clear-text fields were edited outside the app. */
+    editedOutsideApp: boolean;
+}
+
+/** Validate and upgrade decrypted Locker contents. */
+function toLockerContent(raw: any): LockerContent {
+    if (!raw || typeof raw !== 'object' || !Number.isSafeInteger(raw.contentVersion)) {
+        throw new LockerError('not-a-locker', 'This Locker file is damaged.');
+    }
+    if (raw.contentVersion > LOCKER_CONTENT_VERSION) {
+        throw new LockerError('newer-version', 'This Locker was created by a newer version of seQRets. Please update the app to open it.');
+    }
+    let plan: InheritancePlan | null = null;
+    try {
+        plan = migratePlan(raw.plan);
+    } catch {
+        plan = null;
+    }
+    const q = raw.qards;
+    if (!plan || !q || typeof q.setId !== 'string' || !Array.isArray(q.shares)) {
+        throw new LockerError('not-a-locker', 'This Locker file is damaged.');
+    }
+    return {
+        contentVersion: LOCKER_CONTENT_VERSION,
+        plan,
+        qards: q,
+        previousKeys: Array.isArray(raw.previousKeys) ? raw.previousKeys : [],
+    };
+}
+
+/**
+ * Open a Locker with Qards and the password (+ keyfile): restore the
+ * internal key from the Qards, then open the file with it.
+ */
+export async function unlockLocker(
+    args: { fileText: string; shares: string[]; password: string; keyfile?: string },
+    crypto: LockerCrypto = tsLockerCrypto,
+): Promise<UnlockedLocker> {
+    // Cheap checks first: no Argon2id spent on a file that isn't a Locker.
+    parseLockerFile(args.fileText);
+    if (args.shares.length === 0) {
+        throw new Error('Add the Qards that open this Locker.');
+    }
+    const expectedSetId = parseShare(args.shares[0]).salt.substring(0, 8);
+
+    const restored = await crypto.restoreSecret({ shares: args.shares, password: args.password, keyfile: args.keyfile });
+    const key = restored.secret;
+    if (!isLockerKey(key)) {
+        throw new LockerError('not-a-locker-key', 'These Qards hold a single secret, not a Locker key.');
+    }
+
+    const opened = await openLocker<unknown>(args.fileText, key, { expectedSetId }, crypto.decryptInstructions);
+    return {
+        key,
+        setId: opened.setId,
+        seq: opened.seq,
+        savedAt: opened.savedAt,
+        content: toLockerContent(opened.content),
+        editedOutsideApp: opened.editedOutsideApp,
+    };
+}
+
+/** Save edited contents: same key, save counter +1, new date. */
+export async function saveLocker(
+    args: { key: string; content: LockerContent; setId: string; previousSeq: number; now?: string },
+    crypto: LockerCrypto = tsLockerCrypto,
+): Promise<{ file: LockerFile; text: string }> {
+    const file = await sealLocker(
+        { content: args.content, key: args.key, setId: args.setId, seq: args.previousSeq + 1, savedAt: args.now },
+        crypto.encryptInstructions,
+    );
+    return { file, text: serializeLockerFile(file) };
 }
