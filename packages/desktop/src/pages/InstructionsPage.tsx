@@ -31,9 +31,9 @@ import { encryptInstructions, decryptInstructions } from '@/lib/desktop-crypto';
 import { InheritancePlanForm } from '@/components/inheritance-plan-form';
 import { InheritancePlanViewer } from '@/components/inheritance-plan-viewer';
 import { ReviewReminderPrompt } from '@/components/review-reminder-prompt';
-import { createBlankPlan, planFileLastName } from '@/lib/inheritance-plan-types';
-import type { InheritancePlan } from '@/lib/inheritance-plan-types';
-import { planToRawInstruction, isInheritancePlan, rawInstructionToPlan } from '@/lib/inheritance-plan-utils';
+import { createBlankPlan, planFileLastName } from '@seqrets/crypto';
+import type { InheritancePlan } from '@seqrets/crypto';
+import { planToRawInstruction, isInheritancePlan, rawInstructionToPlan } from '@seqrets/crypto';
 import {
   getReminderState,
   reconcileWithPlan,

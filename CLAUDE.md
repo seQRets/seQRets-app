@@ -34,7 +34,7 @@ tested is what ships. Node's built-in runner — no framework, no new dependenci
 Edit the shared source, not a copy:
 
 - **`packages/shared-ui/src/`** — the shadcn primitives plus `camera-scanner`, `password-generator`, `seed-phrase-generator`, `bitcoin-ticker` (logo passed as a prop), `drag-drop-zone`, `qard-render.ts` (Qard canvas/ZIP/vault core), `scroll-utils.ts`, `utils.ts`, `clipboard-utils.ts`, `use-mobile`, `use-toast`. (`packages/desktop/tailwind.config.ts` must include `packages/shared-ui/src/**` in its content paths.)
-- **`@seqrets/crypto`** (`packages/crypto/src/`) — all crypto plus `restore.ts` (`parseShareMeta`, `toSeedQR`, `toCompactEntropy`, `summarizeShareSets`) and re-exported `gzip` / bip39 helpers. Desktop imports these instead of `pako`/`@scure/bip39` directly. Run `npm run build:crypto` after editing.
+- **`@seqrets/crypto`** (`packages/crypto/src/`) — all crypto plus `restore.ts` (`parseShareMeta`, `toSeedQR`, `toCompactEntropy`, `summarizeShareSets`), `locker.ts` (Locker key + file seal/open), `plan.ts` (inheritance plan model, serializer and the v1→current migration chain — tested in `tests/plan.test.mjs`; add a fixture there for every new schema version) and re-exported `gzip` / bip39 helpers. Desktop imports these instead of `pako`/`@scure/bip39` directly. Run `npm run build:crypto` after editing.
 
 ## Version Bumps
 

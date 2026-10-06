@@ -18,8 +18,8 @@ import type {
   DigitalAsset,
   ProfessionalContact,
   EmergencyAccess,
-} from '@/lib/inheritance-plan-types';
-import { createBlankSecretSet } from '@/lib/inheritance-plan-types';
+} from '@seqrets/crypto';
+import { createBlankSecretSet } from '@seqrets/crypto';
 
 interface InheritancePlanFormProps {
   plan: InheritancePlan;

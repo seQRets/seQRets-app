@@ -3,8 +3,8 @@
  * Designed for letter-size paper with clean typography for non-technical readers.
  */
 import { jsPDF } from 'jspdf';
-import type { InheritancePlan } from './inheritance-plan-types';
-import { planFileLastName } from './inheritance-plan-types';
+import type { InheritancePlan } from '@seqrets/crypto';
+import { planFileLastName } from '@seqrets/crypto';
 import logoPng from '@/assets/icons/logo-light-128.png';
 
 // ── Layout constants ──────────────────────────────────────────────────
