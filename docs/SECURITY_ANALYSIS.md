@@ -834,7 +834,7 @@ Round-trip encryption with and without a keyfile, wrong-password rejection at th
 
 Lives in the [seQRets Recover](https://github.com/seQRets/seQRets-Recover) repository. Recover is deliberately pinned to older crypto than this app (`@noble/ciphers` 0.4.0 / `@noble/hashes` 1.4.0 vs. 2.2.0 / 1.8.0), so the suite replays Qards minted by *this* app through *those* pins — proving a Qard created today opens in the recovery tool an heir would actually use. Covers current and both historical share shapes, mnemonics, keyfiles, encrypted plans, and the failure modes an heir must be able to tell apart (tampering vs. wrong password vs. mismatched sets vs. outdated tool).
 
-**CI.** `deploy.yml` runs suite 1 on every push to main (before deploying the static holding page); `tests.yml` runs suites 1 and 2 on every pull request; Recover's own CI gates its GitHub Pages deploy on suite 3.
+**CI.** `tests.yml` runs suites 1 and 2 on every push to main and every pull request; Recover's own CI gates its GitHub Pages deploy on suite 3.
 
 > **Correction (September 2026).** This section previously described an "End-to-End Test Suite (Playwright)" of "114 tests across 12 spec files… 342 total test runs" with a thirteen-item coverage list. **No such suite exists in this repository** — no Playwright configuration, no spec files, no dependency. The claim appears to have described exploratory work that was never committed. It is removed rather than corrected, and the suites above are what actually exist and run.
 

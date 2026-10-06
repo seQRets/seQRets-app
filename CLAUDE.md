@@ -26,8 +26,8 @@ npm run test:all             # Both
 
 Tests live in `tests/*.test.mjs` and run against the BUILT `@seqrets/crypto` (dist), so what is
 tested is what ships. Node's built-in runner — no framework, no new dependencies. CI:
-`deploy.yml` runs `npm test` on every push to main, then deploys `holding/` to Cloudflare Pages;
-`tests.yml` runs the TS and Rust suites on pull requests.
+`tests.yml` runs the TS and Rust suites on every push to main and every pull request;
+`deploy.yml` redeploys `holding/` to Cloudflare Pages only when that folder changes.
 
 ## Shared Code
 

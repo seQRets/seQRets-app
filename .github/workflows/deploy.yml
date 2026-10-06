@@ -1,8 +1,14 @@
-name: Deploy to Cloudflare Pages
+name: Deploy holding page
 
+# app.seqrets.app serves only the static holding page in holding/ (the web app
+# was retired 2026-10-06). Redeploy only when that page or this workflow
+# changes; tests run separately in tests.yml.
 on:
   push:
     branches: [main]
+    paths:
+      - 'holding/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -13,28 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Crypto suite on every push to main. Until CI is reworked (web-removal
-  # step D) this is the only place pushes to main get tested.
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Crypto core tests
-        run: npm test
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,10 +31,9 @@ jobs:
         with:
           node-version: 22
 
-      # The web app is retired: app.seqrets.app serves only the static holding
-      # page in holding/ (no build step). Its security headers ship in
-      # holding/_headers. Wrangler is pinned so a new release can't change
-      # deploy behavior unannounced.
+      # Direct upload of holding/ as-is (no build step). Its security headers
+      # ship in holding/_headers. Wrangler is pinned so a new release can't
+      # change deploy behavior unannounced.
       - name: Deploy holding page to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

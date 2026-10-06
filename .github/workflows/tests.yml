@@ -1,9 +1,5 @@
-# Full test suite for pull requests — TypeScript crypto core plus the Rust
-# implementation.
-#
-# Pushes to main are covered by the `test` job in deploy.yml, which gates the
-# web deploy, so this runs on pull_request only and the same suite is never
-# run twice for one push.
+# Full test suite — TypeScript crypto core plus the Rust implementation —
+# on every push to main and every pull request.
 #
 # The Rust job matters most here: a Dependabot bump to argon2, chacha20poly1305
 # or zeroize that broke TS<->Rust parity would otherwise only be caught by
@@ -13,6 +9,8 @@
 name: Tests
 
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -55,7 +53,16 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('packages/desktop/src-tauri/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      # The crypto module is self-contained; building the full Tauri app would
-      # drag in system webkit/gtk dependencies this job does not need.
+      # `cargo test --lib` still compiles the whole app crate, which links
+      # Tauri (webkit/gtk), the PC/SC smart card library and the keyring's
+      # D-Bus backend. These are Tauri's documented Linux build dependencies
+      # plus pcsclite and dbus.
+      - name: Install Linux system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libxdo-dev libssl-dev libpcsclite-dev libdbus-1-dev
+
       - name: Run tests
         run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml --lib
