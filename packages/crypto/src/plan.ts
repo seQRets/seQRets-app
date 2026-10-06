@@ -11,7 +11,7 @@
 import { Buffer } from 'buffer';
 import type { RawInstruction } from './types';
 
-export const INHERITANCE_PLAN_VERSION = 6;
+export const INHERITANCE_PLAN_VERSION = 7;
 export const INHERITANCE_PLAN_FILENAME = 'inheritance-plan.json';
 export const INHERITANCE_PLAN_FILETYPE = 'application/json';
 
@@ -98,9 +98,47 @@ export interface DigitalAsset {
   derivationPath: string;
   /** v6: where the multisig wallet descriptor / config file is stored. */
   multisigDescriptorLocation: string;
-  /** v6: who holds which key in a multisig setup. */
+  /** v6: who holds which key in a multisig setup (free text, kept for older plans). */
   multisigCosigners: string;
+  /**
+   * v7: the BIP-39 passphrase itself (single-sig). A Locker holds secrets,
+   * not just pointers to them; `usesPassphrase` still records yes/no.
+   */
+  passphrase: string;
+  /** v7: the multisig wallet descriptor text itself. */
+  multisigDescriptor: string;
+  /** v7: one entry per multisig key — any key may have its own passphrase. */
+  multisigKeys: MultisigKey[];
   specialInstructions: string;
+}
+
+/** v7: one key of a multisig wallet. */
+export interface MultisigKey {
+  id: string;
+  label: string;
+  heldBy: string;
+  seed: string;
+  passphrase: string;
+  notes: string;
+}
+
+/** v7: a generic secret that is neither a wallet nor an account (PIN, safe combination, recovery code). */
+export interface OtherSecret {
+  id: string;
+  title: string;
+  secret: string;
+  notes: string;
+}
+
+/** v7: a file kept inside the plan (will, deed, wallet backup file). */
+export interface PlanDocument {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string;
+  /** base64 of the file bytes */
+  fileContent: string;
+  notes: string;
 }
 
 export interface DeviceAccount {
@@ -137,6 +175,10 @@ export interface InheritancePlan {
   secretSets: SecretSet[];
   deviceAccounts: DeviceAccount[];
   digitalAssets: DigitalAsset[];
+  /** v7 */
+  otherSecrets: OtherSecret[];
+  /** v7 */
+  documents: PlanDocument[];
   howToRestore: string;
   professionalContacts: ProfessionalContact[];
   emergencyAccess: EmergencyAccess;
@@ -221,8 +263,10 @@ export function createBlankPlan(): InheritancePlan {
       { id: crypto.randomUUID(), label: '', type: '2FA / Authenticator App', location: '', username: '', password: '', notes: '' },
     ],
     digitalAssets: [
-      { id: crypto.randomUUID(), name: '', type: '', platform: '', loginEmail: '', approxValue: '', twoFactorMethod: '', recoverySeed: '', walletKind: '', usesPassphrase: '', derivationPath: '', multisigDescriptorLocation: '', multisigCosigners: '', specialInstructions: '' },
+      createBlankDigitalAsset(),
     ],
+    otherSecrets: [],
+    documents: [],
     howToRestore: DEFAULT_RESTORE_STEPS,
     professionalContacts: [
       { id: crypto.randomUUID(), role: 'Estate Attorney', name: '', phone: '', email: '' },
@@ -269,7 +313,7 @@ export function isInheritancePlan(instruction: RawInstruction): boolean {
 /**
  * Parse the base64 fileContent of a RawInstruction back into an
  * InheritancePlan object. Returns null if parsing or validation fails.
- * Handles migrations from v1/v2/v3/v4/v5 → v6.
+ * Handles migrations from v1/v2/v3/v4/v5/v6 → v7.
  */
 export function rawInstructionToPlan(instruction: RawInstruction): InheritancePlan | null {
   try {
@@ -344,8 +388,16 @@ export function rawInstructionToPlan(instruction: RawInstruction): InheritancePl
           if (typeof asset.derivationPath !== 'string') asset.derivationPath = '';
           if (typeof asset.multisigDescriptorLocation !== 'string') asset.multisigDescriptorLocation = '';
           if (typeof asset.multisigCosigners !== 'string') asset.multisigCosigners = '';
+          // v6 → v7: the secrets themselves, next to where they're kept.
+          if (typeof asset.passphrase !== 'string') asset.passphrase = '';
+          if (typeof asset.multisigDescriptor !== 'string') asset.multisigDescriptor = '';
+          if (!Array.isArray(asset.multisigKeys)) asset.multisigKeys = [];
         }
       }
+
+      // v6 → v7 migration: generic secrets and attached documents.
+      if (!Array.isArray(parsed.otherSecrets)) parsed.otherSecrets = [];
+      if (!Array.isArray(parsed.documents)) parsed.documents = [];
 
       parsed.version = INHERITANCE_PLAN_VERSION;
       return parsed as InheritancePlan;
@@ -354,4 +406,75 @@ export function rawInstructionToPlan(instruction: RawInstruction): InheritancePl
   } catch {
     return null;
   }
+}
+
+// ── v7 helpers ───────────────────────────────────────────────────────
+
+export function createBlankDigitalAsset(): DigitalAsset {
+  return {
+    id: crypto.randomUUID(), name: '', type: '', platform: '', loginEmail: '', approxValue: '',
+    twoFactorMethod: '', recoverySeed: '', walletKind: '', usesPassphrase: '', derivationPath: '',
+    multisigDescriptorLocation: '', multisigCosigners: '', passphrase: '', multisigDescriptor: '',
+    multisigKeys: [], specialInstructions: '',
+  };
+}
+
+export function createBlankMultisigKey(): MultisigKey {
+  return { id: crypto.randomUUID(), label: '', heldBy: '', seed: '', passphrase: '', notes: '' };
+}
+
+export function createBlankOtherSecret(): OtherSecret {
+  return { id: crypto.randomUUID(), title: '', secret: '', notes: '' };
+}
+
+/**
+ * Document size limits. The whole Locker is decrypted and re-encrypted on
+ * every save, so large attachments make every save slow. 50 MB total matches
+ * the existing limit for encrypting a single file.
+ */
+export const PLAN_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const PLAN_DOCUMENTS_MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+
+/** Decoded size in bytes of a base64 string (no decoding needed). */
+export function base64DecodedBytes(b64: string): number {
+  const len = b64.length;
+  if (len === 0) return 0;
+  const padding = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0;
+  return Math.floor((len * 3) / 4) - padding;
+}
+
+/** Total size in bytes of all documents in a plan. */
+export function planDocumentsBytes(plan: Pick<InheritancePlan, 'documents'>): number {
+  return (plan.documents ?? []).reduce((sum, d) => sum + base64DecodedBytes(d.fileContent), 0);
+}
+
+/**
+ * Whether a file of `sizeBytes` may be added to the plan. Returns a
+ * plain-language reason when it may not.
+ */
+export function checkDocumentFits(
+  plan: Pick<InheritancePlan, 'documents'>,
+  sizeBytes: number,
+): { ok: true } | { ok: false; reason: string } {
+  if (sizeBytes > PLAN_DOCUMENT_MAX_BYTES) {
+    return { ok: false, reason: 'This file is larger than 10 MB. Documents in a Locker can be up to 10 MB each.' };
+  }
+  if (planDocumentsBytes(plan) + sizeBytes > PLAN_DOCUMENTS_MAX_TOTAL_BYTES) {
+    return { ok: false, reason: 'Adding this file would take the documents in this Locker past 50 MB in total.' };
+  }
+  return { ok: true };
+}
+
+/** Build a document entry from a file's bytes. */
+export function createPlanDocument(
+  args: { name?: string; fileName: string; fileType: string; bytes: Uint8Array; notes?: string },
+): PlanDocument {
+  return {
+    id: crypto.randomUUID(),
+    name: args.name ?? args.fileName,
+    fileName: args.fileName,
+    fileType: args.fileType || 'application/octet-stream',
+    fileContent: Buffer.from(args.bytes).toString('base64'),
+    notes: args.notes ?? '',
+  };
 }

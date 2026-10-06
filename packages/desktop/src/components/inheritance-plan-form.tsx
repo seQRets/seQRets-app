@@ -19,7 +19,7 @@ import type {
   ProfessionalContact,
   EmergencyAccess,
 } from '@seqrets/crypto';
-import { createBlankSecretSet } from '@seqrets/crypto';
+import { createBlankSecretSet, createBlankDigitalAsset } from '@seqrets/crypto';
 
 interface InheritancePlanFormProps {
   plan: InheritancePlan;
@@ -319,7 +319,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       ...plan,
       digitalAssets: [
         ...plan.digitalAssets,
-        { id: crypto.randomUUID(), name: '', type: '', platform: '', loginEmail: '', approxValue: '', twoFactorMethod: '', recoverySeed: '', walletKind: '', usesPassphrase: '', derivationPath: '', multisigDescriptorLocation: '', multisigCosigners: '', specialInstructions: '' },
+        createBlankDigitalAsset(),
       ],
     });
   };

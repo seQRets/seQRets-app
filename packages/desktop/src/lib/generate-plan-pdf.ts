@@ -479,7 +479,22 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
       }
       addLabelValue('Derivation Path / Script Type', asset.derivationPath);
       addLabelValue('Multisig Descriptor Location', asset.multisigDescriptorLocation);
+      addLabelValue('Passphrase', asset.passphrase ?? '');
       addLabelValue('Multisig Cosigners', asset.multisigCosigners);
+      addLabelValue('Multisig Descriptor', asset.multisigDescriptor ?? '');
+      const keys = (asset.multisigKeys ?? []).filter(k => k.label || k.heldBy || k.seed || k.passphrase || k.notes);
+      keys.forEach((k, i) => {
+        checkPageBreak(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...PRIMARY_COLOR);
+        doc.text(`Multisig key ${i + 1}${k.label ? ` \u2014 ${k.label}` : ''}`, MARGIN_L + 4, currentY);
+        currentY += 5;
+        doc.setFont('helvetica', 'normal');
+        addLabelValue('Held By', k.heldBy);
+        addLabelValue('Seed', k.seed);
+        addLabelValue('Passphrase', k.passphrase);
+        addLabelValue('Notes', k.notes);
+      });
       if (asset.specialInstructions) {
         addLabelValue('Instructions', asset.specialInstructions);
       }
@@ -489,6 +504,33 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
       doc.setDrawColor(...LINE_COLOR);
       doc.setLineWidth(0.1);
       doc.line(MARGIN_L + 2, currentY - 1, MARGIN_L + CONTENT_W - 2, currentY - 1);
+      currentY += 2;
+    }
+  }
+
+  // ── Other Secrets (v7) ──
+  const otherSecrets = (plan.otherSecrets ?? []).filter(o => o.title || o.secret);
+  if (otherSecrets.length > 0) {
+    addSectionHeader(`${sectionNum++}. Other Secrets`);
+    for (const o of otherSecrets) {
+      checkPageBreak(15);
+      addLabelValue('Title', o.title);
+      addLabelValue('Secret', o.secret);
+      addLabelValue('Notes', o.notes);
+      currentY += 3;
+    }
+  }
+
+  // ── Documents (v7) ── listed by name only; the files stay inside the
+  // encrypted plan and are never rendered into the PDF.
+  const documents = plan.documents ?? [];
+  if (documents.length > 0) {
+    addSectionHeader(`${sectionNum++}. Documents`);
+    addTextBlock('These files are stored inside the encrypted plan. Open it in seQRets to save them.');
+    for (const d of documents) {
+      checkPageBreak(12);
+      addLabelValue('Document', d.name === d.fileName ? d.name : `${d.name} (${d.fileName})`);
+      addLabelValue('Notes', d.notes);
       currentY += 2;
     }
   }
