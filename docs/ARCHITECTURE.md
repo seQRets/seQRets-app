@@ -64,7 +64,7 @@ The salt is still randomly generated per-operation, so two encryptions with the 
 
 - **Losing the keyfile = losing the secret.** There is no recovery path. Treat the keyfile with the same care as a hardware wallet seed — back it up to multiple locations.
 - **Keyfile ≠ password.** The keyfile does not replace the password; both are required. Do not reuse the same keyfile across unrelated secrets unless you want them to share the same second factor.
-- **Keyfile bytes are zeroized after use** on both platforms (`fill(0)` on web, Rust `zeroize` on desktop).
+- **Keyfile bytes are zeroized after use** (`fill(0)` in the TypeScript layer, Rust `zeroize` in the native crypto).
 
 ## Primitives
 
@@ -76,8 +76,8 @@ The salt is still randomly generated per-operation, so two encryptions with the 
 | **Nonce** | 24 random bytes | Per-encryption nonce for XChaCha20 |
 | **Splitting** | Shamir's Secret Sharing ([audited](https://github.com/privy-io/shamir-secret-sharing), zero-dependency) | Threshold-based secret splitting into Qards |
 | **Compression** | Gzip (level 9) | Reduce payload size before encryption |
-| **RNG** | OS-backed CSPRNG | **Desktop:** Rust `rand::thread_rng()` (OS entropy) for salts/nonces; `crypto.getRandomValues()` for passwords/keyfiles. **Web:** `crypto.getRandomValues()` for all operations. |
-| **Memory** | Key zeroization | **Desktop:** Rust `zeroize` crate — compiler-fence guaranteed, optimizer-proof. Keys never cross the JS/Rust boundary. **Web:** `fill(0)` in `finally` blocks. Note: JS strings (passwords) cannot be zeroed — a browser/JS limitation. |
+| **RNG** | OS-backed CSPRNG | Rust `rand::thread_rng()` (OS entropy) for salts/nonces; `crypto.getRandomValues()` for passwords/keyfiles/seed phrases. |
+| **Memory** | Key zeroization | Rust `zeroize` crate — compiler-fence guaranteed, optimizer-proof. Keys never cross the JS/Rust boundary. Note: JS strings (the typed password) cannot be zeroed. |
 
 ## Encrypt-First Architecture (Security by Design)
 
@@ -125,7 +125,7 @@ If the share distribution is designed correctly, the second scenario should neve
 
 ## Random Number Generation (CSPRNG)
 
-All randomness in seQRets is sourced from a **Cryptographically Secure Pseudo-Random Number Generator (CSPRNG)** — the Web Crypto API's `crypto.getRandomValues()`, which draws from the operating system's entropy pool (`/dev/urandom` on Linux/macOS, `BCryptGenRandom` on Windows).
+All randomness in seQRets is sourced from a **Cryptographically Secure Pseudo-Random Number Generator (CSPRNG)** backed by the operating system's entropy pool (`/dev/urandom` on Linux/macOS, `BCryptGenRandom` on Windows): Rust `rand` for encryption salts and nonces, and the Web Crypto API's `crypto.getRandomValues()` in the app's UI layer for everything else.
 
 | Operation | Entropy | Method |
 |-----------|---------|--------|
@@ -133,8 +133,8 @@ All randomness in seQRets is sourced from a **Cryptographically Secure Pseudo-Ra
 | **Seed phrase (24 words)** | 256 bits | `@scure/bip39` → `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
 | **Password generation** | 32 × 32-bit values | `window.crypto.getRandomValues(new Uint32Array(32))` mapped to 88-char charset |
 | **Keyfile generation** | 256 bits | `window.crypto.getRandomValues(new Uint8Array(32))` |
-| **Encryption salt** | 128 bits (16 bytes) | Desktop: Rust `rand::thread_rng()` → OS entropy; Web: `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
-| **Encryption nonce** | 192 bits (24 bytes) | Desktop: Rust `rand::thread_rng()` → OS entropy; Web: `@noble/hashes randomBytes()` → `crypto.getRandomValues()` |
+| **Encryption salt** | 128 bits (16 bytes) | Rust `rand::thread_rng()` → OS entropy |
+| **Encryption nonce** | 192 bits (24 bytes) | Rust `rand::thread_rng()` → OS entropy |
 
 No `Math.random()` or any other weak PRNG is used for any security-critical operation.
 
@@ -158,36 +158,25 @@ Trezor-style SLIP-39 recovery shares (20 or 33 words, including multi-share sets
 
 # Threat Model
 
-seQRets is transparent about its threat model. This section describes the known security properties and limitations of both the web and desktop apps so users can make informed decisions about what to protect and how.
+seQRets is transparent about its threat model. This section describes the known security properties and limitations of the desktop app so users can make informed decisions about what to protect and how.
 
-## Web App
+## Desktop App
 
 Both the secret input and password fields are **masked by default** with reveal-toggle controls, which mitigates casual shoulder surfing and incidental screen capture during normal use.
 
 | Threat | Status | Notes |
 |--------|--------|-------|
-| **Browser extensions** | ⚠️ Unmitigated | The most serious realistic threat. A malicious or compromised extension runs in the same browser context and can read the DOM, intercept keystrokes, and access clipboard data regardless of field masking — extensions operate at higher privilege than the page. |
-| **JS string memory** | ⚠️ Partial | Derived keys and byte buffers are zeroed via `fill(0)` in `finally` blocks. JS strings (your password) cannot be zeroed — they persist in the V8 heap until garbage collection, which may never happen within a session. |
-| **Screen recording** | ⚠️ Partial | Both secret and password fields are masked by default. The risk surface is the reveal toggle — when the eye icon is clicked, the secret is briefly visible on screen. A keylogger is unaffected by masking. |
-| **CDN / supply chain** | ⚠️ Per-load risk | JavaScript is served from Cloudflare Pages (app.seqrets.app), which enforces HTTPS and the security headers in `public/_headers`. A compromise of the host or of the CI deploy token could serve tampered code before load. Going offline after the page loads mitigates mid-session swaps. |
-| **Clipboard** | ⚠️ OS-shared | Pasted content is readable by any focused app and may linger in clipboard history tools. |
-| **Constant-time operations** | ⚠️ No guarantee | Browser JS has no constant-time execution guarantee. Timing side channels in comparison operations are theoretically possible, though difficult to exploit remotely. |
-| **Spectre / shared memory** | ℹ️ Browser-mitigated | Modern browsers use site isolation, but shared renderer process memory between tabs remains a known attack class. |
+| **Browser extensions** | ✓ Closed | The app runs in its own Tauri WebView, which does not load browser extensions — the most serious threat to any website that handles secrets. |
+| **JS string memory** | ⚠️ Partial | The password string briefly transits the JS heap on its way to Rust via IPC and cannot be zeroed (JS strings are immutable). The derived key is computed and used entirely in Rust and never enters the JS heap. |
+| **Key zeroization** | ✓ Guaranteed | Rust `zeroize` crate — compiler-fence guaranteed, optimizer-proof. |
+| **Supply chain** | ✓ Per-install, not per-load | The app is downloaded once and runs from disk instead of re-fetching code on every visit. Updates are signature-verified (minisign) before install. OS code signing (Apple notarization, Windows Authenticode) is planned for launch; until then the OS may warn on first open. |
+| **Constant-time operations** | ✓ By design | The Rust crypto crates (`argon2`, `chacha20poly1305`) are constant-time. |
+| **Screen recording** | ⚠️ Partial | Both fields are masked by default. The risk surface is the reveal toggle — when the eye icon is clicked, the secret is briefly visible on screen. A keylogger is unaffected by masking. |
+| **Clipboard** | ⚠️ OS-shared | Pasted content is readable by any focused app and may linger in clipboard history tools. Copied restored secrets are cleared after 60 seconds. |
 
-### Running Offline After Load
+The remaining risks (clipboard, screen recording, keyloggers) are OS-level and cannot be fully solved by any software. A clean, up-to-date computer — ideally offline while handling secrets — is the strongest mitigation.
 
-Disconnecting from the network after the page has loaded provides limited but real protection:
-
-**Genuinely mitigated:**
-- CDN tampering for that session — the JS is already parsed and running; a server-side swap cannot affect you mid-session
-- Accidental outbound data transmission (seQRets makes none by design, but offline adds a hard network-level guarantee)
-- DNS-based redirects or injection after load
-
-**Not mitigated:**
-- Browser extensions — already running and network-independent; a malicious extension can store your secret locally and transmit it when you reconnect
-- JS heap / string memory — offline changes nothing about V8 garbage collection
-- Clipboard and screen recording — OS-level, not network-dependent
-- Any malicious JS that was already loaded — it can queue exfiltration and fire it when connectivity is restored
+> ⚠️ **Self-built binaries** do not receive automatic updates, and you are responsible for verifying the integrity of your own build.
 
 ## Quantum Attacks
 
@@ -223,7 +212,7 @@ Most realistic password-compromise vectors yield only the password, not the keyf
 | **Password reuse breach** (another site leaks the same password) | ✗ Secret compromised | ✓ Leaked password is useless without the keyfile |
 | **Acoustic / EM keystroke analysis** | ✗ Secret compromised | ✓ Keyfile isn't typed |
 | **Brute-force / dictionary attack** against weak password | ✗ Eventually compromised | ✓ Adding 256 bits of unknown entropy makes brute-force infeasible regardless of password strength |
-| **RAM/V8 heap forensics after a session** (web limitation) | ⚠️ Password may be recoverable from heap | ⚠️ Both would need to be recoverable; keyfile has no JS-string lifetime problem because it's loaded as bytes, not a string |
+| **RAM/JS heap forensics after a session** | ⚠️ Password may be recoverable from heap | ⚠️ Both would need to be recoverable; keyfile has no JS-string lifetime problem because it's loaded as bytes, not a string |
 
 ### Coercion and duress ("$5 wrench attack")
 
@@ -287,20 +276,6 @@ The desktop app offers an opt-in review reminder that nudges users to open and v
 - Fully reversible. "Disable and delete" in the plan editor removes the file entirely.
 - Local-only. Never transmitted, never read by any server.
 
-## Desktop vs Web Comparison
+## Retired Web App
 
-| Threat | Web | Desktop |
-|--------|-----|---------|
-| **Browser extension attack surface** | ✗ Unmitigated | ✓ Tauri WebView runs without browser extensions |
-| **JS string memory** | ✗ Password persists in V8 heap | ⚠️ Password transits JS heap via IPC, but derived key stays entirely in Rust |
-| **Key zeroization** | ⚠️ `fill(0)` — optimizer may elide | ✓ Rust `zeroize` crate — compiler-fence guaranteed |
-| **CDN / supply chain** | ✗ Per-load risk | ✓ Official release is code-signed with integrity verified at install |
-| **Constant-time operations** | ✗ No guarantee | ✓ Rust crypto crates are constant-time by design |
-| **Clipboard** | ✗ OS-shared | ✗ Same |
-| **Screen recording** | ⚠️ Partial (masked by default) | ⚠️ Same |
-
-The two most impactful threats — browser extensions and JS memory — are both substantially closed by the desktop app. The remaining risks (clipboard, screen recording) are OS-level and cannot be fully solved by any software.
-
-> ⚠️ **Self-built binaries are not code-signed.** The CDN/supply-chain protections in the table above apply only to the official signed release. If you compile from source, you are responsible for verifying the integrity of your own build. Self-built binaries will trigger OS gatekeeper warnings and do not receive automatic updates.
-
-> **Bottom line:** The web app is appropriate for users who understand the threat model, use a clean browser profile with no untrusted extensions, and are comfortable with client-side-only JavaScript cryptography. For maximum security — especially for high-value seed phrases — use the desktop app.
+seQRets originally also shipped as a web app at app.seqrets.app. It was retired on 2026-10-06 because a browser cannot close the threats the desktop app does: malicious extensions read the page, JavaScript cannot erase passwords or keys from memory, and a website re-downloads its code on every visit. The domain now serves a static holding page. Qards made with the web app are ordinary Qards and open in the desktop app and in seQRets Recover.

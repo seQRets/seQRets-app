@@ -5,8 +5,8 @@ This guide covers everything you need to build and run seQRets locally from sour
 ## 📋 Prerequisites
 
 - **Node.js 20+** — [nodejs.org](https://nodejs.org/)
-- **Rust** (desktop app only) — [rustup.rs](https://rustup.rs/)
-- **C++ build tools** (desktop app only, platform-specific):
+- **Rust** — [rustup.rs](https://rustup.rs/)
+- **C++ build tools** (platform-specific):
   - **macOS** — `xcode-select --install`
   - **Windows** — [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (free; select "Desktop development with C++" workload). WebView2 is already included in Windows 10/11.
   - **Linux** — `sudo apt install build-essential libwebkit2gtk-4.1-dev libssl-dev` (Debian/Ubuntu)
@@ -18,14 +18,6 @@ git clone https://github.com/seQRets/seQRets-app.git
 cd seQRets-app
 npm install
 ```
-
-## 🌐 Run the Web App
-
-```bash
-npm run dev
-```
-
-Opens at [http://localhost:9002](http://localhost:9002). All core features work offline — no API keys needed.
 
 ## 🖥️ Run the Desktop App
 
@@ -48,7 +40,7 @@ Bob is an AI assistant that can answer questions about seQRets and inheritance p
 
 > ⚠️ **Privacy notice:** Bob sends your chat messages to Google's Gemini API. Never enter seed phrases, passwords, private keys, or any sensitive data in the Bob chat. Bob is for app support and inheritance planning guidance only.
 
-- **Web & Desktop:** Click "Ask Bob" → follow the in-app setup guide to enter your free Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys). Your key is stored in your browser's local storage and never sent anywhere except Google's Gemini API.
+- **Setup:** Click "Ask Bob" → follow the in-app setup guide to enter your free Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys). If you choose to remember it, the key is stored in your OS keychain and never sent anywhere except Google's Gemini API.
 - **Remove API key:** Click "Remove API Key" at the bottom of the Bob chat to disconnect the assistant and delete the stored key. You can re-add a key at any time.
 
 ## 💳 JavaCard Applet Installation
@@ -95,16 +87,14 @@ seQRets is a monorepo with npm workspaces:
 
 ```
 seQRets/
-├── src/                     # Web app (Next.js 16 + React 19)
-│   └── app/
-│       ├── page.tsx         #   Home (Secure Secret / Restore Secret)
-│       └── instructions/    #   Inheritance Plan (Encrypt / Decrypt)
+├── holding/                 # Static holding page served at app.seqrets.app
 ├── packages/
 │   ├── crypto/              # @seqrets/crypto — shared JS crypto library
-│   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39 (full impl. for web; BIP-39 helpers for desktop)
-│   ├── desktop/             # @seqrets/desktop — Tauri v2 desktop app
+│   │   └── src/             #   XChaCha20, Argon2id, Shamir's, BIP-39 (TS reference impl. + helpers the desktop app uses)
+│   ├── desktop/             # @seqrets/desktop — Tauri v2 desktop app (the app)
 │   │   ├── src/             #   React + Vite frontend (pages + components)
 │   │   └── src-tauri/       #   Rust backend (crypto engine, PC/SC smartcard, macOS config)
+│   ├── shared-ui/           # shadcn primitives + shared components (via @/components/ui/*)
 │   └── javacard/            # JavaCard applet for smartcard storage
 │       ├── src/             #   SeQRetsApplet.java (APDU command handler)
 │       └── build.xml        #   Ant build file (produces .cap)
@@ -116,7 +106,6 @@ seQRets/
 
 | Component | Technology |
 |-----------|------------|
-| **Web App** | Next.js 16, React 19, TypeScript, Tailwind CSS, Radix UI |
 | **Desktop App** | Tauri v2, Vite, React 19, TypeScript, Tailwind CSS, Radix UI |
 | **Desktop Crypto (Rust)** | argon2, chacha20poly1305, zeroize, flate2, rand |
 | **Crypto Library (JS)** | @noble/ciphers, @noble/hashes, @scure/bip39, shamir-secret-sharing, pako |
@@ -128,9 +117,8 @@ seQRets/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start web app dev server (port 9002) |
-| `npm run build` | Build web app for production |
 | `npm run build:crypto` | Build the shared crypto package |
 | `npm run desktop:dev` | Run Tauri desktop app in dev mode |
 | `npm run desktop:build` | Build desktop .dmg installer |
-| `npm run type-check` | TypeScript type checking |
+| `npm test` | Crypto core test suite (TypeScript) |
+| `npm run test:rust` | Rust crypto tests incl. TS↔Rust parity |

@@ -17,17 +17,12 @@ Thank you for your interest in contributing to seQRets! We welcome contributions
    ```
 4. **Make your changes**, write tests if applicable, and ensure everything builds:
    ```bash
-   npm run build
-   npm run type-check
+   npm test
+   npm run build --workspace=@seqrets/desktop
    ```
 5. **Commit** and **push** your changes, then open a **Pull Request** against the `main` branch.
 
 ## Development
-
-### Web App
-```bash
-npm run dev           # Start dev server on port 9002
-```
 
 ### Desktop App (Tauri)
 ```bash
@@ -42,7 +37,7 @@ npm run build:crypto  # Build the @seqrets/crypto package
 ## Code Guidelines
 
 - **TypeScript** is required for all frontend code
-- **Rust** is used for the Tauri backend (smartcard communication)
+- **Rust** is used for the Tauri backend (native crypto, smartcard communication, OS keychain)
 - Follow existing code patterns and naming conventions
 - Keep security-critical code clean, well-documented, and auditable
 - Never use `Math.random()` for any security operation — always use the Web Crypto API CSPRNG
@@ -54,7 +49,7 @@ Please open an issue on GitHub with:
 - A clear, descriptive title
 - Steps to reproduce the bug
 - Expected behavior vs. actual behavior
-- Your platform (OS, browser, web/desktop)
+- Your platform (OS and version) and the seQRets version
 - Screenshots if applicable
 
 ## Suggesting Features

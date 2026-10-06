@@ -22,9 +22,7 @@ seQRets encrypts your most sensitive secrets — seed phrases, private keys, pas
 
 ## 📦 Get seQRets
 
-### 🌐 Web App (Free)
-
-**<a href="https://app.seqrets.app" target="_blank" rel="noopener noreferrer">Launch seQRets Web App →</a>** — no installation required.
+seQRets is a desktop app. The earlier web app (app.seqrets.app) was retired in October 2026 — Qards made with it are ordinary Qards and open in the desktop app and in [seQRets Recover](#-seqrets-recover--long-term-recovery).
 
 ### 🖥️ Desktop App
 
@@ -48,12 +46,12 @@ Official release: coming soon — **<a href="https://seqrets.app" target="_blank
 - **BIP-39 optimization** — 24-word phrases compress from ~150 chars to 32 bytes
 - **SLIP-39 detection** — Trezor-style recovery shares (20/33 words) are recognized and checksum-validated on entry and on restore, so a mistyped word is caught before encryption; restored shares display as a numbered word list for easy re-entry into a hardware wallet
 - **SeedQR display** on restore — Standard and Compact formats for scanning BIP-39 seeds into compatible hardware wallets
-- **Built-in inheritance planner** (desktop only) — comprehensive 9-section form that walks you through beneficiaries, secret sets, Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message. The plan is encrypted natively and fits on a smart card. No need to type sensitive information into external editors. Web and desktop can also encrypt any external file (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50 MB) the same way.
-- **JavaCard smart card** storage (desktop only) — shares, vaults, keyfiles, or plans on JCOP3 hardware with optional PIN protection
+- **Built-in inheritance planner** — comprehensive 9-section form that walks you through beneficiaries, secret sets, Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message. The plan is encrypted natively and fits on a smart card. No need to type sensitive information into external editors. You can also encrypt any external file (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50 MB) the same way.
+- **JavaCard smart card** storage — shares, vaults, keyfiles, or plans on JCOP3 hardware with optional PIN protection
 - **Optional keyfile** as a second factor in addition to the password
 - **Helper tools** — CSPRNG password generator, BIP-39 seed generator, Bitcoin ticker, Bob AI assistant (optional, user-provided Gemini key)
-- **SHA-256 share integrity** — every Qard (web and desktop) embeds a SHA-256 hash and validates it at generation and on restore; corrupted or tampered Qards are detected before decryption. Desktop additionally surfaces a green shield indicator at restore time and prints a truncated fingerprint on physical cards for visual spot-checking.
-- **Fully offline-capable** — every cryptographic operation runs locally, and the app is designed to be used with the network disconnected. Your secrets, passwords and keyfiles never leave your machine: no accounts, no servers, no telemetry. While you are online, seQRets does talk to a price server (Coinbase) for the Bitcoin ticker and the connection indicator, Bob talks to Google Gemini when you ask him something, and the desktop app checks GitHub for updates at launch — none of which carries your data. Want none of it? Turn off Wi-Fi. Everything that matters keeps working.
+- **SHA-256 share integrity** — every Qard embeds a SHA-256 hash and validates it at generation and on restore; corrupted or tampered Qards are detected before decryption. The app surfaces a green shield indicator at restore time and prints a truncated fingerprint on physical cards for visual spot-checking.
+- **Fully offline-capable** — every cryptographic operation runs locally, and the app is designed to be used with the network disconnected. Your secrets, passwords and keyfiles never leave your machine: no accounts, no servers, no telemetry. While you are online, seQRets does talk to a price server (Coinbase) for the Bitcoin ticker and the connection indicator, Bob talks to Google Gemini when you ask him something, and the app checks GitHub for updates at launch — none of which carries your data. Want none of it? Turn off Wi-Fi. Everything that matters keeps working.
 
 ## 🛟 seQRets Recover — Long-Term Recovery
 
@@ -75,8 +73,8 @@ seQRets uses industry-standard primitives entirely client-side. **The core crypt
 - **Key derivation:** Argon2id (64MB memory, 4 iterations)
 - **Encryption:** XChaCha20-Poly1305 (AEAD)
 - **Splitting:** Shamir's Secret Sharing ([audited](https://github.com/privy-io/shamir-secret-sharing))
-- **RNG:** OS-backed CSPRNG (Rust `rand` on desktop, `crypto.getRandomValues` on web)
-- **Memory:** Rust `zeroize` on desktop; `fill(0)` + finally blocks on web
+- **RNG:** OS-backed CSPRNG (Rust `rand` for salts and nonces, `crypto.getRandomValues` for passwords, keyfiles and seed phrases)
+- **Memory:** derived keys stay in Rust and are wiped with `zeroize`
 - **Length privacy:** payloads are padded to 192-byte buckets before encryption, so a Qard's size doesn't reveal the secret's size; every Qard carries a hash-covered `v=1` format-version marker for decades-later diagnosability
 
 For the full cryptographic design and threat model, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -98,9 +96,9 @@ The **[seQRets Recover](https://github.com/seQRets/seQRets-Recover)** lifeboat h
 
 ## 📚 Further Reading
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cryptographic design, encrypt-first ordering, quantum resistance, RNG, and the web vs desktop threat model
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cryptographic design, encrypt-first ordering, quantum resistance, RNG, and the threat model
 - [docs/SMARTCARD.md](docs/SMARTCARD.md) — JavaCard hardware, features, applet AID
-- [docs/BUILDING.md](docs/BUILDING.md) — build instructions for web, desktop, and the JavaCard applet
+- [docs/BUILDING.md](docs/BUILDING.md) — build instructions for the desktop app and the JavaCard applet
 - <a href="https://seqrets.app/docs/inheritance" target="_blank" rel="noopener noreferrer">Inheritance Guide</a> — how to plan, distribute, and hand off Qards to your heirs
 - [SECURITY.md](SECURITY.md) — vulnerability reporting policy
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guide and CLA

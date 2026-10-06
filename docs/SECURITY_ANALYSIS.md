@@ -8,6 +8,8 @@
 >
 > **Every ✅ in [What Has Been Verified](#what-has-been-verified) carries the command that produced it**, so any claim here can be re-run instead of believed. That convention exists because it was previously absent, and claims quietly rotted: the September 2026 pass found this document asserting a 114-test Playwright suite that does not exist anywhere in the repository, and crediting the desktop app with code-signed binaries that are not yet configured. A claim nobody can re-run is a claim nobody can catch. See [Post-Audit Changes (v1.15.x)](#post-audit-changes-v115x--re-verification-pass).
 >
+> **Web app retired (2026-10-06).** seQRets is now desktop-only; app.seqrets.app serves a static holding page from `holding/` (no inline script, `script-src 'self'`, `connect-src 'none'`). Sections below that compare against or harden the web app are kept as history.
+>
 > This is a **living document**, not a frozen snapshot: the baseline finding set (11 items) was established at v1.10.7 and is kept current as remediation lands. It reflects the codebase as of **v1.15.1**; the pre-launch hardening pass was completed at v1.12.0.
 
 ---
@@ -20,7 +22,7 @@ seQRets is a zero-knowledge cryptographic application for protecting sensitive s
 
 The application demonstrates excellent cryptographic engineering with proper algorithm selection, key zeroization, and defense-in-depth architecture. Derived encryption keys in the desktop app never enter the JavaScript heap — all key derivation and encryption runs in Rust with compiler-fence guaranteed memory erasure. The few issues identified are addressable and do not compromise the core cryptographic guarantees.
 
-**Pre-launch hardening (2026-07): complete.** Beyond the 11 baseline findings (all resolved), a comprehensive pre-launch pass was worked through incrementally and finished at v1.12.0 — honesty-of-claims corrections, additional memory zeroization, hardened input validation (share metadata bounds + a parse-size ceiling), a cross-version-verified `@noble/ciphers` upgrade with a **permanent TS↔Rust parity test**, web HTTP-layer hardening, and a large redundancy/drift refactor that also fixed a stale-state race in QR generation. Full itemized status in [Pre-Launch Hardening Pass](#pre-launch-hardening-pass-v1107--v1120). The only consciously-deferred item is a hash-based Content-Security-Policy for the web app (post-launch — zero XSS sinks today, automation fragility too risky for a solo operator pre-launch).
+**Pre-launch hardening (2026-07): complete.** Beyond the 11 baseline findings (all resolved), a comprehensive pre-launch pass was worked through incrementally and finished at v1.12.0 — honesty-of-claims corrections, additional memory zeroization, hardened input validation (share metadata bounds + a parse-size ceiling), a cross-version-verified `@noble/ciphers` upgrade with a **permanent TS↔Rust parity test**, web HTTP-layer hardening, and a large redundancy/drift refactor that also fixed a stale-state race in QR generation. Full itemized status in [Pre-Launch Hardening Pass](#pre-launch-hardening-pass-v1107--v1120). The one item that had been consciously deferred — a hash-based Content-Security-Policy for the web app — became moot when the web app was retired on 2026-10-06.
 
 ---
 
@@ -215,6 +217,8 @@ The desktop app runs all cryptographic operations in native Rust, providing guar
 ---
 
 ## Desktop vs. Web: Threat Comparison
+
+> *Historical — the web app was retired on 2026-10-06 (see the note at the top). Kept as a record of the review.*
 
 | Threat Vector | Web App | Desktop App | Notes |
 |:--------------|:-------:|:-----------:|:------|
@@ -576,6 +580,8 @@ now leads the card-setup flow.
 
 ## Web App HTTP Security Hardening (Cloudflare Pages)
 
+> *Historical — the web app was retired on 2026-10-06 (see the note at the top). Kept as a record of the review.*
+
 ### Background
 
 The audit above focused on the desktop app and the shared cryptographic library. The web app at `app.seqrets.app` was originally hosted on **GitHub Pages**, which serves a fixed, minimal set of HTTP response headers and does not honor custom header configuration. That left the web app's HTTP layer thinner than the desktop app's WebView policy, with its security depending entirely on the in-document `<meta http-equiv="Content-Security-Policy">` tag defined in `src/app/layout.tsx`.
@@ -738,8 +744,8 @@ insufficient to spend, but not nothing; the underlying library exposes no wipe f
 - **18 `cargo audit` informational warnings** — unmaintained/unsound notices on transitive crates,
   effectively all of them the GTK3 bindings Tauri pulls in for Linux. Not reachable from seQRets
   code paths.
-- **Hash-based CSP for the web app** — unchanged deferral, reasoning in
-  [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md) item 1.3.
+- **Hash-based CSP for the web app** — moot: the web app was retired on 2026-10-06
+  ([`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md) item 1.3).
 
 ### Not verified
 
@@ -794,7 +800,7 @@ A pre-launch external review raised three format/exposure weaknesses; all three 
 
 ### Remaining (Roadmap)
 
-All 11 baseline findings are resolved, and the pre-launch hardening pass (above) is complete as of v1.12.0. **One item is consciously deferred post-launch:** a hash-based Content-Security-Policy for the web app (the current CSP is externalized-script + `frame-ancestors 'none'`; the full hash-based version is deferred because there are zero XSS sinks today and the automation fragility — a hash mismatch blanks the site — is too risky for a solo operator to run pre-launch). No other items remain.
+All 11 baseline findings are resolved, and the pre-launch hardening pass (above) is complete as of v1.12.0. The one item that had been deferred post-launch — a hash-based Content-Security-Policy for the web app — is moot since the web app was retired on 2026-10-06. No other items remain.
 
 ---
 
@@ -828,7 +834,7 @@ Round-trip encryption with and without a keyfile, wrong-password rejection at th
 
 Lives in the [seQRets Recover](https://github.com/seQRets/seQRets-Recover) repository. Recover is deliberately pinned to older crypto than this app (`@noble/ciphers` 0.4.0 / `@noble/hashes` 1.4.0 vs. 2.2.0 / 1.8.0), so the suite replays Qards minted by *this* app through *those* pins — proving a Qard created today opens in the recovery tool an heir would actually use. Covers current and both historical share shapes, mnemonics, keyfiles, encrypted plans, and the failure modes an heir must be able to tell apart (tampering vs. wrong password vs. mismatched sets vs. outdated tool).
 
-**CI.** `deploy.yml` gates the web deploy on suite 1; `tests.yml` runs suites 1 and 2 on every pull request; Recover's own CI gates its GitHub Pages deploy on suite 3.
+**CI.** `deploy.yml` runs suite 1 on every push to main (before deploying the static holding page); `tests.yml` runs suites 1 and 2 on every pull request; Recover's own CI gates its GitHub Pages deploy on suite 3.
 
 > **Correction (September 2026).** This section previously described an "End-to-End Test Suite (Playwright)" of "114 tests across 12 spec files… 342 total test runs" with a thirteen-item coverage list. **No such suite exists in this repository** — no Playwright configuration, no spec files, no dependency. The claim appears to have described exploratory work that was never committed. It is removed rather than corrected, and the suites above are what actually exist and run.
 
@@ -840,21 +846,21 @@ Re-run 2026-09-06 against v1.15.1. Each row carries the command, so these can be
 |-------|:------:|---------------|
 | No `unsafe` blocks in Rust | ✅ 0 hits | `grep -rn 'unsafe' packages/desktop/src-tauri/src/*.rs` |
 | No `Math.random()` in crypto code | ✅ 0 hits | `grep -rn 'Math.random' packages/crypto/src packages/desktop/src-tauri/src` |
-| No API routes or server-side code | ✅ 0 handlers, static export | `find src -name 'route.ts'` · `grep output next.config.ts` |
+| No API routes or server-side code | ✅ none — the app is a desktop binary; app.seqrets.app serves only static files (re-checked 2026-10-06 after the web app's removal) | `find holding -type f` |
 | Drag-drop disabled in Tauri config | ✅ `false` | `grep dragDropEnabled packages/desktop/src-tauri/tauri.conf.json` |
 | Update signatures verified via Minisign | ✅ pubkey + updater artifacts configured | `grep -n 'pubkey\|createUpdaterArtifacts' packages/desktop/src-tauri/tauri.conf.json` |
-| Debug logging absent from shipped code | ✅ 0 `console.log` in web, desktop and crypto sources | `grep -rn 'console\.log' src packages/desktop/src packages/crypto/src` |
+| Debug logging absent from shipped code | ✅ 0 `console.log` in desktop, shared-ui and crypto sources (re-checked 2026-10-06) | `grep -rn 'console\.log' packages/desktop/src packages/shared-ui/src packages/crypto/src` |
 | Source maps disabled in production | ✅ crypto `false`; desktop gated on `TAURI_DEBUG` | `grep -n sourcemap packages/crypto/tsup.config.ts packages/desktop/vite.config.ts` |
 | Crypto buffers zeroized in `finally` blocks | ✅ 7 `finally` blocks, 26 `fill(0)` calls | `grep -c 'fill(0)' packages/crypto/src/crypto.ts` |
-| No `eval()` or `dangerouslySetInnerHTML` | ⚠️ **Qualified** — one occurrence, `src/app/layout.tsx:83`: a **development-only** static script (guarded by `NODE_ENV === 'development'`) that unregisters the service worker against the dev server. Static literal, no interpolation, stripped from production builds. No `eval()` in first-party code. | `grep -rn 'dangerouslySetInnerHTML' src packages/desktop/src packages/shared-ui/src` |
-| No secrets stored in `localStorage` | ⚠️ **Qualified** — no seQRets secret material (seeds, passwords, keyfiles, shares) is ever persisted. The **web** app can persist a user-supplied *Gemini API key* to `localStorage`, but only if the user opts in via the "remember" checkbox; the default is session-memory only (`setSessionApiKey`). Desktop stores it in the OS keychain instead. | `grep -rn 'localStorage.setItem' src packages/desktop/src packages/shared-ui/src` |
+| No `eval()` or `dangerouslySetInnerHTML` | ✅ 0 hits (re-checked 2026-10-06; the one former occurrence, a development-only script in the web app's `layout.tsx`, was removed with the web app) | `grep -rn 'dangerouslySetInnerHTML' packages/desktop/src packages/shared-ui/src` |
+| No secrets stored in `localStorage` | ✅ only preferences (theme, terms acceptance, welcome-screen skip, Bob disclaimer, camera choice, a one-time migration flag) — re-checked 2026-10-06. The Gemini API key lives in the OS keychain. | `grep -rn 'localStorage.setItem' packages/desktop/src packages/shared-ui/src` |
 | `npm audit` | ⚠️ **Qualified** — **0 vulnerabilities in production dependencies.** The full tree reports **1 low-severity, development-only** advisory: `esbuild` ≤ 0.28.0 arbitrary file read via the dev server on Windows ([GHSA-g7r4-m6w7-qqqr](https://github.com/advisories/GHSA-g7r4-m6w7-qqqr)). It affects the local development server only, never shipped code. Clearing it requires a breaking major bump of a build-critical dependency; **consciously accepted** rather than forced. On-disk `esbuild` is 0.27.7, deduped to a single copy. | `npm audit --omit=dev` · `npm audit` |
 | `cargo audit` | ✅ **0 vulnerabilities** across 567 crate dependencies. 18 informational warnings (unmaintained/unsound), effectively all transitive: the GTK3 bindings Tauri pulls in for Linux builds, plus `proc-macro-error`, the `unic-*` family, and unsoundness notes in `glib` and `lru`. None are reachable from seQRets code paths. | `cd packages/desktop/src-tauri && cargo audit` |
 
 
 ## Conclusion
 
-seQRets demonstrates **strong cryptographic engineering** with a well-designed zero-knowledge architecture. The desktop app provides meaningful security advantages over the web version through Rust-native cryptography, compiler-guaranteed memory erasure, browser-extension immunity, and a binary downloaded once rather than re-fetched through a CDN on every visit. (OS-level code signing is **not** yet configured — see the launch gate in [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md). Updates are signed with Minisign and verified before installation; that is a different guarantee from Gatekeeper/SmartScreen trust.)
+seQRets demonstrates **strong cryptographic engineering** with a well-designed zero-knowledge architecture. The desktop app — now the only version, after the web app was retired on 2026-10-06 — gets its security advantages from Rust-native cryptography, compiler-guaranteed memory erasure, browser-extension immunity, and a binary downloaded once rather than re-fetched through a CDN on every visit. (OS-level code signing is **not** yet configured — see the launch gate in [`PRELAUNCH_AUDIT.md`](PRELAUNCH_AUDIT.md). Updates are signed with Minisign and verified before installation; that is a different guarantee from Gatekeeper/SmartScreen trust.)
 
 The 11 findings identified in this analysis were primarily configuration hardening opportunities (CSP, source maps) and edge-case robustness improvements (chunk overflow, clipboard clearing) — **none compromised the core cryptographic guarantees** of the application. **All 11 findings have been resolved.** Additionally, the password generator now guarantees at least one character from each required class (lowercase, uppercase, digit, special) via Fisher-Yates shuffle, eliminating the ~2.3% chance of generating an invalid password.
 

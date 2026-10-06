@@ -2,6 +2,8 @@
 
 **Status:** ✅ All batches complete (Batch G finished 2026-07-12) · **Created:** 2026-07-04 · **Baseline:** v1.11.8 "🔥 Ignition"
 
+> **2026-10-06 — web app retired.** seQRets is now desktop-only and the web app source (`src/`, `public/`) has been removed; app.seqrets.app serves a static holding page from `holding/`. Web-only items below are historical, and item 1.3 (hash-based CSP for the web app) is moot. Desktop, crypto and launch-gate items (including OS code signing) still apply.
+
 Full read-only review of the web (`src/`), desktop (`packages/desktop/`), shared crypto
 (`packages/crypto/`), shared UI (`packages/shared-ui/`), and JavaCard (`packages/javacard/`)
 codebases for security vulnerabilities, orphaned code, inefficiencies, and redundancies.

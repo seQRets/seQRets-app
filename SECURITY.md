@@ -20,7 +20,7 @@ Include as much of the following as possible:
 
 - Description of the vulnerability
 - Steps to reproduce
-- Affected component (web app, desktop app, `@seqrets/crypto` library)
+- Affected component (desktop app, `@seqrets/crypto` library, JavaCard applet)
 - Potential impact
 - Suggested fix (if any)
 
@@ -39,13 +39,12 @@ The following are in scope:
 - Secret or key material leakage (memory, DOM, network, logs)
 - Share reconstruction with fewer than the required threshold
 - Input validation bypasses
-- Cross-site scripting (XSS) or injection in the web app
+- Script injection in the app's webview (e.g. via restored content or Bob responses)
 - Tauri IPC or privilege escalation in the desktop app
 
 The following are **out of scope**:
 
 - Vulnerabilities in upstream dependencies (report those to the upstream maintainer, but feel free to notify us)
-- Browser extension threats (documented in README as a known limitation)
 - Attacks requiring physical access to the user's device
 - Social engineering
 
