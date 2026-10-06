@@ -1,6 +1,7 @@
 export * from './crypto';
 export * from './restore';
 export * from './slip39';
+export * from './locker';
 export * from './types';
 
 // Re-export utilities so the desktop app doesn't need to duplicate these dependencies

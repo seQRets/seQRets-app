@@ -486,4 +486,77 @@ mod tests {
 
         assert_eq!(restored, payload);
     }
+
+    // ── Rust → TS / Recover: Locker file vector ───────────────────────────
+    // The desktop app seals a Locker with @seqrets/crypto's sealLocker, which
+    // builds the file envelope in TS and hands it to crypto_encrypt_blob (this
+    // file, pad = false). The committed vector is a Locker file produced by
+    // exactly that Rust path. `npm test` opens it with the TS openLocker, and
+    // `npm run fixtures:recover` ships it to Recover's suite — proving a Locker
+    // made by the desktop app opens in TypeScript and in today's Recover.
+    //
+    // Regenerate (only if the Locker format changes):
+    //   cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml \
+    //     --lib -- --ignored write_rust_locker_vector
+    const RUST_LOCKER_VECTOR_PATH: &str = "tests/fixtures/rust-locker-vector.json";
+    // Throwaway test values, committed to a public repo on purpose.
+    const LOCKER_TEST_KEY: &str =
+        "seQRets-Locker-Key:00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
+    const LOCKER_TEST_SET_ID: &str = "RustVec1";
+    const LOCKER_TEST_SAVED_AT: &str = "2026-10-06T12:00:00.000Z";
+    const LOCKER_TEST_CONTENT: &str =
+        r#"{"letter":"Made by the Rust path","secrets":[{"name":"Test wallet","seed":"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"}]}"#;
+
+    #[test]
+    #[ignore]
+    fn write_rust_locker_vector() {
+        // Same shapes and key order as sealLocker: inner Locker JSON, then the
+        // RawInstruction envelope JSON.stringify'd by desktop-crypto.ts.
+        let inner = format!(
+            r#"{{"format":"seqrets-locker","v":1,"setId":"{LOCKER_TEST_SET_ID}","seq":1,"savedAt":"{LOCKER_TEST_SAVED_AT}","content":{LOCKER_TEST_CONTENT}}}"#
+        );
+        let envelope = format!(
+            r#"{{"fileName":"seQRets-Locker.json","fileContent":"{}","fileType":"application/json"}}"#,
+            STANDARD.encode(inner.as_bytes())
+        );
+        let sealed = encrypt_impl(envelope, LOCKER_TEST_KEY.to_string(), None, false).unwrap();
+
+        let locker_file = format!(
+            "{{\n  \"format\": \"seqrets-locker\",\n  \"v\": 1,\n  \"setId\": \"{LOCKER_TEST_SET_ID}\",\n  \"seq\": 1,\n  \"savedAt\": \"{LOCKER_TEST_SAVED_AT}\",\n  \"salt\": \"{}\",\n  \"data\": \"{}\"\n}}\n",
+            sealed.salt, sealed.data
+        );
+        let vector = serde_json::json!({
+            "_note": "Locker file sealed by the Rust crypto_encrypt_blob path (crypto.rs write_rust_locker_vector). Throwaway test values.",
+            "key": LOCKER_TEST_KEY,
+            "setId": LOCKER_TEST_SET_ID,
+            "expect_content": serde_json::from_str::<serde_json::Value>(LOCKER_TEST_CONTENT).unwrap(),
+            "locker_file": locker_file,
+        });
+        std::fs::write(
+            RUST_LOCKER_VECTOR_PATH,
+            serde_json::to_string_pretty(&vector).unwrap() + "\n",
+        )
+        .unwrap();
+    }
+
+    // The committed vector must still decrypt here, unpadded, to a Locker
+    // envelope (guards against an accidental regenerate with pad = true).
+    #[test]
+    fn test_rust_locker_vector_decrypts() {
+        let vector: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/rust-locker-vector.json")).unwrap();
+        let file: serde_json::Value =
+            serde_json::from_str(vector["locker_file"].as_str().unwrap()).unwrap();
+        assert_eq!(file["format"], "seqrets-locker");
+        let envelope = decrypt_impl(
+            file["salt"].as_str().unwrap().to_string(),
+            file["data"].as_str().unwrap().to_string(),
+            vector["key"].as_str().unwrap().to_string(),
+            None,
+        )
+        .expect("Rust Locker vector must decrypt");
+        let envelope: serde_json::Value = serde_json::from_str(&envelope).unwrap();
+        assert_eq!(envelope["fileName"], "seQRets-Locker.json");
+        assert_eq!(envelope["fileType"], "application/json");
+    }
 }

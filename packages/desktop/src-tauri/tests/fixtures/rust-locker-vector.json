@@ -1,0 +1,15 @@
+{
+  "_note": "Locker file sealed by the Rust crypto_encrypt_blob path (crypto.rs write_rust_locker_vector). Throwaway test values.",
+  "expect_content": {
+    "letter": "Made by the Rust path",
+    "secrets": [
+      {
+        "name": "Test wallet",
+        "seed": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+      }
+    ]
+  },
+  "key": "seQRets-Locker-Key:00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+  "locker_file": "{\n  \"format\": \"seqrets-locker\",\n  \"v\": 1,\n  \"setId\": \"RustVec1\",\n  \"seq\": 1,\n  \"savedAt\": \"2026-10-06T12:00:00.000Z\",\n  \"salt\": \"tmSO0MT+PohkP9btwuiqLQ==\",\n  \"data\": \"07XZcmP2B12KJmxLj/pEY2FMPTom7p5mYI3T3PZn32YhYt14QCS/xPk1E1ODUq6q1m+CGRetfDydBFsXyQ0ZdMPuDR7l2zRC4BysrLBV7CS/46FSTebF7aaZXRfVE974YdKEk4RQMw0SqqTcgjiGBxKQbpnKClybTFOAKJKm9ErNXJVmDIDJ5g92HCE72yGn4RDll5vM3JMyRTFEu9cjcfcl4glST28ccpkaNQPuS6Oi2DVnVJa8iBkXRgczENpqNc4L7jf+3HRPqjsnUr6C6cDAUhSRu1C2TnPxX9uw7vqaYa49LzFvglO8VhObkbp5vzHQCJjSl8Tt0PFphtMILHxjdq4I5cjF852fhGwhVnzvnmlmFs3fyPj2Z6An1PPZfSvVIvIQXjwGypGs2uTLCNes26ONCmKCcXNBAUwhNaD7/dJO0e0PsefMzejU6VUI3OoFLae2ZnAZpPn5vPgi\"\n}\n",
+  "setId": "RustVec1"
+}
