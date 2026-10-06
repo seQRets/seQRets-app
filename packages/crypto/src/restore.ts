@@ -1,5 +1,5 @@
 /**
- * Pure restore-flow helpers shared by the web and desktop restore forms (G5).
+ * Pure restore-flow helpers used by the desktop restore form (G5).
  * No DOM, no React — everything here is deterministic data transformation,
  * which keeps the inheritance-critical restore logic in one tested place.
  */

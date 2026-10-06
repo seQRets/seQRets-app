@@ -30,8 +30,8 @@ import type { CardItem } from '@/lib/smartcard';
 
 // Stable id for a decoded-share row. No security role, but kept on a CSPRNG so a
 // grep of this repo turns up no weak-PRNG calls to misread. crypto.randomUUID is
-// secure-context-only; the fallback is only load-bearing on the web twin (Tauri's
-// webview is always secure) and is kept identical here so the two don't drift.
+// secure-context-only. Tauri's webview is always a secure context, so the
+// fallback below is belt-and-braces.
 function newShareId(): string {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   const buf = new Uint32Array(4);

@@ -1,13 +1,9 @@
 /**
  * Centralized audio playback for the desktop app.
  *
- * Mirror of src/lib/play-sound.ts in the web app. Same exported API; the
- * only difference is that desktop loads audio via Vite-bundled asset
- * imports (so the mp3 binaries are baked into the Tauri bundle), whereas
- * web loads from URL strings served out of the public folder.
- *
- * Both files derive their sounds from packages/desktop/src/assets/ as
- * the canonical source of truth.
+ * Audio is loaded via Vite-bundled asset imports from
+ * packages/desktop/src/assets/, so the mp3 binaries are baked into the
+ * Tauri bundle.
  */
 
 import qardDropSound from '@/assets/sound.mp3';

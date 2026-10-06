@@ -129,8 +129,7 @@ export function BobChatInterface({ initialMessage, showLinkToFullPage = false }:
 
     // Only show setup guide once we've confirmed no API key exists.
     // While the keychain check is pending (hasApiKey === null), render the
-    // chat UI so conversation loaded from localStorage is visible immediately
-    // — matching the web version's synchronous pattern.
+    // chat UI so conversation loaded from localStorage is visible immediately.
     if (hasApiKey === false) {
         return <BobSetupGuide onKeyConfigured={() => setHasApiKey(true)} />;
     }

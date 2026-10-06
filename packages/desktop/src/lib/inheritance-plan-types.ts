@@ -135,7 +135,7 @@ export interface InheritancePlan {
   personalMessage: string;
 }
 
-const DEFAULT_RESTORE_STEPS = `1. Download seQRets from seqrets.app or use the web app.
+const DEFAULT_RESTORE_STEPS = `1. Download the free seQRets desktop app from seqrets.app.
    Fallback: if seQRets is unavailable, use the standalone recovery tool — a single offline HTML file that performs the same restore in any browser. Download recover.html from https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html, or use the hosted version at https://seqrets.github.io/seQRets-Recover/
 2. Open the app (or recover.html) and click "Restore Secret".
 3. Gather the required Qards from the locations listed in the seQRet Sets section above.

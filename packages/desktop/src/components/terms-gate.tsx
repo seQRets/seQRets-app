@@ -10,8 +10,6 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 // Versioned key: bumping ACCEPTANCE_VERSION re-prompts all users after a
 // material change to the Terms, so prior acceptance of older terms doesn't
 // silently carry forward.
-//
-// Keep in sync with the web copy at src/app/components/terms-gate.tsx.
 const ACCEPTANCE_VERSION = '1';
 const ACCEPTANCE_KEY = `seQRets_termsAccepted_v${ACCEPTANCE_VERSION}`;
 

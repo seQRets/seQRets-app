@@ -5,8 +5,8 @@
  *
  * Everything here is pure with respect to the app: no React, no toasts, no
  * saving. The platform components own state, JSX, print windows, and how
- * bytes reach disk (browser anchor vs Tauri native-save); this module owns
- * WHAT gets generated so fixes land on web and desktop at once.
+ * bytes reach disk (Tauri native-save); this module owns WHAT gets
+ * generated.
  *
  * Intentional platform divergence is expressed through options:
  * - `fingerprint` (desktop premium): printing a truncated SHA-256 line
