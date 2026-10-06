@@ -1,0 +1,85 @@
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+}
+
+/* Colors match the app's theme (src/app/globals.css). */
+:root {
+  --bg: hsl(37 22% 89%);
+  --card: hsl(37 30% 94%);
+  --text: hsl(30 12% 14%);
+  --muted: hsl(30 8% 38%);
+  --primary: hsl(25 24% 16%);
+  --primary-text: hsl(37 14% 91%);
+  --border: hsl(35 14% 80%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: hsl(28 10% 8%);
+    --card: hsl(28 8% 12%);
+    --text: hsl(30 15% 92%);
+    --muted: hsl(30 8% 65%);
+    --primary: hsl(38 48% 62%);
+    --primary-text: hsl(28 10% 8%);
+    --border: hsl(28 8% 20%);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.55;
+}
+
+main {
+  max-width: 34rem;
+  width: 100%;
+  text-align: center;
+}
+
+img { display: block; margin: 0 auto 8px; }
+
+h1 { font-size: 1.75rem; font-weight: 800; line-height: 1.25; margin: 0 0 12px; }
+
+h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 8px; }
+
+p { margin: 0 0 16px; color: var(--muted); }
+
+section {
+  margin: 28px 0;
+  padding: 24px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+section p { color: var(--text); }
+
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:hover { opacity: 0.9; }
+
+.small { font-size: 0.9rem; }
+
+a { color: inherit; }

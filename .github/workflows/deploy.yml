@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Gate the deploy on the crypto suite. app.seqrets.app is the live web app —
-  # a regression in createShares/parseShare must not reach it.
+  # Crypto suite on every push to main. Until CI is reworked (web-removal
+  # step D) this is the only place pushes to main get tested.
   test:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +33,7 @@ jobs:
       - name: Crypto core tests
         run: npm test
 
-  build-and-deploy:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -45,29 +45,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build crypto package
-        run: npm run build:crypto
-
-      - name: Generate version module
-        run: npm run generate:version
-
-      - name: Sync web assets (mp3 audio from desktop assets dir)
-        run: npm run sync:web-assets
-
-      - name: Build Next.js static export
-        run: npx next build
-
-      # Direct upload of the prebuilt static export — Cloudflare never builds
-      # Next.js itself (that is what broke the March 2026 attempt). Security
-      # headers ship inside out/ via public/_headers. Wrangler is pinned so a
-      # new release can't change deploy behavior unannounced.
-      - name: Deploy to Cloudflare Pages
+      # The web app is retired: app.seqrets.app serves only the static holding
+      # page in holding/ (no build step). Its security headers ship in
+      # holding/_headers. Wrangler is pinned so a new release can't change
+      # deploy behavior unannounced.
+      - name: Deploy holding page to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4.142.0 pages deploy out --project-name seqrets-app --branch main --commit-hash ${{ github.sha }}
+        run: npx --yes wrangler@4.142.0 pages deploy holding --project-name seqrets-app --branch main --commit-hash ${{ github.sha }}

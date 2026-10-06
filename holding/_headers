@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HTTP headers for app.seqrets.app, which now serves only the holding page in
+# this folder (the web app was retired). Cloudflare Pages applies this file
+# natively; .github/workflows/deploy.yml uploads the folder as-is.
+#
+# The page has no inline code and talks to no other server, so the CSP allows
+# only same-origin files. Clear-Site-Data wipes whatever the old web app left
+# in a returning visitor's browser (service worker, caches, saved settings).
+#
+# HSTS deliberately omits "preload". Don't add it without an explicit decision.
+# ─────────────────────────────────────────────────────────────────────────────
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Permitted-Cross-Domain-Policies: none
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; worker-src 'self'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+  Clear-Site-Data: "storage"

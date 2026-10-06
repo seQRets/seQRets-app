@@ -60,3 +60,6 @@ memory.md
 # Other
 .DS_Store
 *.pem
+
+# Local `wrangler pages dev` state (holding-page preview)
+.wrangler/
