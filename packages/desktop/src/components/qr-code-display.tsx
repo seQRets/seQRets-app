@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { SmartCardDialog, SmartCardMode } from '@/components/smartcard-dialog';
 import { saveFileNative, saveTextFileNative, dataUrlToUint8Array, PNG_FILTERS, TXT_FILTERS, ZIP_FILTERS, SEQRETS_FILTERS } from '@/lib/native-save';
 import { encryptVault } from '@/lib/desktop-crypto';
-import { computeShareHash, truncateHash } from '@seqrets/crypto';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { tempDir, join } from '@tauri-apps/api/path';
@@ -30,9 +29,16 @@ interface QrCodeDisplayProps {
    * the payload is unaffected. Defaults to true, matching historical behavior.
    */
   showLabelOnExports?: boolean;
+  /**
+   * Offer the "vault" exports that pack every Qard of the set into ONE file
+   * or ONE smart card. Off for Locker Qards: a single copy of all of them,
+   * plus the password and the Locker file, would open everything and defeat
+   * the K-of-N split. Defaults to true (single-secret Qards).
+   */
+  allowVaultExport?: boolean;
 }
 
-export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = true }: QrCodeDisplayProps) {
+export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = true, allowVaultExport = true }: QrCodeDisplayProps) {
   const { shares, totalShares, requiredShares, label, setId, isTextOnly: isTextOnlyHint, encryptedInstructions } = qrCodeData;
   // Every export surface reads exportLabel; only the on-screen header (the
   // user's own session) keeps showing the real label regardless.
@@ -66,18 +72,6 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
   const [showScanWarning, setShowScanWarning] = useState(isNearLimit);
 
   const getShareTitle = (index: number) => qardFileTitle(exportLabel, index, setId);
-
-  // Truncated SHA-256 fingerprint (premium) — read from the share's embedded
-  // sha256 segment (computed at generation over the FULL hash input,
-  // including any recovery metadata), falling back to recompute over
-  // salt|data for legacy hashless Qards. Guarantees the printed fingerprint
-  // matches the QR's contents byte-for-byte.
-  const getShareFingerprint = (index: number) => {
-    const parts = shares[index].split('|');
-    const embedded = parts.find(p => p.startsWith('sha256:'))?.slice(7);
-    const fullHash = embedded ?? computeShareHash(parts.slice(0, 3).join('|'));
-    return truncateHash(fullHash);
-  };
 
   const getPrintableStyles = (forPrintAll: boolean = false) => `
     ${PRINT_FONT_CSS}
@@ -118,7 +112,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
       <div id="qard-to-print-${index}" class="a5-page ${pageBreakClass}" style="width: 14.8cm; height: 21cm; display: flex; justify-content: center; align-items: center; background-color: #fdfdfd; font-family: 'Inter', sans-serif;">
         <div style="box-sizing: border-box; border: 1px solid #d3cdc1; padding: 20px 40px 50px 40px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: space-between;">
 
-            <h1 style="font-size: 24px; font-weight: 700; color: #231f20; margin-top: 50px; margin-bottom: 40px;">Secret Qard Backup</h1>
+            <h1 style="font-size: 24px; font-weight: 700; color: #231f20; margin-top: 50px; margin-bottom: 40px;">Secret Qard</h1>
 
             <div style="border: 1px solid #d3cdc1; padding: 10px;">
                 ${qrUri ? `<img src="${qrUri}" alt="QR Code" style="width: 10cm; height: 10cm; image-rendering: pixelated;"/>` : `<div style="width: 10cm; height: 10cm; display: flex; align-items: center; justify-content: center; background: #e8e5df; color: #6b6567; text-align: center;">QR Code not available.<br/>Data is too large.</div>`}
@@ -129,13 +123,11 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
 
                 ${exportLabel ? `<p style="font-size: 14px; color: #3e3739; margin: 0 0 6px 0;">Label: <b style="font-weight: 500;">${escapeHtml(exportLabel)}</b></p>` : ''}
 
-                <p style="font-size: 14px; color: #3e3739; margin: 0 0 6px 0;">Set: ${escapeHtml(setId)}  &middot;  ${createdDate}</p>
-
-                <p style="font-size: 12px; color: #3e3739; margin: 0 0 16px 0;">SHA-256: ${getShareFingerprint(index)}</p>
+                <p style="font-size: 14px; color: #3e3739; margin: 0 0 16px 0;">Set: ${escapeHtml(setId)}  &middot;  ${createdDate}</p>
 
                 <div style="display: flex; align-items: center; justify-content: center; color: #DC2626; font-weight: 500; font-size: 14px; margin-bottom: 10px;">
                     <span style="margin-right: 6px; font-size: 16px;">⚠️</span>
-                    <span>Store securely and separately from other qards</span>
+                    <span>Store securely and separately from other Qards</span>
                 </div>
 
                 <p style="font-size: 12px; color: #6b6567; margin: 0;">Scan with seQRets App to recover &mdash; seqrets.app</p>
@@ -192,16 +184,13 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
     printContent(allSharesHtml, getPrintableStyles(true));
   };
 
-  // Canvas card rendering lives in shared-ui (qard-render.ts). Desktop uses
-  // the compact premium layout: the fingerprint switches on the combined
-  // "Set · date" line and the SHA-256 row, with the desktop footer.
+  // Canvas card rendering lives in shared-ui (qard-render.ts).
   const renderCardToCanvas = (index: number, qrDataUrl: string, scale: number = 4): Promise<string> =>
     renderQardToCanvas(qrDataUrl, {
       cardNumber: index + 1,
       setId,
       label: exportLabel,
       dateStr: new Date().toLocaleDateString('en-US'),
-      fingerprint: getShareFingerprint(index),
       footerText: 'Scan with seQRets App to recover  \u2014  seqrets.app',
       scale,
     });
@@ -530,6 +519,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
           <ShieldCheck className="h-4 w-4" />
           <span className="text-sm font-medium">All shares integrity verified (SHA-256)</span>
         </div>
+        {allowVaultExport && (
         <div className="mt-8 border-t pt-6">
             <div className="max-w-md mx-auto text-center space-y-3">
                 <h4 className="font-semibold text-base">Save a Backup Vault File</h4>
@@ -561,6 +551,7 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
                 </p>
             </div>
         </div>
+        )}
 
         <Dialog open={showScanWarning} onOpenChange={() => {}}>
           <DialogContent className="sm:max-w-sm" onInteractOutside={(e) => e.preventDefault()}>

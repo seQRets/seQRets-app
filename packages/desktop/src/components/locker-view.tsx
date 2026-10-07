@@ -170,7 +170,7 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
           <p className="text-sm text-muted-foreground">
             Exact copies of this Locker&apos;s Qards. Reprint a damaged Qard here; destroy the damaged one. If a Qard may be in someone else&apos;s hands, make a new set instead.
           </p>
-          <QrCodeDisplay qrCodeData={qardData} keyfileUsed={qards.keyfileUsed} showLabelOnExports={false} />
+          <QrCodeDisplay qrCodeData={qardData} keyfileUsed={qards.keyfileUsed} showLabelOnExports={false} allowVaultExport={false} />
         </div>
       )}
 

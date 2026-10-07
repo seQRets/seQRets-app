@@ -65,6 +65,15 @@
   }
 }
 
+/* WebKit (macOS/Linux webviews) paints date/time field text with the light
+   color scheme unless told otherwise — black digits on the dark background,
+   so dates looked blank in dark mode. */
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
 .dark .dark-thin-border {
   border-width: 0.5px !important;
 }

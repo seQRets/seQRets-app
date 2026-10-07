@@ -321,7 +321,7 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
           <div className="space-y-4">
             <StepHeader n={4} title="Print the Qards and Save the Locker" done={!!savedPath} />
             <div className="pl-11 space-y-6">
-              <QrCodeDisplay qrCodeData={created.qards} keyfileUsed={created.content.qards.keyfileUsed} showLabelOnExports={false} />
+              <QrCodeDisplay qrCodeData={created.qards} keyfileUsed={created.content.qards.keyfileUsed} showLabelOnExports={false} allowVaultExport={false} />
 
               <div className="space-y-3 rounded-md border p-4">
                 <div className="flex items-center gap-2">

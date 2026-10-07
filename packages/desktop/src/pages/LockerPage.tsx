@@ -52,12 +52,10 @@ export default function LockerPage() {
   const { secondsLeft, stayOpen } = useIdleLock(view === 'locker', () => lock('Locked after 15 minutes without activity.'));
 
   const handleOpened = async (opened: OpenLocker) => {
-    setLocker(opened);
-    setDirty(false);
-    setView('locker');
-    toast({ title: 'Locker opened' });
     // The plan's lastReviewedAt is the authoritative review date; the
     // reminder sidecar is a cache rebuilt from it (and checked against it).
+    // Reconcile BEFORE showing the Locker, so the review panel never reads
+    // a stale sidecar.
     try {
       const reconcile = await reconcileWithPlan(opened.content.plan.planInfo.lastReviewedAt ?? null);
       if (reconcile.disagreementWarning) {
@@ -70,6 +68,10 @@ export default function LockerPage() {
     } catch {
       // Non-fatal; the panel surfaces a corrupt sidecar.
     }
+    setLocker(opened);
+    setDirty(false);
+    setView('locker');
+    toast({ title: 'Locker opened' });
   };
 
   return (

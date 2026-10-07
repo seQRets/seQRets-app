@@ -8,12 +8,10 @@
  * bytes reach disk (Tauri native-save); this module owns WHAT gets
  * generated.
  *
- * Intentional platform divergence is expressed through options:
- * - `fingerprint` (desktop premium): printing a truncated SHA-256 line
- *   switches the info block to the compact layout (label first, then a
- *   combined "Set: X · date" line). Without it the classic layout renders
- *   (Set, label, Created on separate lines).
- * - `footerText` differs per platform by design.
+ * The Qard face shows: "Secret Qard", the QR, "Qard #N", an optional label,
+ * "Set: X · date", the keep-apart warning and the footer. No SHA-256
+ * fingerprint is printed — the hash stays inside the QR data, where the app
+ * uses it to say "this Qard is damaged" instead of "wrong password".
  */
 
 import JSZip from 'jszip';
@@ -79,13 +77,6 @@ export interface QardCardOptions {
   label?: string | null;
   /** Pre-formatted creation date (e.g. `new Date().toLocaleDateString('en-US')`). */
   dateStr: string;
-  /**
-   * Truncated SHA-256 fingerprint (premium). When present the compact
-   * layout renders: optional label, combined "Set · date" line, then the
-   * fingerprint. When absent the classic layout renders: Set, optional
-   * label, "Created:" on separate lines.
-   */
-  fingerprint?: string | null;
   /** Footer line under the warning (differs per platform by design). */
   footerText: string;
   /** Canvas supersampling factor (default 4). */
@@ -112,11 +103,11 @@ function fillCentered(ctx: CanvasRenderingContext2D, text: string, W: number, y:
 
 /**
  * Pure Canvas 2D renderer for the Qard card layout.
- * Draws the full "Secret Qard Backup" card programmatically without
+ * Draws the full "Secret Qard" card programmatically without
  * html2canvas, ensuring reliable cross-browser support (including Safari).
  */
 export function renderQardToCanvas(qrDataUrl: string, opts: QardCardOptions): Promise<string> {
-  const { cardNumber, setId, label, dateStr, fingerprint, footerText, scale = 4 } = opts;
+  const { cardNumber, setId, label, dateStr, footerText, scale = 4 } = opts;
   return new Promise((resolve, reject) => {
     // A5 dimensions at ~96 DPI
     const W = 560;
@@ -144,7 +135,7 @@ export function renderQardToCanvas(qrDataUrl: string, opts: QardCardOptions): Pr
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#231f20';
     ctx.font = 'bold 24px Inter, system-ui, -apple-system, sans-serif';
-    ctx.fillText('Secret Qard Backup', W / 2, 85);
+    ctx.fillText('Secret Qard', W / 2, 85);
 
     // ── QR Code ──
     const qrImgSize = 378; // ~10cm at 96 DPI
@@ -188,49 +179,24 @@ export function renderQardToCanvas(qrDataUrl: string, opts: QardCardOptions): Pr
       ctx.fillText(`Qard #${cardNumber}`, W / 2, y);
       y += 28;
 
-      if (fingerprint) {
-        // Compact layout (premium): label first, combined Set · date,
-        // then the SHA-256 fingerprint for visual spot-checking.
-        if (label) {
-          ctx.fillStyle = '#3e3739';
-          ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-          // Labels are user-authored and may contain emoji — see fillCentered.
-          fillCentered(ctx, `Label: ${label}`, W, y);
-          y += 24;
-        }
-
+      // Optional label first, then the combined "Set · date" line.
+      if (label) {
         ctx.fillStyle = '#3e3739';
         ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`Set: ${setId}  ·  ${dateStr}`, W / 2, y);
+        // Labels are user-authored and may contain emoji — see fillCentered.
+        fillCentered(ctx, `Label: ${label}`, W, y);
         y += 24;
-
-        ctx.fillStyle = '#3e3739';
-        ctx.font = '12px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`SHA-256: ${fingerprint}`, W / 2, y);
-        y += 28;
-      } else {
-        // Classic layout: Set, optional label, Created — separate lines.
-        ctx.fillStyle = '#6b6567';
-        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        ctx.fillText(`Set: ${setId}`, W / 2, y);
-        y += 24;
-
-        ctx.fillStyle = '#3e3739';
-        ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
-        if (label) {
-          // Labels are user-authored and may contain emoji — see fillCentered.
-          fillCentered(ctx, `Label: ${label}`, W, y);
-          y += 22;
-        }
-
-        ctx.fillText(`Created: ${dateStr}`, W / 2, y);
-        y += 30;
       }
+
+      ctx.fillStyle = '#3e3739';
+      ctx.font = '14px Inter, system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Set: ${setId}  ·  ${dateStr}`, W / 2, y);
+      y += 32;
 
       // Warning — emoji rendered larger than the text
       {
         const emoji = '⚠️';
-        const text = ' Store securely and separately from other qards';
+        const text = ' Store securely and separately from other Qards';
         const emojiFont = '20px Inter, system-ui, -apple-system, sans-serif';
         const textFont = '500 14px Inter, system-ui, -apple-system, sans-serif';
 
