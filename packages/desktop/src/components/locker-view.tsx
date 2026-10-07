@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { InheritancePlanForm } from '@/components/inheritance-plan-form';
 import { QrCodeDisplay } from '@/components/qr-code-display';
 import { ReviewReminderPanel } from '@/components/review-reminder-panel';
-import { describeLockerSet, lockerFileName, saveLocker } from '@seqrets/crypto';
+import { describeLockerSet, lockerFileName, saveLocker, sealLocker, serializeLockerFile } from '@seqrets/crypto';
 import type { CreateSharesResult, InheritancePlan } from '@seqrets/crypto';
 import { desktopLockerCrypto, LOCKER_FILE_FILTERS } from '@/lib/locker';
 import type { OpenLocker } from '@/lib/locker';
@@ -55,7 +55,29 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
     onDirtyChange(true);
   };
 
+  // No edits: write the SAME version (same save counter and date) to a new
+  // place. Bumping the version for identical contents would make copies
+  // impossible to tell apart.
+  const handleSaveCopy = async () => {
+    setIsSaving(true);
+    try {
+      const file = await sealLocker(
+        { content: locker.content, key: locker.key, setId: locker.setId, seq: locker.seq, savedAt: locker.savedAt },
+        desktopLockerCrypto.encryptInstructions,
+      );
+      const path = await saveTextFileNative(locker.fileName ?? lockerFileName(locker.setId), LOCKER_FILE_FILTERS, serializeLockerFile(file));
+      if (!path) return;
+      if (locker.editedOutsideApp) onChange({ ...locker, editedOutsideApp: false });
+      toast({ title: 'Copy saved', description: `Saved "${savedFileName(path)}" — version ${locker.seq}, unchanged.` });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Could not save the Locker', description: e?.message || String(e) });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!dirty) return handleSaveCopy();
     setIsSaving(true);
     try {
       const today = new Date().toISOString().split('T')[0];

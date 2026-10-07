@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Bot, FolderLock, FolderOpen } from 'lucide-react';
 import {
@@ -20,6 +20,7 @@ import { LockerCreate } from '@/components/locker-create';
 import { LockerOpen } from '@/components/locker-open';
 import { LockerView } from '@/components/locker-view';
 import type { OpenLocker } from '@/lib/locker';
+import { takeHandedOffLocker } from '@/lib/locker-handoff';
 import { reconcileWithPlan, SIDECAR_DISAGREEMENT_WARN_DAYS } from '@/lib/review-reminder';
 // Lazy: Bob's chunk loads when the popover first opens, not on first paint (item 1.5).
 const BobChatInterface = React.lazy(() =>
@@ -73,6 +74,13 @@ export default function LockerPage() {
     setView('locker');
     toast({ title: 'Locker opened' });
   };
+
+  // A Locker opened from the Restore tab arrives here exactly once.
+  useEffect(() => {
+    const handed = takeHandedOffLocker();
+    if (handed) void handleOpened(handed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12">

@@ -6,10 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './file-upload';
-import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { FolderLock, KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
-import { parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets, detectSlip39, isLockerKey } from '@seqrets/crypto';
+import { parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets, detectSlip39, isLockerKey, openLockerWithKey, LockerError } from '@seqrets/crypto';
+import { useNavigate } from 'react-router-dom';
+import { DragDropZone } from '@/components/ui/drag-drop-zone';
+import { desktopLockerCrypto } from '@/lib/locker';
+import { handOffLocker } from '@/lib/locker-handoff';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
@@ -78,6 +82,12 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
   const [password, setPassword] = useState('');
   const [restoredSecret, setRestoredSecret] = useState('');
   const [restoredLabel, setRestoredLabel] = useState<string | undefined>('');
+  // Qards that turned out to hold a Locker key: the key is kept only until
+  // the Locker file is chosen, and is never displayed.
+  const [lockerKey, setLockerKey] = useState<{ key: string; setId?: string } | null>(null);
+  const [lockerFileError, setLockerFileError] = useState<string | null>(null);
+  const [isOpeningLocker, setIsOpeningLocker] = useState(false);
+  const navigate = useNavigate();
   const [isRestoring, setIsRestoring] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -533,6 +543,16 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
         setDecodedShares([]);
         return;
       }
+      if (isLockerKey(result.secret)) {
+        setLockerKey({ key: result.secret, setId: decodedShares.find(s => s.success)?.setId ?? undefined });
+        setLockerFileError(null);
+        secureWipe(setPassword, password);
+        setKeyfile(null);
+        setKeyfileName(null);
+        setDecodedShares([]);
+        toast({ title: 'These Qards open a Locker', description: 'Choose the Locker file to open it.' });
+        return;
+      }
       setRestoredSecret(result.secret);
       setRestoredLabel(result.label);
       setKeyfile(null);
@@ -555,7 +575,30 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
     }
   };
 
+  const handleLockerFile = async (files: File[]) => {
+    const file = files[0];
+    if (!file || !lockerKey) return;
+    setLockerFileError(null);
+    setIsOpeningLocker(true);
+    try {
+      const fileText = await file.text();
+      const unlocked = await openLockerWithKey(
+        { fileText, key: lockerKey.key, expectedSetId: lockerKey.setId },
+        desktopLockerCrypto,
+      );
+      handOffLocker({ ...unlocked, fileName: file.name });
+      setLockerKey(null);
+      navigate('/locker');
+    } catch (e: any) {
+      setLockerFileError(e instanceof LockerError ? e.message : 'This file could not be opened as a Locker.');
+    } finally {
+      setIsOpeningLocker(false);
+    }
+  };
+
   const handleReset = () => {
+    setLockerKey(null);
+    setLockerFileError(null);
     secureWipe(setRestoredSecret, restoredSecret);
     secureWipe(setPassword, password);
     setDecodedShares([]);
@@ -684,13 +727,13 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
 
   return (
     <Card className="relative shadow-lg dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] dark:border-0">
-      {isRestoring && (
+      {(isRestoring || isOpeningLocker) && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 rounded-lg backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
-          <p className="mt-3 text-sm text-[hsl(37,10%,75%)]">{lockerMode ? 'Opening your Locker…' : 'Restoring your secret…'}</p>
+          <p className="mt-3 text-sm text-[hsl(37,10%,75%)]">{lockerMode || isOpeningLocker ? 'Opening your Locker…' : 'Restoring your secret…'}</p>
         </div>
       )}
-      {restoredSecret && (
+      {(restoredSecret || lockerKey) && (
         <Button
           onClick={handleReset}
           variant="outline"
@@ -712,7 +755,34 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
         <CardDescription>{lockerMode ? 'Add enough Qards from this Locker\'s set and enter its password.' : 'Follow the steps to restore a secret from your backups.'}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8 p-10 pt-0">
-        {restoredSecret ? (
+        {lockerKey ? (
+            <div className="space-y-4 text-center">
+                <FolderLock className="mx-auto h-16 w-16 text-primary" />
+                <h3 className="text-2xl font-bold">These Qards open a Locker</h3>
+                <p className="text-muted-foreground">
+                    Choose the Locker file to open it. The Qards alone don&apos;t hold the secrets — the Locker file does.
+                </p>
+                <div className="text-left">
+                    <DragDropZone
+                        onFiles={handleLockerFile}
+                        accept=".json,application/json"
+                        label="Drop the Locker file here"
+                        hint="or click to choose it (seQRets-Locker-….json)"
+                        icon={<FolderLock className="w-10 h-10 text-muted-foreground" />}
+                        inputAriaLabel="Choose the Locker file"
+                    />
+                </div>
+                {lockerFileError && (
+                    <Alert variant="destructive" className="text-left">
+                        <AlertTitle>Couldn&apos;t open the Locker</AlertTitle>
+                        <AlertDescription>{lockerFileError}</AlertDescription>
+                    </Alert>
+                )}
+                <p className="text-sm text-muted-foreground">
+                    Can&apos;t find it? The heir sheet says where the Locker file is kept.
+                </p>
+            </div>
+        ) : restoredSecret ? (
             <div className="space-y-4 text-center">
                 <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
                 <h3 className="text-2xl font-bold">Secret Revealed!</h3>
