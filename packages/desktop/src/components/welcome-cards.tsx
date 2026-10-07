@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Lock, FileText, Combine, ShieldCheck, WifiOff } from "lucide-react";
+import { Lock, FolderLock, Combine, ShieldCheck, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 import { VERSION_STRING } from "@/generated/version";
 
 const SKIP_WELCOME_KEY = 'seQRets_skipWelcome';
 
-type ActivePage = "create" | "plan" | "restore";
+type ActivePage = "create" | "locker" | "restore";
 
 interface WelcomeCardsProps {
   onSelect: (tab: ActivePage) => void;
@@ -40,7 +40,7 @@ const DARK_PALETTE: CardPalette = {
 
 const cards: CardDef[] = [
   { value: "create", label: "Secure a Secret", description: "Encrypt and split into Qards", icon: Lock },
-  { value: "plan", label: "Inheritance Plan", description: "Prepare instructions for heirs", icon: FileText },
+  { value: "locker", label: "Locker", description: "Every secret and your plan, one set of Qards", icon: FolderLock },
   { value: "restore", label: "Restore a Secret", description: "Rebuild a secret from Qards", icon: Combine },
 ];
 

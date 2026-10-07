@@ -31,6 +31,8 @@ import {
   createLocker,
   unlockLocker,
   saveLocker,
+  openLockerWithKey,
+  describeLockerSet,
   createBlankPlan,
   INHERITANCE_PLAN_VERSION,
 } from '@seqrets/crypto';
@@ -351,5 +353,38 @@ describe('Locker create / unlock / save', () => {
       unlockLocker({ fileText: '{"salt":"x","data":"y"}', shares: created.qards.shares, password: PASSWORD }),
       expectLockerError('not-a-locker'),
     );
+  });
+});
+
+describe('openLockerWithKey (Restore form hands over the key)', () => {
+  it('opens with a key restored elsewhere, and refuses a non-key', async () => {
+    const created = await createLocker({ plan: createBlankPlan(), password: PASSWORD, totalShares: 2, requiredShares: 2 });
+    const opened = await openLockerWithKey({ fileText: created.text, key: created.key, expectedSetId: created.qards.setId });
+    assert.equal(opened.seq, 1);
+    assert.deepEqual(opened.content.qards.shares, created.qards.shares);
+    await assert.rejects(openLockerWithKey({ fileText: created.text, key: 'a single secret' }), expectLockerError('not-a-locker-key'));
+  });
+});
+
+describe('describeLockerSet', () => {
+  it('says what the family\'s set survives', () => {
+    assert.equal(describeLockerSet(2, 3).survives, "Any 2 of these 3 Qards open the Locker. If 2 are lost, your family can't open it.");
+    assert.equal(describeLockerSet(2, 3).tight, false);
+    assert.equal(describeLockerSet(2, 2).survives, "All 2 Qards are needed to open the Locker. If any one is lost, your family can't open it.");
+  });
+
+  it('warns when more than two-thirds are needed, with looser suggestions', () => {
+    for (const [k, n] of [[3, 4], [5, 7], [8, 10], [2, 2], [1, 1]]) {
+      const d = describeLockerSet(k, n);
+      assert.equal(d.tight, true, `${k} of ${n}`);
+      assert.ok(d.warning, `${k} of ${n} has a warning`);
+    }
+    for (const [k, n] of [[2, 3], [3, 5], [4, 7], [6, 10]]) {
+      assert.equal(describeLockerSet(k, n).tight, false, `${k} of ${n}`);
+    }
+    assert.match(describeLockerSet(3, 4).warning, /3 of 5/);
+    assert.match(describeLockerSet(5, 7).warning, /4 of 7/);
+    assert.match(describeLockerSet(8, 10).warning, /If 3 Qards are lost/);
+    assert.doesNotMatch(describeLockerSet(8, 10).warning, /of 1[1-9]/, 'never suggests more than 10 Qards');
   });
 });

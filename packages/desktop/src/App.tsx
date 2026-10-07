@@ -8,7 +8,7 @@ import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
 import SupportPage from '@/pages/SupportPage';
 import SmartCardPage from '@/pages/SmartCardPage';
-import InstructionsPage from '@/pages/InstructionsPage';
+import LockerPage from '@/pages/LockerPage';
 import ContactPage from '@/pages/ContactPage';
 import { maybeFireLaunchNotification } from '@/lib/review-reminder';
 
@@ -45,7 +45,7 @@ export default function App() {
           <Route path="/support" element={<SupportPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/smartcard" element={<SmartCardPage />} />
-          <Route path="/inheritance" element={<InstructionsPage />} />
+          <Route path="/locker" element={<LockerPage />} />
         </Routes>
       </TermsGate>
       <UpdateChecker checkOnMount />

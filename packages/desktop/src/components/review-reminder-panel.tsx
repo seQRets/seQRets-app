@@ -36,9 +36,14 @@ interface ReviewReminderPanelProps {
    * is settings-only.
    */
   canMarkReviewed?: boolean;
+  /**
+   * Called with today's ISO date after "Mark as reviewed" succeeds, so the
+   * open Locker can record it in the plan (the authoritative copy) too.
+   */
+  onMarkedReviewed?: (isoDate: string) => void;
 }
 
-export function ReviewReminderPanel({ canMarkReviewed = true }: ReviewReminderPanelProps) {
+export function ReviewReminderPanel({ canMarkReviewed = true, onMarkedReviewed }: ReviewReminderPanelProps) {
   const { toast } = useToast();
   const [state, setState] = useState<ReminderState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -172,7 +177,7 @@ export function ReviewReminderPanel({ canMarkReviewed = true }: ReviewReminderPa
             size="sm"
             variant={due ? 'default' : 'outline'}
             disabled={busy}
-            onClick={() => guard(() => markReviewed(), 'Marked as reviewed')}
+            onClick={() => guard(async () => { await markReviewed(); onMarkedReviewed?.(todayIso()); }, 'Marked as reviewed')}
           >
             <CheckCircle2 className="h-4 w-4 mr-1.5" />
             Mark as reviewed

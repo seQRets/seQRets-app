@@ -9,7 +9,7 @@ import { FileUpload } from './file-upload';
 import { KeyRound, Combine, Loader2, CheckCircle2, Eye, EyeOff, XCircle, Copy, RefreshCcw, X, Paperclip, Lock, ArrowDown, QrCode, Sprout, ShieldCheck, TriangleAlert } from 'lucide-react';
 import QRCode from 'qrcode';
 import { tryGetEntropy, masterFingerprint } from '@/lib/crypto';
-import { parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets, detectSlip39 } from '@seqrets/crypto';
+import { parseShare, parseShareMeta, toSeedQR, toCompactEntropy, summarizeShareSets, detectSlip39, isLockerKey } from '@seqrets/crypto';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
@@ -51,7 +51,19 @@ interface DecodedShare {
     index: number | null;     // 1-based card index, if embedRecoveryInfo
 }
 
-export function RestoreSecretForm() {
+interface RestoreSecretFormProps {
+  /**
+   * Locker mode: the Qards must hold a Locker's internal key. The key is
+   * handed to `onKeyRestored` (which opens the Locker) and never displayed.
+   * Errors thrown by the callback are shown like a failed restore, with the
+   * Qards and password kept so the user can fix and retry.
+   */
+  lockerMode?: {
+    onKeyRestored: (key: string, setId: string | undefined) => Promise<void>;
+  };
+}
+
+export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
   const [step, setStep] = useState(1);
   const endRef = useRef<HTMLDivElement>(null);
   // When the user advances a step, scroll to the bottom so the newly
@@ -508,6 +520,19 @@ export function RestoreSecretForm() {
         password,
         keyfile: useKeyfile ? keyfile ?? undefined : undefined,
       });
+      if (lockerMode) {
+        if (!isLockerKey(result.secret)) {
+          throw new Error('These Qards hold a single secret, not a Locker. Open them on the Restore Secret tab instead.');
+        }
+        const setId = decodedShares.find(s => s.success)?.setId ?? undefined;
+        await lockerMode.onKeyRestored(result.secret, setId);
+        // The parent has taken over; clear what this form held.
+        secureWipe(setPassword, password);
+        setKeyfile(null);
+        setKeyfileName(null);
+        setDecodedShares([]);
+        return;
+      }
       setRestoredSecret(result.secret);
       setRestoredLabel(result.label);
       setKeyfile(null);
@@ -522,7 +547,7 @@ export function RestoreSecretForm() {
       setError(errorMessage);
       toast({
         variant: 'destructive',
-        title: 'Restoration Failed',
+        title: lockerMode ? "Couldn't Open the Locker" : 'Restoration Failed',
         description: errorMessage,
       });
     } finally {
@@ -662,7 +687,7 @@ export function RestoreSecretForm() {
       {isRestoring && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 rounded-lg backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-amber-400" />
-          <p className="mt-3 text-sm text-[hsl(37,10%,75%)]">Restoring your secret…</p>
+          <p className="mt-3 text-sm text-[hsl(37,10%,75%)]">{lockerMode ? 'Opening your Locker…' : 'Restoring your secret…'}</p>
         </div>
       )}
       {restoredSecret && (
@@ -677,14 +702,14 @@ export function RestoreSecretForm() {
       )}
       <CardHeader className="p-10">
         <div className="flex items-center gap-2">
-          <CardTitle>Restore From Backup</CardTitle>
+          <CardTitle>{lockerMode ? 'Unlock Your Locker' : 'Restore From Backup'}</CardTitle>
           <HelpHint label="How does restoring work?">
             <p className="font-bold mb-2">How does restoring work?</p>
             <p>Bring together the minimum number of Qards (the threshold you set when creating them) plus the password — and the keyfile if you used one. Drop in QR images, scan with the camera, paste the text, or load directly from a seQRets smart card.</p>
             <p className="mt-2">If your Qards include recovery info, the app shows a live count of how many you still need.</p>
           </HelpHint>
         </div>
-        <CardDescription>Follow the steps to restore a secret from your backups.</CardDescription>
+        <CardDescription>{lockerMode ? 'Add enough Qards from this Locker\'s set and enter its password.' : 'Follow the steps to restore a secret from your backups.'}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8 p-10 pt-0">
         {restoredSecret ? (
@@ -1118,11 +1143,13 @@ export function RestoreSecretForm() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">3</div>
-                            <h3 className="text-xl font-semibold">Restore Your Secret</h3>
+                            <h3 className="text-xl font-semibold">{lockerMode ? 'Open Your Locker' : 'Restore Your Secret'}</h3>
                         </div>
                         <div className="pl-11 space-y-4">
                             <p className="text-sm text-muted-foreground">
-                                Once you have added enough shares and entered your credentials, click the button below to decrypt and reveal your secret.
+                                {lockerMode
+                                  ? 'Once you have added enough Qards and entered the password, click the button below to open the Locker.'
+                                  : 'Once you have added enough shares and entered your credentials, click the button below to decrypt and reveal your secret.'}
                             </p>
                             {error && (
                                 <Alert variant="destructive">
@@ -1133,7 +1160,7 @@ export function RestoreSecretForm() {
                             <div className="flex justify-end">
                                 <Button size="lg" onClick={handleRestore} disabled={isRestoreButtonDisabled} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md">
                                     {isScanning || isRestoring ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Combine className="mr-2 h-5 w-5" />}
-                                    {isScanning ? 'Scanning...' : isRestoring ? 'Restoring...' : `Restore Secret (${uniqueSharesCount} shares)`}
+                                    {isScanning ? 'Scanning...' : isRestoring ? (lockerMode ? 'Opening...' : 'Restoring...') : lockerMode ? `Open Locker (${uniqueSharesCount} Qards)` : `Restore Secret (${uniqueSharesCount} shares)`}
                                 </Button>
                             </div>
                         </div>

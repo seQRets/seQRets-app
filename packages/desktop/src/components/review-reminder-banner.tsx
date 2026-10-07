@@ -1,7 +1,7 @@
 // ── Review Reminder Banner ─────────────────────────────────────────
 // Rendered on the home page. Checks the sidecar on mount and, if the
 // reminder is due (and not session-dismissed), shows a dismissible card
-// that deep-links to the Inheritance Plan tab. Also offers a 7-day snooze
+// that deep-links to the Locker tab. Also offers a 7-day snooze
 // that persists across launches.
 
 import React, { useEffect, useState } from 'react';
@@ -44,8 +44,8 @@ export function ReviewReminderBanner() {
   const overdueDays = state.daysUntilDue;
   const message =
     overdueDays > 0
-      ? `Your inheritance plan review is overdue by ${overdueDays} day${overdueDays === 1 ? '' : 's'}.`
-      : 'Your inheritance plan review is due today.';
+      ? `Your Locker review is overdue by ${overdueDays} day${overdueDays === 1 ? '' : 's'}.`
+      : 'Your Locker review is due today.';
 
   const handleDismiss = () => {
     try {
@@ -78,10 +78,10 @@ export function ReviewReminderBanner() {
             <Button
               size="sm"
               variant="default"
-              onClick={() => navigate('/inheritance')}
+              onClick={() => navigate('/locker')}
             >
               <CalendarClock className="h-4 w-4 mr-1.5" />
-              Open plan
+              Open Locker
             </Button>
             <Button size="sm" variant="outline" onClick={() => void handleSnooze()}>
               Snooze 7 days

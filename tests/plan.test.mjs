@@ -1,4 +1,4 @@
-// seQRets — inheritance plan model: serializer, validator, documents.
+// seQRets — inheritance plan model: validator and documents.
 //
 // The plan lives inside a Locker. There is no migration chain — the app had
 // no users before plan schema v7 — so anything that is not a current plan
@@ -9,8 +9,6 @@ import assert from 'node:assert/strict';
 
 import {
   INHERITANCE_PLAN_VERSION,
-  INHERITANCE_PLAN_FILENAME,
-  INHERITANCE_PLAN_FILETYPE,
   createBlankPlan,
   createBlankSecretSet,
   createBlankDigitalAsset,
@@ -23,22 +21,8 @@ import {
   PLAN_DOCUMENT_MAX_BYTES,
   PLAN_DOCUMENTS_MAX_TOTAL_BYTES,
   planFileLastName,
-  planToRawInstruction,
-  isInheritancePlan,
-  rawInstructionToPlan,
   validatePlan,
-  encryptInstructions,
-  decryptInstructions,
 } from '@seqrets/crypto';
-
-const PASSWORD = 'a throwaway test password, not a real one';
-
-/** Wrap a raw plan object the way the app stores it (envelope + base64 JSON). */
-const wrap = (obj) => ({
-  fileName: INHERITANCE_PLAN_FILENAME,
-  fileContent: Buffer.from(JSON.stringify(obj), 'utf8').toString('base64'),
-  fileType: INHERITANCE_PLAN_FILETYPE,
-});
 
 // ── tests ────────────────────────────────────────────────────────────
 
@@ -58,30 +42,6 @@ describe('planFileLastName', () => {
     assert.equal(planFileLastName('  Jo   Smith-Jones '), 'Smith-Jones');
     assert.equal(planFileLastName(''), '');
     assert.equal(planFileLastName(undefined), '');
-  });
-});
-
-describe('serializer', () => {
-  it('round-trips a current plan unchanged', () => {
-    const plan = createBlankPlan();
-    plan.personalMessage = 'Ünïcode and emoji survive 🔑 — “quotes”';
-    const raw = planToRawInstruction(plan);
-    assert.equal(isInheritancePlan(raw), true);
-    assert.deepEqual(rawInstructionToPlan(raw), plan);
-  });
-
-  it('opens after real encryption and decryption', async () => {
-    const plan = createBlankPlan();
-    const enc = await encryptInstructions(planToRawInstruction(plan), PASSWORD);
-    const raw = await decryptInstructions({ encryptedData: JSON.stringify(enc), password: PASSWORD });
-    assert.deepEqual(rawInstructionToPlan(raw), plan);
-  });
-
-  it('is not fooled by other files or damaged content', () => {
-    assert.equal(isInheritancePlan({ ...wrap(createBlankPlan()), fileName: 'notes.json' }), false);
-    assert.equal(isInheritancePlan({ ...wrap(createBlankPlan()), fileType: 'text/plain' }), false);
-    assert.equal(rawInstructionToPlan({ ...wrap(createBlankPlan()), fileContent: Buffer.from('not json').toString('base64') }), null);
-    assert.equal(rawInstructionToPlan(wrap({ version: INHERITANCE_PLAN_VERSION, planInfo: {} })), null, 'missing sections');
   });
 });
 

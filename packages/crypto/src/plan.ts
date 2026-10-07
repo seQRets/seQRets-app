@@ -1,14 +1,11 @@
 // ── Inheritance Plan ────────────────────────────────────────────────
 // The data model for the inheritance plan kept inside a Locker, plus its
-// serializer and validator. Lives in @seqrets/crypto (not the desktop app)
+// validator and document helpers. Lives in @seqrets/crypto (not the desktop app)
 // so it is covered by `npm test`. Pure: no DOM, no React.
 
 import { Buffer } from 'buffer';
-import type { RawInstruction } from './types';
 
 export const INHERITANCE_PLAN_VERSION = 7;
-export const INHERITANCE_PLAN_FILENAME = 'inheritance-plan.json';
-export const INHERITANCE_PLAN_FILETYPE = 'application/json';
 
 export interface PlanInfo {
   preparedBy: string;
@@ -276,43 +273,6 @@ export function createBlankPlan(): InheritancePlan {
     },
     personalMessage: '',
   };
-}
-
-/**
- * Serialize an InheritancePlan into a RawInstruction that feeds directly
- * into the existing encryptInstructions crypto pipeline.
- */
-export function planToRawInstruction(plan: InheritancePlan): RawInstruction {
-  const base64Content = Buffer.from(JSON.stringify(plan), 'utf8').toString('base64');
-  return {
-    fileName: INHERITANCE_PLAN_FILENAME,
-    fileContent: base64Content,
-    fileType: INHERITANCE_PLAN_FILETYPE,
-  };
-}
-
-/**
- * Check whether a decrypted RawInstruction is an in-app inheritance plan
- * (as opposed to a user-uploaded file).
- */
-export function isInheritancePlan(instruction: RawInstruction): boolean {
-  return (
-    instruction.fileName === INHERITANCE_PLAN_FILENAME &&
-    instruction.fileType === INHERITANCE_PLAN_FILETYPE
-  );
-}
-
-/**
- * Parse the base64 fileContent of a RawInstruction back into an
- * InheritancePlan object. Returns null if parsing or validation fails.
- */
-export function rawInstructionToPlan(instruction: RawInstruction): InheritancePlan | null {
-  try {
-    const jsonString = Buffer.from(instruction.fileContent, 'base64').toString('utf8');
-    return validatePlan(JSON.parse(jsonString));
-  } catch {
-    return null;
-  }
 }
 
 const PLAN_ARRAY_FIELDS = [

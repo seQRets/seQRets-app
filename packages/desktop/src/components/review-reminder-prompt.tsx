@@ -76,8 +76,8 @@ export function ReviewReminderPrompt({ open, onClose }: ReviewReminderPromptProp
         <DialogHeader>
           <DialogTitle>Set up review reminders?</DialogTitle>
           <DialogDescription>
-            Stale inheritance plans are a common failure mode. seQRets can nudge you locally to
-            open and verify this plan on a schedule. No server, no network — a plaintext reminder
+            An out-of-date Locker is a common way inheritance plans fail. seQRets can nudge you
+            locally to open and check your Locker on a schedule. No server, no network — a plaintext reminder
             file in your app data directory.
           </DialogDescription>
         </DialogHeader>

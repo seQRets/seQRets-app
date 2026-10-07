@@ -449,14 +449,25 @@ export async function unlockLocker(
     const expectedSetId = parseShare(args.shares[0]).salt.substring(0, 8);
 
     const restored = await crypto.restoreSecret({ shares: args.shares, password: args.password, keyfile: args.keyfile });
-    const key = restored.secret;
-    if (!isLockerKey(key)) {
+    return openLockerWithKey({ fileText: args.fileText, key: restored.secret, expectedSetId }, crypto);
+}
+
+/**
+ * Open a Locker with a key already restored from its Qards (the Restore
+ * form's Locker mode). `expectedSetId` is the set ID of those Qards.
+ */
+export async function openLockerWithKey(
+    args: { fileText: string; key: string; expectedSetId?: string },
+    crypto: Pick<LockerCrypto, 'decryptInstructions'> = tsLockerCrypto,
+): Promise<UnlockedLocker> {
+    if (!isLockerKey(args.key)) {
         throw new LockerError('not-a-locker-key', 'These Qards hold a single secret, not a Locker key.');
     }
-
-    const opened = await openLocker<unknown>(args.fileText, key, { expectedSetId }, crypto.decryptInstructions);
+    const opened = await openLocker<unknown>(
+        args.fileText, args.key, { expectedSetId: args.expectedSetId }, crypto.decryptInstructions,
+    );
     return {
-        key,
+        key: args.key,
         setId: opened.setId,
         seq: opened.seq,
         savedAt: opened.savedAt,
@@ -475,4 +486,50 @@ export async function saveLocker(
         crypto.encryptInstructions,
     );
     return { file, text: serializeLockerFile(file) };
+}
+
+// ── Describing a Qard set to the owner ───────────────────────────────
+
+export interface LockerSetDescription {
+    /** Plain sentence of what the set survives, counting only the family's Qards. */
+    survives: string;
+    /** True when more than two-thirds of the Qards are needed. */
+    tight: boolean;
+    /** For tight sets: a warning with looser suggestions. */
+    warning?: string;
+}
+
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
+/**
+ * What a K-of-N Qard set survives, in plain words, plus a warning when the
+ * family must gather more than two-thirds of its Qards. Suggestions keep
+ * within the app's 10-Qard maximum.
+ */
+export function describeLockerSet(requiredShares: number, totalShares: number, maxShares = 10): LockerSetDescription {
+    const k = requiredShares;
+    const n = totalShares;
+    if (n === 1) {
+        return {
+            survives: "This single Qard opens the Locker. If it is lost, your family can't open it.",
+            tight: true,
+            warning: "With only one Qard, losing it means your family can't open the Locker. A set such as 2 of 3 is safer.",
+        };
+    }
+    const fatal = n - k + 1;
+    const survives = k === n
+        ? `All ${n} Qards are needed to open the Locker. If any one is lost, your family can't open it.`
+        : `Any ${k} of these ${n} Qards open the Locker. If ${fatal} ${plural(fatal, 'is', 'are')} lost, your family can't open it.`;
+    const tight = k * 3 > n * 2;
+    if (!tight) return { survives, tight };
+
+    const suggestions: string[] = [];
+    const raisedTotal = Math.ceil((k * 3) / 2);
+    if (raisedTotal <= maxShares) suggestions.push(`${k} of ${raisedTotal}`);
+    const loweredRequired = Math.max(2, Math.floor((n * 2) / 3));
+    if (loweredRequired < k) suggestions.push(`${loweredRequired} of ${n}`);
+
+    const warning = `If ${fatal} ${plural(fatal, 'Qard is', 'Qards are')} lost, your family can't open the Locker.`
+        + (suggestions.length ? ` A looser set such as ${suggestions.join(' or ')} is safer.` : '');
+    return { survives, tight, warning };
 }

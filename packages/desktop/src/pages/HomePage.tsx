@@ -24,7 +24,7 @@ import { AnimatePresence, motion } from "framer-motion";
 const SKIP_WELCOME_KEY = 'seQRets_skipWelcome';
 const SESSION_DISMISSED_KEY = 'seQRets_welcomeDismissed';
 
-type ActivePage = "create" | "plan" | "restore";
+type ActivePage = "create" | "locker" | "restore";
 
 function shouldShowWelcome(): boolean {
   try {
@@ -53,9 +53,9 @@ export default function HomePage() {
   const handleCardSelect = useCallback((tab: ActivePage) => {
     try { sessionStorage.setItem(SESSION_DISMISSED_KEY, 'true'); } catch { /* ignore */ }
 
-    if (tab === 'plan') {
+    if (tab === 'locker') {
       setShowWelcomeCards(false);
-      navigate('/inheritance');
+      navigate('/locker');
       return;
     }
 

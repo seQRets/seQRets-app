@@ -7,7 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, Plus, Trash2, ShieldCheck, AlertTriangle, Info, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, AlertTriangle, Info, KeyRound, Eye, EyeOff, Wifi, WifiOff } from 'lucide-react';
+import { useConnectionStatus } from '@/components/connection-status';
 import type {
   InheritancePlan,
   PlanInfo,
@@ -185,6 +186,7 @@ function BlurInput({ value, onChange, disabled, placeholder, className }: Sensit
 // ── Main form component ─────────────────────────────────────────────
 
 export function InheritancePlanForm({ plan, onChange, readOnly = false }: InheritancePlanFormProps) {
+  const { isOnline } = useConnectionStatus();
   const [expanded, setExpanded] = useState<Set<string>>(new Set(['planInfo']));
 
   const toggle = (id: string) => {
@@ -357,10 +359,23 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground pb-1">
-        <ShieldCheck className="h-4 w-4" />
-        <span>All data stays local and will be encrypted before saving.</span>
-      </div>
+      {!readOnly && (
+        isOnline ? (
+          <div className="flex items-start gap-2 p-3 rounded-md bg-red-500/10 border border-red-500/30 text-xs text-red-700 dark:text-red-300">
+            <Wifi className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>
+              You&apos;re online. Anything typed on this computer can be read by malware on it. For the most care, disconnect from the internet while you fill your Locker.
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 p-3 rounded-md bg-green-500/10 border border-green-500/20 text-xs text-green-700 dark:text-green-400">
+            <WifiOff className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>
+              You&apos;re offline. Your Locker is encrypted on this computer when you save it. seQRets can&apos;t protect against malware already on this computer.
+            </span>
+          </div>
+        )
+      )}
 
       {/* ── 1. Plan Information ── */}
       <Section id="planInfo" number={1} title="Plan Information" description="Who created this plan, version tracking, and review schedule" expanded={expanded.has('planInfo')} onToggle={toggle}>
@@ -445,11 +460,6 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
 
       {/* ── 3. Secret Sets (Recovery Credentials + Qard Locations) ── */}
       <Section id="secretSets" number={3} title="seQRet Sets" description="Credentials, Qard locations, and smart card info for each secret protected by seQRets" expanded={expanded.has('secretSets')} onToggle={toggle}>
-        <div className="flex items-start gap-2 p-3 rounded-md bg-green-500/10 border border-green-500/20 text-xs text-green-400">
-          <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
-          <span>Safe to include here — this entire plan will be encrypted before saving.</span>
-        </div>
-
         <div className="space-y-6">
           {plan.secretSets.map((secret, idx) => (
             <div key={secret.id} className="border-2 border-border rounded-xl p-4 space-y-4 bg-card/50">
