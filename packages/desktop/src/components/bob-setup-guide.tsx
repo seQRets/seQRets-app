@@ -82,7 +82,7 @@ export function BobSetupGuide({ onKeyConfigured }: BobSetupGuideProps) {
               <MessageCircle className="h-3 w-3" /> Try asking Bob:
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {['Help me set up an Inheritance Plan', 'What is Argon2id?', 'How do I use a keyfile?'].map((q) => (
+              {['Help me set up a Locker', 'What is Argon2id?', 'How do I use a keyfile?'].map((q) => (
                 <span key={q} className="inline-block rounded-full border px-2.5 py-1 text-xs text-muted-foreground">{q}</span>
               ))}
             </div>

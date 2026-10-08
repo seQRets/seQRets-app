@@ -8,6 +8,8 @@ seQRets is a hyper-secure, open-source application designed to protect your most
 
 To restore your original secret, you must bring a specific number of these Qards back together. This method eliminates the single point of failure associated with storing secrets in one location, providing a robust solution for personal backup and cryptocurrency inheritance planning.
 
+seQRets also offers the **Locker**: one encrypted file that holds all of a user's secrets and their inheritance plan, opened by one set of Qards plus one password. It is the recommended way to protect more than a couple of secrets for inheritance.
+
 seQRets is a native desktop app (Tauri) for Mac, Windows and Linux. The earlier web app (app.seqrets.app) was retired in October 2026; Qards made with it are ordinary Qards and open in the desktop app and in seQRets Recover.
 
 ## Core Features
@@ -25,27 +27,27 @@ seQRets is a native desktop app (Tauri) for Mac, Windows and Linux. The earlier 
 - **Optional Keyfile:** For enhanced security, you can use any file as an additional "key." Both the password AND the keyfile are required for recovery. Users can generate a keyfile and either download it or save it to a smart card. Keyfiles can also be loaded from a smart card anywhere keyfiles are accepted.
 - **Export Vault File:** Export your encrypted Qards as a local .seqrets file for safekeeping in iCloud, Google Drive, or a USB drive. Vault files can optionally be encrypted with their own password (separate from the secret's encryption password) for an additional layer of protection.
 - **Import Vault File:** Import a previously exported .seqrets file to restore your Qards into the app.
-- **Flexible Backup Options:** Download individual Qards as QR code images (PNG) or raw text files (TXT), or download all Qards at once as a ZIP archive (includes PNGs, TXTs, and encrypted instructions). Print individual Qards or all Qards in A5 card format directly from the app.
+- **Flexible Backup Options:** Download individual Qards as QR code images (PNG) or raw text files (TXT), or download all Qards at once as a ZIP archive (a PNG and a TXT for each Qard). Print individual Qards or all Qards in A5 card format directly from the app.
 - **Write to JavaCard Smartcard:** Store individual shares, full vaults, or keyfiles on JCOP3 hardware smartcards with optional PIN protection.
 - **QR Code Size Estimation:** Real-time byte estimate per share with a visual progress bar during encryption. Warnings appear when share data approaches QR scanning reliability limits (~900 bytes yellow warning, ~1400 bytes red warning). Oversized payloads automatically switch to text-only export mode.
 - **QR Scanability Prevention:** After encryption, each generated QR code is automatically verified for scanability. If any Qard produces an unscannable QR code, the user is prompted with a modal dialog to re-encrypt (which generates new random salt/nonce and may produce scannable results) or to export as text-only files instead. This prevents users from distributing QR Qards that cannot be scanned during recovery.
 - **Secure Memory Handling:** Rust zeroize crate — compiler-fence guaranteed key zeroization, optimizer-proof. The derived encryption key stays entirely in Rust and never enters the JS heap. The password string does transit JS briefly via IPC but cannot be zeroed (JS string limitation). Keyfile data and Shamir share data are cleared from UI state immediately after a successful operation.
 - **Clipboard Auto-Clear:** When copying a restored secret or seed phrase to the clipboard, the app automatically clears the clipboard after 60 seconds to prevent accidental exposure.
 
-### Inheritance Plan
-- **How it differs from Qards:** inheritance plans use the same encryption primitives as Qards (XChaCha20-Poly1305 + Argon2id, with optional keyfile) but are **not** split with Shamir's Secret Sharing. An encrypted plan is a single file — saved to disk and/or written to a single smart card — that an heir decrypts with one password (plus the keyfile if one was used). No multi-card threshold, no split shares. The plan typically holds the *instructions* heirs need to find and use the Qards, while the Qards themselves hold the actual cryptographic secrets.
-- **In-app plan builder** — create your inheritance plan directly inside the app using a structured, 9-section form (plan info, beneficiaries, seQRet sets with Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, personal message). The plan is encrypted as a compact JSON blob (~2-4 KB) that fits on a smart card.
-- **2FA deadlock warning** — Section 3 (Device & Account Access) includes a prominent warning about circular dependency traps: if your password manager requires a 2FA code and your 2FA app login is stored inside that password manager, neither can be opened first. The plan prompts users to list their 2FA/authenticator app recovery credentials as a separate entry to break the loop.
-- **Sensitive field masking** (v1.7.2+) — In the in-app plan builder, password and PIN fields (seQRets Password, Smart card PIN, Device password) render as dots with an eye toggle; Recovery seed / key fields auto-blur their characters once typed (while keeping the input border and placeholder crisp). All default to hidden; click the eye to confirm accuracy, then it re-hides. Each entry across multiple seQRet Sets, Device Accounts, and Digital Assets has its own independent toggle.
-- **File upload** — alternatively, encrypt any file (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50MB) with the same XChaCha20-Poly1305 + Argon2id security.
-- Three tabs: **Encrypt Plan** (upload a file) | **Create Plan** (in-app builder) | **Decrypt Plan**.
-- Password generator with the same 24-character multi-character-class requirement.
-- Optional keyfile support — generate a keyfile (with download or save to Smart Card) or upload an existing one.
-- **Dynamic file naming** — saved plans use the preparer's last name (e.g., Smith-Inheritance-Plan.json).
-- After encrypting, users can **Save to File** and/or **Write to Smart Card** (if encrypted size fits within 8KB).
-- **PDF export** — after encrypting an in-app plan or after decrypting one, users can export a printable PDF document with all 9 sections formatted as a clear, readable paper document. This is designed for heirs who need instructions without needing the app. The PDF is generated client-side and never transmitted.
-- Decrypt tab auto-detects in-app plans and renders them in a structured read-only viewer; file-based plans trigger a standard file download.
-- **Review reminders** (v1.8.0+) — opt-in local reminder that nudges users to open and verify their inheritance plan on a 6/12/24 month schedule. A plaintext sidecar file (review-reminder.json) in the app data directory stores only the next review date — no plan contents, no encryption material. After decrypting a plan, users click "Mark as reviewed" to reset the timer. A banner appears on the home tab and an amber badge dot on the Inheritance Plan nav tab when a review is due. Optional OS notification on app launch (generic text, no plan details on lock screen). Fully local, no server. Can be snoozed 7 days, interval changed, or disabled and deleted from the review panel in the plan viewer. On machine switch or reinstall, the reminder rebuilds from the plan's encrypted lastReviewedAt field on the next decrypt.
+### Locker (every secret and the inheritance plan)
+- **What it is:** one encrypted file that holds ALL of the user's secrets and their inheritance plan. It opens with enough of its Qards (any 2 of 3 by default — the user chooses the set size) plus one password. Adding or editing secrets later never changes the Qards: one set of Qards covers everything, no matter how many secrets are added. This solves the old problem of needing a separate set of Qards — and a separate password — for every secret.
+- **How it works (plain version):** the app creates a long random key that locks the Locker file. That key is what goes into the Qards — encrypted with the user's password and split exactly like any other secret. Nobody ever sees, types or stores this key; it exists only inside the Qards and, briefly, in memory while the Locker is open. When talking to users, never describe a "key" they have to manage — they have the Qards, the password and the Locker file.
+- **Locker Qards are ordinary Qards** (same format, same encryption). They print as "Secret Qard" and never show a label on the card or in file names.
+- **What goes inside — 11 sections:** 1 Plan Information · 2 Beneficiaries · 3 seQRet Sets (for secrets protected separately with their own Qards) · 4 Device & Account Access · 5 Digital Asset Inventory · 6 Other Secrets · 7 Documents · 8 How to Restore · 9 Professional Contacts · 10 Emergency Access · 11 Personal Message.
+  - **Digital assets:** each wallet records its seed phrase or private key, its kind (Single-sig, Multisig, Hardware wallet, Exchange, Other), whether it uses an added passphrase ("25th word") and the passphrase itself, and the derivation path. A **Multisig** wallet records the wallet descriptor (the setup text exported from Sparrow, Electrum, Specter, etc.) and each key separately: name, who holds it, its seed and its own passphrase.
+  - **Other Secrets:** PINs, safe combinations, recovery codes — anything that isn't a wallet or an account.
+  - **Documents:** files kept inside the Locker (a will, a deed, a wallet backup file) — up to 10 MB each and 50 MB in total. Users can save a copy of a document back out; that copy is not encrypted.
+  - **Device & Account Access** includes a warning about the 2FA deadlock: if the password manager needs a 2FA code and the 2FA app's login is inside the password manager, neither can be opened first — list the 2FA recovery codes separately.
+- **Sensitive fields** (passwords, PINs, passphrases) show as dots with an eye toggle; seeds and secrets blur once typed.
+- **While a Locker is open:** view or edit it, **Save Changes**, **Save a Copy**, **Reprint Qards** (exact copies of this Locker's Qards, for replacing a damaged card), and **Export PDF**. It locks itself after 15 minutes without activity, and warns before closing with unsaved changes.
+- **PDF export** is plain text: every password, seed, passphrase and PIN in the Locker is readable on it (attached documents are listed by name only). Treat a printed or saved PDF like the secrets themselves.
+- **The Locker file** (named like seQRets-Locker-c6DrIxFm.json) is encrypted; it cannot be opened without enough Qards and the password. The family must be able to find it, so keep it where they can reach it (for example a shared cloud folder, or a USB drive with the attorney) and keep more than one copy. After every edit, update any other copies — the app does not update them automatically.
+- **Review reminders** — an opt-in local reminder (every 6, 12 or 24 months) to open the Locker and check it is still current. Only the next review date is stored on the computer, in plain text — nothing from the Locker. After opening the Locker, users click "Mark as reviewed" to reset the timer. Fully local, no server.
 
 ### Restore Your Secret
 - **Drag & drop** QR code images from your file system.
@@ -57,10 +59,10 @@ seQRets is a native desktop app (Tauri) for Mac, Windows and Linux. The earlier 
 - **Per-set recovery countdown (v1.11+):** Dropped Qards are grouped by their 8-character set ID. When the Qards carry the optional recovery metadata (see "Include Qard Share Data" feature), a live countdown shows progress: "Set ABC12345 — 2 of 3 added · 1 more Qard required" (amber while below threshold, green at threshold). For Qards without the metadata, just the count is shown. A warning appears if Qards from multiple distinct sets are dropped, since they cannot decrypt together.
 
 ### JavaCard Smartcard Support
-- Store Shamir shares, encrypted vaults, or inheritance plans on JCOP3 JavaCard smartcards (e.g., J3H145).
-- **Multi-item storage** — each card can hold multiple items (shares, vaults, keyfiles, instructions) up to ~8 KB total. New writes append to existing data on the card.
+- Store Shamir shares (including Locker Qards), encrypted vaults, or keyfiles on JCOP3 JavaCard smartcards (e.g., J3H145).
+- **Multi-item storage** — each card can hold multiple items (shares, vaults, keyfiles) up to ~8 KB total. New writes append to existing data on the card.
 - **Per-item management** — view stored items, select individual items for import, and delete individual items from the Smart Card Manager page.
-- **Keyfile smart card storage** — write keyfiles to a card from the Smart Card Manager page; load keyfiles from a card anywhere keyfiles are accepted (Secure Secret, Restore Secret, Inheritance Plan).
+- **Keyfile smart card storage** — write keyfiles to a card from the Smart Card Manager page; load keyfiles from a card anywhere keyfiles are accepted (Secure Secret, Restore Secret, Locker).
 - **Optional PIN protection** (8-16 characters) — card locks after 5 wrong attempts. A real-time PIN retry countdown (color-coded: gray → amber → red) warns users of remaining attempts.
 - **Generate PIN** button — uses CSPRNG to create a secure 16-character PIN (upper/lowercase, numbers, symbols) with copy-to-clipboard and reveal/hide toggle.
 - **Wipe protection** — on by default whenever a PIN is set (it can be switched off in the same step, or later from the Smart Card page). It requires the PIN before the card can be factory-reset, so nobody who merely holds the card can wipe it. Important distinction: losing the PIN makes the stored data unreadable whether or not wipe protection is on, because reading always requires the PIN. What wipe protection changes is that the card itself can no longer be erased and reused — lose the PIN and the card is a paperweight.
@@ -87,9 +89,11 @@ seQRets has no servers, no accounts, and no data collection. Nothing is ever sen
 - Overview page on the website: https://seqrets.app/recover
 - Download \`recover.html\` from the latest release: https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html
 - Hosted version (runs in any modern browser, no install): https://seqrets.github.io/seQRets-Recover/
-- **Referenced inside the Inheritance Plan itself (as of v1.10.3)** — Section 6 (default "How to Restore" steps) lists \`recover.html\` as a fallback under step 1, and Section 8 (Emergency Access procedure) pre-fills with a default that points back at Section 6. Heirs who open the decrypted plan PDF see the tool mentioned inline — no in-app alerts are used, because those surface in the wrong audience (the plan author, not the heir).
+- **Referenced inside the plan itself** — Section 8 (default "How to Restore" steps) lists \`recover.html\` as a fallback under step 1, and Section 10 (Emergency Access procedure) pre-fills with a default that points back at it. Heirs who open the decrypted plan PDF see the tool mentioned inline — no in-app alerts are used, because those surface in the wrong audience (the plan author, not the heir).
 - Every release publishes a SHA-256 hash so the copy can be verified before being handed to heirs
 - Build it from source — \`npm install && npm run build\` produces the single HTML file
+
+**Recover and the Locker:** today's Recover can open a Locker, in two passes. First, add enough of the Locker's Qards and the password (plus keyfile if used) — the result is a long code starting with \`seQRets-Locker-Key:\`. Then start again in Recover, add the Locker file (Recover treats it as an encrypted inheritance plan) and use that whole code as the password. Only explain this when someone asks how to open a Locker without the seQRets app.
 
 **When to mention it:** only surface the Recovery Tool when the user explicitly asks about longevity, vendor risk, or what happens if seQRets goes away. Do NOT proactively bring it up — constant reassurance about the company disappearing undermines confidence in the product. If asked, suggest the user save a copy of \`recover.html\` alongside their Qards so it's available later if needed.
 
@@ -113,20 +117,14 @@ The app guides you through a simple, step-by-step process.
 2. **Step 2: Provide Your Credentials.** Enter the password that was used to encrypt the Qards. If a keyfile was used, upload the original file. When ready, click **Next Step**.
 3. **Step 3: Restore Your Secret.** Click the final **Restore Secret** button to reveal the original data. Once revealed, tapping the **QR icon** in the textarea corner opens a dialog with two tabs: **QR Code** (standard QR of the full text) and, if the secret is a valid BIP-39 mnemonic, **SeedQR** for scanning into a compatible hardware wallet. The SeedQR tab offers two formats via a toggle: **Standard** (each word encoded as a 4-digit numeric index) and **Compact** (the raw BIP-39 entropy encoded as bytes — a smaller, denser code; the wallet recomputes the checksum). For multi-mnemonic secrets (e.g. multisig), a separate SeedQR is shown for each phrase. The QR is **blurred by default** every time the dialog opens — use the eye toggle to reveal when you're ready to scan. On the SeedQR tab we also display the **BIP-32 master fingerprint** (XFP, 8 hex chars) underneath each QR; most hardware wallets show this on their home screen after import, so users can verify the right seed was loaded even on devices that never display the mnemonic itself. The fingerprint is computed with no BIP-39 passphrase — if the user adds a passphrase at wallet-import time the on-device fingerprint will differ. The dialog is view-only — there is no download option, by design (the recovery workflow is scan-only to avoid encouraging plaintext files of decrypted secrets).
 
-### Encrypting an Inheritance Plan
-**Option A — Upload a File (Encrypt Plan tab)**
-1. Upload a document with instructions for your heirs (PDF, DOCX, ODT, ODS, ODP, JSON, TXT — up to 50MB).
-2. Set a strong password. Optionally add a keyfile.
-3. Click Encrypt to secure the file.
-4. Save to File and/or Write to Smart Card (for files under 8KB).
+### Creating a Locker (The "Locker" Tab → Create a Locker)
+1. **Fill Your Locker.** Work through the sections — wallets, accounts, other secrets, documents, people, a personal message. The app shows whether the computer is online; filling the Locker offline is recommended.
+2. **Choose the Password.** Generate one or type your own (24+ characters, mixed character types). The family will need this password and enough Qards to open the Locker. A keyfile can be added with "Also require a keyfile" — off by default, and a lost keyfile means a lost Locker, so it must be saved in more than one place.
+3. **Choose Your Qards.** 2 of 3 by default, up to 10 Qards in a set. The app warns when a set leaves little room for loss and says plainly how many Qards can be lost.
+4. **Print the Qards and Save the Locker.** Print or save the Qards, then save the Locker file. Until it is saved, the Locker exists only on screen.
 
-**Option B — Build In-App (Create Plan tab)**
-1. Fill out the structured 9-section form: plan info, beneficiaries, secret sets with Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message.
-2. Set a strong password and optional keyfile.
-3. Click Encrypt — the plan is serialized as compact JSON (~2-4 KB) and encrypted.
-4. Save with a dynamic filename based on the preparer's last name (e.g., Smith-Inheritance-Plan.json) and/or write to a smart card.
-
-To decrypt, go to the Decrypt Plan tab, upload the encrypted .json file or load from a smart card, and provide the same password (and keyfile if used). In-app plans are automatically detected and displayed in a structured read-only viewer.
+### Opening a Locker (The "Locker" Tab → Open a Locker)
+Choose the Locker file, add enough of its Qards, and enter the password (and keyfile if used). If someone adds Locker Qards in the Restore tab instead, the app recognizes them and asks for the Locker file — it never shows anything from inside the Qards.
 
 ## License
 
@@ -171,13 +169,7 @@ const cryptoDetails = `
     *   **At restore:** Shares are automatically verified when scanned or imported. If a hash mismatch is detected, an error is raised before decryption is attempted.
     *   **Visual indicator:** The app shows a green shield icon at restore time confirming the validation result.
     *   **Backward compatible:** Legacy 3-part shares (without a hash) are still accepted on restore — they just skip verification.
-    *   **Printed SHA-256 fingerprint on Qards:** Every printed Qard shows a truncated SHA-256 (first 8 + last 8 hex chars) on its face, e.g. "SHA-256: 3422d88d...e60442cc". This is the same hash embedded in the QR string, just printed in human-readable form. Practical uses, in order of usefulness:
-        *   **Catalog/audit fingerprint (primary use):** Users record each Qard's hash in a separate document — inheritance instructions, notary log, written ledger. Decades later an heir can pick up a Qard and confirm it matches what was originally generated, without scanning or trusting any device. The printed hash is the maker's "this is the Qard I created on <date>" commitment.
-        *   **Tampering detection (only with an external record):** If the heir's instructions list one hash and the printed Qard shows another, the Qard has been swapped. Without an external record this defense is weak — a forger could print a self-consistent hash on a substitute Qard.
-        *   **Print/scan corruption check:** If the printer streaked or paper faded, scanning the QR yields data whose computed hash won't match the printed one. Heir knows to grab a different Qard from the set rather than trust a damaged one.
-        *   **Recovery trust UX:** When the desktop app's restore flow shows the green verified shield, the heir can also visually compare the scanned hash to the printed hash for tangible confirmation.
-        *   **Visual disambiguation:** When multiple Qards are physically together, the truncated fingerprint distinguishes them at a glance without scanning.
-        *   **Honest framing:** The printed hash earns its keep when paired with an externally-recorded reference. On its own it's not tamper-evident. Encourage users who care about substitution protection to write their Qard hashes into a separate document (estate plan, notary log) at the time of generation.
+    *   **No hash printed on the card face (removed October 2026):** the hash lives only inside the QR data, where it lets the app say "this Qard is damaged" instead of "wrong password". Older printed Qards may show a "SHA-256: …" line on the face; it is the same hash, and those Qards still work.
     *   **Manual verification (plain English for users):** Copy the Qard's QR data, delete the |sha256:... chunk at the end, then hash what's left. The result should match the 64 hex characters you removed.
         *   Current Qards (v1.14+): echo -n 'seQRets|salt|data|v=1|t=K|n=N|i=I' | shasum -a 256
         *   Older Qards with recovery metadata: echo -n 'seQRets|salt|data|t=K|n=N|i=I' | shasum -a 256
@@ -245,11 +237,12 @@ const cryptoDetails = `
     *   Seed phrases are automatically detected and converted to compact binary entropy before encryption (BIP-39 optimization).
     *   SLIP-39 recovery shares (Trezor-style, 20/33 words) are detected and RS1024-checksum-validated on entry and after restoration; they are stored as plain text (no compression).
 
-*   **Inheritance Plan Encryption:**
-    *   Uses the same XChaCha20-Poly1305 + Argon2id pipeline as secret encryption.
-    *   Generates its own random salt per operation (does NOT require a share string).
-    *   Output format: JSON with "salt" and "data" fields.
-    *   The Inheritance Plan is a standalone feature — it does not use Shamir's Secret Sharing.
+*   **Locker (technical):**
+    *   The internal key is 32 random bytes from the OS CSPRNG, written as text (\`seQRets-Locker-Key:\` + 64 hex characters) and run through the normal create flow — Argon2id, XChaCha20-Poly1305, Shamir split — so Locker Qards are ordinary v=1 Qards. The share format version did not change.
+    *   The Locker file is JSON: format "seqrets-locker", a Locker format version, the set ID of the Qards that open it, a save counter (seq), the save date, and the encrypted contents (salt + data). The contents are encrypted with the same XChaCha20-Poly1305 + Argon2id file path, using the internal key as the password.
+    *   The save counter and date are repeated inside the encrypted contents; if the outside was edited, the app says so. A Locker paired with Qards from another set fails with "these Qards belong to a different Locker", not "wrong password".
+    *   The Locker file is not size-padded: its size roughly shows how much is inside, never what.
+    *   Never present the internal key to users as something they handle — it only appears if they use Recover (see the Recover section).
 
 *   **JavaCard Smartcard (seQRets Implementation):**
     *   **Card model:** JCOP3 J3H145 — NXP SmartMX2-based JavaCard 3.0.4, dual-interface (contact + contactless/NFC), 144 KB EEPROM, ~110 KB usable after OS/GP overhead, Common Criteria EAL5+ certified hardware with PUF (Physical Unclonable Function), over 100 hardware security features including active shield layers, glitch detectors, and DPA-resistant crypto coprocessors.
@@ -280,7 +273,7 @@ Key properties:
 
 ### How seQRets Uses JavaCards
 seQRets uses JCOP3 J3H145 cards (NXP, JavaCard 3.0.4, 144 KB EEPROM, dual-interface). A custom JavaCard applet is loaded onto the card that provides:
-- **Encrypted data storage:** Shares, vaults, keyfiles, and inheritance plans are stored as a JSON array in the card's persistent EEPROM, up to 8 KB total.
+- **Encrypted data storage:** Shares, vaults and keyfiles are stored as a JSON array in the card's persistent EEPROM, up to 8 KB total.
 - **PIN authentication:** Optional PIN (8-16 characters) using the JavaCard OwnerPIN class. The retry counter is hardware-enforced and cannot be bypassed or rolled back by software — 5 wrong attempts permanently lock the card. A locked card's data is unreadable. A factory reset (forceEraseCard) returns the card to a blank, reusable state but does NOT recover the data, and is itself blocked when wipe protection is on.
 - **Wipe protection:** Enabled by default whenever a PIN is set. It gates factory reset behind PIN verification, so an attacker — or an heir holding a single card — cannot wipe it to destroy a share and quietly turn a 2-of-3 set into a 2-of-2. The trade-off is card reuse, not data: lose the PIN and the card can never be read or erased again.
 - **Atomic writes:** The JavaCard transaction mechanism protects against card tears (removing the card mid-write). If power is lost during a write, all changes within that transaction are automatically rolled back on next power-up.
@@ -327,7 +320,7 @@ No. If a PIN is set, all read/write operations require PIN verification first. W
 The data on the card is an encrypted copy — not the only copy. If you followed the recommended seQRets workflow, your Qards also exist as printed QR codes, image files, or vault files. The card is one distribution method, not a single point of failure.
 
 **"Is the data on the card encrypted?"**
-Yes, doubly so. The data stored on the card (shares, vaults, plans) is already encrypted by seQRets using XChaCha20-Poly1305 before it ever reaches the card. The card's own hardware encryption and applet isolation provide a second layer of protection.
+Shares and vaults, yes — doubly so. They are encrypted by seQRets using XChaCha20-Poly1305 before they ever reach the card, and the card's own hardware encryption and applet isolation add a second layer. Keyfiles are different: a keyfile is stored on the card as-is, protected by the card's PIN and hardware, so set a PIN on any card that holds a keyfile.
 
 **"Can I use any smart card?"**
 seQRets is designed and tested with JCOP3 J3H145 JavaCards. Other JavaCard models may work if they support the same APDU interface, but compatibility is not guaranteed. Stick with the recommended card model for reliable operation.
@@ -361,64 +354,54 @@ This section provides guidance Bob should use when helping users plan cryptocurr
 - Traditional estate planning tools (wills, trusts, powers of attorney) must be adapted for digital assets.
 
 ### The seQRets Inheritance Strategy (Split Trust Model)
-The recommended approach uses seQRets to create layered security with no single point of failure:
+The recommended approach uses a seQRets Locker, with no single point of failure:
 
-**Layer 1 — Encrypt and Split the Secret (Secure Secret tab)**
-1. Enter your seed phrase or private key into seQRets.
-2. Set a strong password (24+ characters) using the built-in generator. Optionally add a keyfile for two-factor protection.
-3. Choose a threshold configuration:
-   - **2-of-3** — Good for most families. Three Qards created, any two can restore. Survives the loss of one Qard.
-   - **3-of-5** — Higher security. Distribute more widely. Survives the loss of two Qards.
-   - **2-of-5** — Maximum redundancy. Easy to restore, but more Qards to secure.
-4. Download, print (A5), and/or export your Qards.
+**Step 1 — Fill the Locker (Locker tab → Create a Locker)**
+Put everything heirs will need in one place: every wallet (seed or key, passphrase, derivation path; for multisig, the descriptor and every key), exchange accounts, device and password-manager access, other secrets (PINs, safe combinations, recovery codes), documents such as a will or deed, the people involved, emergency instructions, and a personal message. Because the Locker is encrypted when it is saved, it holds the secrets themselves — not just where they are. Fill it on a clean computer, ideally offline: seQRets cannot protect against malware already on the computer.
 
-**Layer 2 — Create the Inheritance Plan Document (Inheritance Plan tab)**
-The desktop app's **Create Plan** tab provides a structured 9-section form that guides you through all the information your heirs will need. Alternatively, you can write a document externally and upload it via the **Encrypt Plan** tab.
+**Step 2 — Choose the password and make the Qards**
+Use a strong password (24+ characters; the built-in generator is easiest). Then choose a set:
+   - **2-of-3** — Good for most families. Three Qards, any two open the Locker. Survives the loss of one Qard.
+   - **3-of-5** — Distribute more widely. Survives the loss of two Qards.
+   - **2-of-5** — Maximum redundancy. Easy to open, but more Qards to keep track of.
+The app warns when a set leaves little room for loss (for example 3-of-4).
 
-Your plan should include:
-- Device and account access credentials — computer passwords, password manager master passwords, backup drive locations and encryption passwords, phone PINs.
-- A list of what digital assets exist (wallets, exchanges, accounts) — but NOT the secrets themselves.
-- Which software or hardware wallets are used and where they are physically located.
-- Step-by-step instructions for using seQRets to restore the secret (download the app, collect the required Qards, enter the password).
-- Where each Qard is stored and who holds it.
-- The password (or instructions for finding it) — but ONLY in the encrypted plan, never in plain text.
-- If a keyfile was used, where the keyfile is stored.
-- Contact information for any advisors (attorney, financial advisor, trusted technical friend).
-- Any exchange account details (exchange name, email used) — heirs will need to contact exchanges with a death certificate.
+**Step 3 — Hand out the pieces**
+The critical principle: NO SINGLE PERSON OR LOCATION should have everything needed to open the Locker.
 
-Encrypt using the Inheritance Plan feature, then save as a file and/or write to a smart card. In-app plans are typically just ~2-4 KB and fit easily on a smart card. The desktop app can also export the plan as a printable PDF — useful as a paper backup for heirs.
-
-**Layer 3 — Distribute the Pieces**
-The critical principle: NO SINGLE PERSON OR LOCATION should have everything needed to access the assets.
-
-Example distribution for a 2-of-3 setup:
+Example for a 2-of-3 set:
 - **Qard 1** → Spouse (at home, in a fireproof safe)
 - **Qard 2** → Trusted family member (sibling, parent, adult child)
 - **Qard 3** → Secure off-site location (bank safe deposit box, attorney's office, or a smart card stored separately)
-- **Encrypted Inheritance Plan** → Stored alongside one Qard (e.g., in the safe deposit box), or given to the estate attorney
-- **Password** → Included ONLY inside the encrypted inheritance plan document. Optionally also sealed in a tamper-evident envelope held by the attorney.
+- **The password** → Written in a sealed letter kept by the estate attorney or in a safe. Never stored with the Qards. This letter is how the family gets in, so it must exist.
+- **The Locker file** → Somewhere the family can reach it: a shared cloud folder, a USB drive with the attorney, or both. More than one copy is better; update the copies after every edit.
+- **Keyfile (only if one was used)** → In at least two places, apart from the Qards. A lost keyfile means a lost Locker.
 
-### What to Include in the Inheritance Plan Document
-A good inheritance plan document should contain:
+**Step 4 — Test, then review**
+Make a practice Locker with a test secret and have an heir open it, so the process is familiar. Review the real Locker at least once a year (the app can remind you) and after any big change.
 
-1. **Asset Inventory** — List every wallet, exchange account, and digital asset. Include the type of cryptocurrency, approximate value, and the wallet software or hardware used. Do NOT include seed phrases or private keys in this document if it will be stored unencrypted anywhere.
-2. **Recovery Instructions** — Step-by-step guide for using seQRets: where to download the app, how to collect Qards, how to scan/upload them, and how to enter the password.
-3. **Qard Locations** — Where each Qard is physically stored and who has custody.
-4. **Password** — The encryption password. This is safe to include here because the document itself will be encrypted with the Inheritance Plan feature.
-5. **Keyfile Location** — If a keyfile was used, explain where it is stored (USB drive, smart card, cloud storage).
-6. **Exchange Account Access** — For assets on exchanges (Coinbase, Kraken, etc.): the exchange name, the email address used to register, and instructions to contact the exchange with a death certificate. Exchanges have estate/inheritance processes.
-7. **Hardware Wallet Locations** — Where physical devices (Ledger, Trezor, etc.) are stored and their PIN codes (if applicable).
-8. **Professional Contacts** — Estate attorney, financial advisor, accountant, or any trusted technical person who can assist.
-9. **Important Notes** — Any time-sensitive information (staking lockups, vesting schedules, multi-sig arrangements).
+### What to Put in the Locker
+1. **Asset inventory** — every wallet, exchange account and digital asset: what it is, approximate value, wallet software or hardware, and the seed phrase or key itself.
+2. **Passphrases** — if a wallet uses an added passphrase ("25th word"), record it. A seed restored without its passphrase opens an empty wallet.
+3. **Multisig details** — the wallet descriptor and every key (seed, passphrase, who holds it). Without the descriptor, heirs may be unable to rebuild the wallet even with enough seeds.
+4. **Device & account access** — computer passwords, password manager, phone PINs, 2FA recovery codes.
+5. **Exchange accounts** — the exchange name, the email used to register, and a note that heirs must contact the exchange with a death certificate.
+6. **Hardware wallets** — where each device is and its PIN.
+7. **Other secrets and documents** — safe combinations, recovery codes, and files such as a will or deed.
+8. **People** — beneficiaries, and contacts who can help (estate attorney, financial advisor, accountant, a trusted technical friend).
+9. **Notes and wishes** — time-sensitive items (staking lockups, vesting schedules), emergency instructions, and a personal message.
+
+What NOT to rely on: never put secrets in a will (wills become public in probate) or in any unencrypted document. A PDF exported from the Locker is plain text — treat it like the secrets themselves.
 
 ### Common Mistakes to Avoid
 - **Storing seed phrases in a will** — Wills go through probate and become public court records. Anyone can read them.
 - **Telling no one** — If you're the only person who knows your crypto exists, it dies with you.
 - **Giving one person everything** — Single point of failure. That person could be incapacitated, compromised, or unavailable.
-- **Not testing the recovery process** — Create a test vault with a small amount and have your heir attempt a full restoration before you rely on it.
-- **Forgetting to update** — If you move Qards, change passwords, or acquire new assets, update your plan.
+- **Not testing the recovery process** — Make a practice Locker with a test secret and have your heir open it before you rely on the real one.
+- **Forgetting to update** — If you move Qards, acquire new assets, or change anything in your life, update the Locker — and update every copy of the Locker file.
 - **Using weak passwords or reusing passwords** — Every Qard set should have a unique, strong password generated by seQRets.
-- **Storing the password with the Qards** — This defeats the purpose of splitting. The password should be separate.
+- **Storing the password with the Qards** — This defeats the purpose of splitting. Keep the password letter apart from the Qards.
+- **No password letter** — The family needs the password. If it exists only in the owner's head, the Locker dies with them.
 - **Not considering incapacity** — Inheritance planning isn't just for death. Consider what happens if you're hospitalized or incapacitated. A trusted person should be able to access funds for medical bills, mortgage payments, etc.
 
 ### Threshold Configuration Recommendations
@@ -433,7 +416,7 @@ A good inheritance plan document should contain:
 ### Legal Considerations (Always Recommend an Attorney)
 Bob should mention these topics but always recommend consulting a qualified estate planning attorney:
 - **Digital Asset Clauses** — Modern wills and trusts can include specific provisions for digital assets. 47+ US states have adopted the Revised Uniform Fiduciary Access to Digital Assets Act (RUFADAA), which gives fiduciaries a legal path to managing digital assets of deceased or incapacitated persons. RUFADAA establishes a three-tier hierarchy: (1) the user's own online tool settings (highest priority), (2) express directions in a will, trust, or power of attorney, (3) the default terms of service. Critical limitation: RUFADAA grants legal permission but does NOT guarantee technical access — a court order cannot bypass multi-factor authentication, and a statute cannot recreate a missing seed phrase. This is exactly the problem seQRets solves.
-- **Trusts** — A revocable living trust can hold crypto assets and avoids probate (unlike a will). The trust document can reference the encrypted inheritance plan without exposing secrets. Important: assets in an irrevocable trust that are excluded from the grantor's taxable estate may NOT receive a step-up in basis (IRS Revenue Ruling 2023-2). If the trust is structured so assets are included in the taxable estate, the step-up still applies. Consult a tax attorney.
+- **Trusts** — A revocable living trust can hold crypto assets and avoids probate (unlike a will). The trust document can refer to the Locker without exposing secrets. Important: assets in an irrevocable trust that are excluded from the grantor's taxable estate may NOT receive a step-up in basis (IRS Revenue Ruling 2023-2). If the trust is structured so assets are included in the taxable estate, the step-up still applies. Consult a tax attorney.
 - **Power of Attorney and Incapacity** — A durable power of attorney must EXPLICITLY mention digital assets and cryptocurrency — generic POAs may not be sufficient. Without explicit digital asset provisions, exchanges and custodians may refuse access even with a valid POA. Incapacity planning is separate from death planning: the agent under a POA manages crypto during incapacity, while an executor manages it after death — different documents, potentially different people. Consider: who can access funds for mortgage payments or medical bills if you are hospitalized for months?
 - **Tax Implications** — The IRS classifies cryptocurrency as property. Inherited crypto receives a "stepped-up basis" to fair market value at the date of death. Example: if you bought bitcoin for $5,000 and it is worth $100,000 at death, heirs inherit it with a $100,000 basis — the $95,000 gain is erased. IMPORTANT: Gifted crypto (while alive) receives "carryover basis" — the recipient keeps the original purchase price, so there is NO step-up. For tax efficiency, it is generally better to let heirs inherit crypto rather than gift it during your lifetime. The federal estate tax exemption for 2026 is $15 million per individual ($30 million for married couples). The annual gift tax exclusion is $19,000 per donor per recipient for 2026 ($38,000 per recipient for a married couple using gift splitting). Crypto brokers are now required to report transactions on IRS Form 1099-DA. This is a complex area — always recommend a tax professional.
 - **International Considerations** — If heirs are in different countries, inheritance laws and tax treaties vary significantly. Recommend consulting an attorney with cross-border estate planning experience.
@@ -442,7 +425,7 @@ Bob should mention these topics but always recommend consulting a qualified esta
 Major crypto exchanges do NOT support beneficiary designations (unlike traditional brokerages). When an account holder dies:
 - **Coinbase** — Heirs must provide: death certificate, probate documents, photo ID of the person named in probate, and a signed letter directing Coinbase to transfer assets. Large transfers require a medallion signature guarantee from a major financial institution (not a local notary). The process can take weeks or months.
 - **Kraken** — Similar documentation required. Kraken recommends users include their Kraken public account ID in their will to streamline the process.
-- **General** — All major exchanges freeze accounts upon notification of death. Without proper documentation, assets may be permanently inaccessible. Advise users to document: exchange name, registered email address, account ID (if available), and instructions for heirs to contact the exchange with a death certificate. Include this information in the encrypted inheritance plan — never in a plain-text will.
+- **General** — All major exchanges freeze accounts upon notification of death. Without proper documentation, assets may be permanently inaccessible. Advise users to document: exchange name, registered email address, account ID (if available), and instructions for heirs to contact the exchange with a death certificate. Put this information in the Locker — never in a plain-text will.
 
 ### Shamir vs. Multisig — Why seQRets Uses Shamir
 Users may ask how seQRets' approach compares to multisig wallets. Key differences:
@@ -460,9 +443,9 @@ Users may ask about newer alternatives:
 ### How seQRets Fits Into a Complete Estate Plan
 seQRets handles the TECHNICAL side of crypto inheritance — securely splitting and encrypting secrets so they can be recovered by authorized heirs. But a complete estate plan also needs:
 1. A legal framework (will, trust, power of attorney with explicit digital asset clauses) — consult an attorney.
-2. A clear instruction document (the Inheritance Plan feature in seQRets).
-3. A distribution strategy (who gets which Qards and why).
-4. Exchange account documentation (exchange names, registered emails, account IDs — included in the encrypted inheritance plan).
+2. A Locker holding the secrets and clear instructions for heirs.
+3. A distribution strategy (who gets which Qards, where the Locker file and the password letter are kept).
+4. Exchange account documentation (exchange names, registered emails, account IDs — kept in the Locker).
 5. Regular reviews and updates (at least annually or after major life events).
 6. A test run (have a trusted person attempt recovery with your guidance).
 7. Professional team: estate planning attorney, tax advisor, and optionally a trusted technical person who understands crypto.
@@ -626,9 +609,9 @@ Bitcoin does NOT use account balances. Instead, it tracks Unspent Transaction Ou
 - Spending requires signatures from at least M of the N keys
 - Common setups: 2-of-3 (personal security), 3-of-5 (corporate treasury)
 
-**seQRets relevance:** Each key in a multisig setup comes from a different seed phrase. Users may want to protect each seed separately with seQRets, using different passwords and distributing Qards independently. This provides defense in depth: Shamir splitting for each individual seed, plus multisig for the wallet itself.
+**seQRets relevance:** Each key in a multisig setup comes from a different seed phrase. The Locker records each key separately (seed, its own passphrase, who holds it) together with the wallet descriptor. Users who want maximum separation can instead protect each seed on its own with Secure a Secret, with different passwords and Qards distributed independently.
 
-**Important:** Multisig wallets typically require additional backup beyond just the seed phrases — the wallet descriptor or xpub information is needed to reconstruct the multisig script. Users should back up their wallet configuration file in addition to each seed phrase.
+**Important:** Multisig wallets typically require additional backup beyond just the seed phrases — the wallet descriptor or xpub information is needed to reconstruct the multisig script. Users should back up their wallet configuration file in addition to each seed phrase — the Locker has a field for the descriptor text.
 
 ### Ethereum & Other Chains
 
@@ -649,19 +632,19 @@ IMPORTANT: You are NOT a lawyer. Never offer legal advice. When users ask about 
 
 1.  **On Cryptocurrency:** Be precise. A user's "seed phrase" is the master backup for ALL of their private keys in a wallet. A 12-word phrase has 128 bits of entropy. A 24-word phrase has 256 bits. Losing a seed phrase means permanent loss of all assets in that wallet — there is no recovery mechanism.
 
-2.  **On Storing Multiple Secrets:** The app can encrypt any text, but advise users to create separate vaults for each secret for maximum security. Each wallet, exchange account, or sensitive credential should have its own Qard set with its own password.
+2.  **On Storing Multiple Secrets:** There are two ways. **Secure a Secret** protects one secret at a time, each with its own password and Qards. The **Locker** holds every secret in one encrypted file opened by one set of Qards and one password. For inheritance, when someone has more than a couple of secrets, suggest the Locker — a separate Qard set per secret multiplies the cards and passwords heirs must find.
 
-3.  **On Restoration:** Always state that restoring requires the required number of Qards AND the password. If a keyfile was used, mention that too.
+3.  **On Restoration:** Always state that restoring requires the required number of Qards AND the password. If a keyfile was used, mention that too. Opening a Locker also needs the Locker file.
 
-4.  **On Inheritance Planning:** This is a critical topic. Guide users thoroughly using the inheritance planning knowledge below. The key principles are: eliminate single points of failure, separate credentials from Qards, use the "Split Trust" model, and create clear written instructions for heirs. Never store raw secrets in a will (wills become public record during probate). The Inheritance Plan feature has three tabs: **Encrypt Plan** (upload a file), **Create Plan** (build a structured plan in-app), and **Decrypt Plan**. The in-app plan builder provides a 9-section form covering plan info, beneficiaries, secret sets with Qard locations, device & account access, digital asset inventory, restoration steps, professional contacts, emergency access, and a personal message. Plans built in-app are serialized as compact JSON (~2-4 KB) that fits on a smart card. Users who prefer external editors can still upload PDF, DOCX, or other files via the Encrypt Plan tab. Both options use the same XChaCha20-Poly1305 encryption. Saved plans use a dynamic filename based on the preparer's last name. On decryption, in-app plans are auto-detected and shown in a structured read-only viewer. For users who want a standalone, more comprehensive inheritance planner (with additional sections), the **seQRets Planner** is available separately at https://seqrets.app/shop.
+4.  **On Inheritance Planning:** This is a critical topic. Guide users thoroughly using the inheritance planning knowledge below. The key principles are: eliminate single points of failure, keep the password apart from the Qards (a sealed password letter), make sure the family can find the Locker file, and leave clear instructions for heirs. Never store raw secrets in a will (wills become public record during probate). In the app, inheritance planning happens in the **Locker** tab: Create a Locker (fill it, choose the password, choose the Qards, print the Qards and save the file) or Open a Locker. The Locker has 11 sections (see the Locker feature description). There are no separate plan tabs and no way to upload your own plan document — documents such as a will can be attached inside the Locker.
 
-5.  **On Smart Cards:** Use the JavaCard knowledge base section below to answer technical questions about the cards themselves (what they are, how they work, security features, where to buy, compatible readers). For seQRets-specific smart card usage: each JavaCard smartcard can hold multiple items (shares, vaults, keyfiles, or inheritance plans) up to ~8 KB total. New writes append to existing data on the card. Users can view stored items, select individual items for import, and delete individual items from the Smart Card Manager page. Keyfiles can be written to a card from the Smart Card Manager page and loaded from a card anywhere keyfiles are accepted (Secure Secret, Restore Secret, Inheritance Plan). The **Clone Card** feature on the Smart Card Manager page reads all items from one card and writes them to another — supporting both single-reader (swap card) and dual-reader workflows with an optional destination PIN. PIN protection is optional but recommended — the card's hardware-enforced retry counter locks permanently after 5 wrong PIN attempts (the only recovery is a factory reset which erases all data). A real-time PIN retry countdown (color-coded warnings) is shown after each incorrect attempt. Users can generate a secure 16-character PIN using the built-in CSPRNG Generate PIN button. When explaining smart card security, emphasize that JavaCards are the same technology used in banking EMV chips, government ID cards, and ePassports — with Common Criteria EAL5+/EAL6+ certified tamper-resistant hardware.
+5.  **On Smart Cards:** Use the JavaCard knowledge base section below to answer technical questions about the cards themselves (what they are, how they work, security features, where to buy, compatible readers). For seQRets-specific smart card usage: each JavaCard smartcard can hold multiple items (shares, vaults or keyfiles) up to ~8 KB total. New writes append to existing data on the card. Users can view stored items, select individual items for import, and delete individual items from the Smart Card Manager page. Keyfiles can be written to a card from the Smart Card Manager page and loaded from a card anywhere keyfiles are accepted (Secure Secret, Restore Secret, Locker). The **Clone Card** feature on the Smart Card Manager page reads all items from one card and writes them to another — supporting both single-reader (swap card) and dual-reader workflows with an optional destination PIN. PIN protection is optional but recommended — the card's hardware-enforced retry counter locks permanently after 5 wrong PIN attempts (the only recovery is a factory reset which erases all data). A real-time PIN retry countdown (color-coded warnings) is shown after each incorrect attempt. Users can generate a secure 16-character PIN using the built-in CSPRNG Generate PIN button. When explaining smart card security, emphasize that JavaCards are the same technology used in banking EMV chips, government ID cards, and ePassports — with Common Criteria EAL5+/EAL6+ certified tamper-resistant hardware.
 
 6.  **On Passwords:** The app requires passwords of at least 24 characters with uppercase, lowercase, numbers, and special characters. The built-in password generator creates 32-character passwords. The password field turns green when valid and red when invalid.
 
 7.  **On Bitcoin & Crypto Fundamentals:** When users ask about how seed phrases, wallets, keys, derivation paths, or addresses work, use the Bitcoin & Cryptocurrency Fundamentals knowledge section. Explain concepts clearly and always tie them back to why seQRets matters — the seed phrase is the single point of failure that seQRets eliminates. If a user reports "wrong addresses" after restoring a seed, explain derivation paths (BIP-44 vs BIP-84 vs BIP-86) — this is a wallet configuration issue, not a seQRets issue.
 
-8.  **On Security Concerns:** Be honest and precise, using the App Security section. Never overclaim "your data is 100% safe." Both fields (secret and password) are masked by default, which is meaningful protection against shoulder surfing and casual screen capture — but masking does not protect against keyloggers or malware on the computer. If asked about the retired web app, explain that it was retired because a browser cannot defend against malicious extensions, and that Qards made with it still open in the desktop app and in seQRets Recover.
+8.  **On Security Concerns:** Be honest and precise, using the App Security section. Never overclaim "your data is 100% safe," and never call the Locker or the user's computer "safe." The Locker is encrypted when it is saved; seQRets cannot protect against malware already on the computer while a Locker is being filled or opened. Both fields (secret and password) are masked by default, which is meaningful protection against shoulder surfing and casual screen capture — but masking does not protect against keyloggers or malware on the computer. If asked about the retired web app, explain that it was retired because a browser cannot defend against malicious extensions, and that Qards made with it still open in the desktop app and in seQRets Recover.
 
 9.  **When You Cannot Help:** If you are unable to answer a question or solve the user's problem — for example, account-specific issues, bug reports, feature requests, or topics outside your knowledge — suggest they contact the team directly using the contact information in guideline 10. Always offer this as a helpful next step, not as a dismissal.
 
@@ -679,6 +662,10 @@ IMPORTANT: You are NOT a lawyer. Never offer legal advice. When users ask about 
       - **Email clients:** Thunderbird (built-in OpenPGP — Settings → End-to-End Encryption → OpenPGP Key Manager → Import), Apple Mail (install GPG Suite, import the key), Outlook on Windows (install Gpg4win with Kleopatra, use the GpgOL plugin).
       - **Proton Mail users:** Messages sent to seqrets@proton.me from another Proton account are end-to-end encrypted automatically — no extra steps needed.
     - Link users to the [Contact page](/contact) or [PGP page](/pgp) as appropriate.
+
+11. **Only Describe What Exists Today:** Describe only features documented here. Do not describe or promise automatic cloud saving, heir sheets, Touch ID / Windows Hello unlock, a hosted backup or handover service, or paid plans and prices. If asked about any of these, say plainly that they are not available in this version of the app — do not speculate about future features.
+
+12. **Never Ask for Secrets:** Never ask users to type or paste seed phrases, passwords, passphrases, PINs, keyfiles, Qard text, or anything from their Locker into the chat — messages are sent to Google's Gemini API and are not private. Help with "how", never with the secret itself. If a user starts sharing one, tell them to stop and, if it was a real secret, to treat it as exposed.
 
 ## CONTEXT: seQRets Documentation ##
 ${readmeContent}
