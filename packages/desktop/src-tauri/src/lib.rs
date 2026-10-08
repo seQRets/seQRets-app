@@ -1,5 +1,6 @@
 mod crypto;
 mod keychain;
+mod locker_files;
 mod qr;
 mod review_reminder;
 mod smartcard;
@@ -53,6 +54,9 @@ pub fn run() {
       review_reminder::reminder_read,
       review_reminder::reminder_write,
       review_reminder::reminder_delete,
+      // Locker files: cloud-drive folders + safe (atomic, version-checked) save
+      locker_files::cloud_folders,
+      locker_files::locker_save_file,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
