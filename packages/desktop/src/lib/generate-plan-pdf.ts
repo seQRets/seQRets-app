@@ -103,9 +103,14 @@ function addLabelValue(label: string, value: string) {
   const labelWidth = doc.getTextWidth(labelStr);
   doc.setFont('helvetica', 'normal');
   const maxWidth = CONTENT_W - labelWidth - 4;
-  const lines = doc.splitTextToSize(value, maxWidth);
-  doc.text(lines, MARGIN_L + 2 + labelWidth, currentY);
-  currentY += lines.length * 5;
+  const lines: string[] = doc.splitTextToSize(value, maxWidth);
+  // Line by line, so a long value (a descriptor, a list of recovery codes)
+  // continues on the next page instead of running off this one.
+  lines.forEach((line, i) => {
+    if (i > 0) checkPageBreak(5);
+    doc.text(line, MARGIN_L + 2 + labelWidth, currentY);
+    currentY += 5;
+  });
 }
 
 function addTextBlock(text: string) {
@@ -477,11 +482,10 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
           ? 'YES \u2014 the seed alone opens an EMPTY wallet; the passphrase is also required'
           : 'No \u2014 the seed phrase alone is sufficient');
       }
-      addLabelValue('Derivation Path / Script Type', asset.derivationPath);
-      addLabelValue('Multisig Descriptor Location', asset.multisigDescriptorLocation);
       addLabelValue('Passphrase', asset.passphrase ?? '');
-      addLabelValue('Multisig Cosigners', asset.multisigCosigners);
+      addLabelValue('Derivation Path / Script Type', asset.derivationPath);
       addLabelValue('Multisig Descriptor', asset.multisigDescriptor ?? '');
+      addLabelValue('Other Copies of the Descriptor', asset.multisigDescriptorLocation);
       const keys = (asset.multisigKeys ?? []).filter(k => k.label || k.heldBy || k.seed || k.passphrase || k.notes);
       keys.forEach((k, i) => {
         checkPageBreak(12);
@@ -526,7 +530,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
   const documents = plan.documents ?? [];
   if (documents.length > 0) {
     addSectionHeader(`${sectionNum++}. Documents`);
-    addTextBlock('These files are stored inside the encrypted plan. Open it in seQRets to save them.');
+    addTextBlock('These files are stored inside the Locker. Open the Locker in seQRets to save a copy of them.');
     for (const d of documents) {
       checkPageBreak(12);
       addLabelValue('Document', d.name === d.fileName ? d.name : `${d.name} (${d.fileName})`);
@@ -567,7 +571,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   sub('If the asset says it uses an added passphrase (\u201C25th word\u201D)');
   addTextBlock(
-    'The seed phrase alone will open a real \u2014 but empty \u2014 wallet. The wallet holding the funds only appears when the passphrase is entered along with the seed during restore. The passphrase is a separate secret; its location is listed with the asset. Without it, no expert can reach the funds.'
+    'The seed phrase alone will open a real \u2014 but empty \u2014 wallet. The wallet holding the funds only appears when the passphrase is entered along with the seed during restore. The passphrase is listed with the asset in this plan. Without it, no expert can reach the funds.'
   );
   currentY += 2;
 
@@ -579,7 +583,7 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   sub('If the asset is marked multisig \u2014 do not skip this');
   addTextBlock(
-    'A multisig wallet is controlled by SEVERAL keys \u2014 for example \u201C2-of-3\u201D means any two of three keys must sign. Restoring it needs two things: enough of the seed phrases, AND the wallet\u2019s configuration file (called a \u201Cdescriptor\u201D or \u201Cwallet file\u201D), which lists all the keys that belong together. The descriptor\u2019s location is listed with the asset. With it, recovery is: open the wallet software, import the descriptor, then add the seeds \u2014 the software does the rest. Without it, reconstruction may be impossible even for a professional. If you cannot find the descriptor, stop and call the Technical Contact listed under Professional Contacts before doing anything else.'
+    'A multisig wallet is controlled by SEVERAL keys \u2014 for example \u201C2-of-3\u201D means any two of three keys must sign. Restoring it needs two things: enough of the seed phrases, AND the wallet\u2019s configuration file (called a \u201Cdescriptor\u201D or \u201Cwallet file\u201D), which lists all the keys that belong together. The descriptor is listed with the asset in this plan. With it, recovery is: open the wallet software, import the descriptor, then add the seeds \u2014 the software does the rest. Without it, reconstruction may be impossible even for a professional. If you cannot find the descriptor, stop and call the Technical Contact listed under Professional Contacts before doing anything else.'
   );
   currentY += 2;
 

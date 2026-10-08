@@ -76,7 +76,7 @@ export interface DigitalAsset {
   approxValue: string;
   twoFactorMethod: string;
   recoverySeed: string;
-  /** Single-sig / multisig / hardware wallet / custodial exchange / other. */
+  /** One of WALLET_KINDS, or '' when not specified. */
   walletKind: string;
   /**
    * Whether the wallet uses an added BIP-39 passphrase ("25th word").
@@ -87,10 +87,8 @@ export interface DigitalAsset {
   usesPassphrase: '' | 'yes' | 'no';
   /** Derivation path / script type (e.g. Native SegWit, m/84'/0'/0'). */
   derivationPath: string;
-  /** Where the multisig wallet descriptor / config file is stored. */
+  /** Where other copies of the multisig descriptor / config file are kept. */
   multisigDescriptorLocation: string;
-  /** Who holds which key in a multisig setup (free text). */
-  multisigCosigners: string;
   /**
    * The BIP-39 passphrase itself (single-sig). A Locker holds secrets,
    * not just pointers to them; `usesPassphrase` records yes/no.
@@ -298,11 +296,14 @@ export function validatePlan(parsed: any): InheritancePlan | null {
 
 // ── helpers ──────────────────────────────────────────────────────────
 
+/** The choices for DigitalAsset.walletKind, stored and printed as shown. */
+export const WALLET_KINDS = ['Single-sig', 'Multisig', 'Hardware wallet', 'Exchange', 'Other'] as const;
+
 export function createBlankDigitalAsset(): DigitalAsset {
   return {
     id: crypto.randomUUID(), name: '', type: '', platform: '', loginEmail: '', approxValue: '',
     twoFactorMethod: '', recoverySeed: '', walletKind: '', usesPassphrase: '', derivationPath: '',
-    multisigDescriptorLocation: '', multisigCosigners: '', passphrase: '', multisigDescriptor: '',
+    multisigDescriptorLocation: '', passphrase: '', multisigDescriptor: '',
     multisigKeys: [], specialInstructions: '',
   };
 }
