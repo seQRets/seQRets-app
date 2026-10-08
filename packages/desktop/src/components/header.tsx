@@ -9,7 +9,7 @@ import {
   Info,
   Home,
   CreditCard,
-  FileText,
+  FolderLock,
   RefreshCw,
   Mail,
 } from 'lucide-react';
@@ -74,9 +74,9 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                 {isHomePage ? (
                      activeTab === 'create' ? (
                         <>
-                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                            <FileText className="h-5 w-5" />
-                            <span>Inheritance Plan</span>
+                        <Link to="/locker" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FolderLock className="h-5 w-5" />
+                            <span>Locker</span>
                         </Link>
                         <Button variant="ghost" className="w-full justify-start gap-3 p-2" onClick={() => handleLinkClick('restore')}>
                             <Combine className="h-5 w-5" />
@@ -89,9 +89,9 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                             <Lock className="h-5 w-5" />
                             <span>Secure Secret</span>
                         </Button>
-                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                            <FileText className="h-5 w-5" />
-                            <span>Inheritance Plan</span>
+                        <Link to="/locker" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FolderLock className="h-5 w-5" />
+                            <span>Locker</span>
                         </Link>
                         </>
                     )
@@ -105,10 +105,10 @@ function MobileMenu({ activeTab, onTabChange }: HeaderProps) {
                             <Lock className="h-5 w-5" />
                             <span>Secure Secret</span>
                         </Link>
-                        {pathname !== '/inheritance' && (
-                        <Link to="/inheritance" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
-                            <FileText className="h-5 w-5" />
-                            <span>Inheritance Plan</span>
+                        {pathname !== '/locker' && (
+                        <Link to="/locker" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
+                            <FolderLock className="h-5 w-5" />
+                            <span>Locker</span>
                         </Link>
                         )}
                         <Link to="/?tab=restore" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted" onClick={() => handleLinkClick()}>
@@ -210,9 +210,9 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                 activeTab === 'create' ? (
                     <>
                     <DropdownMenuItem asChild>
-                        <Link to="/inheritance">
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>Inheritance Plan</span>
+                        <Link to="/locker">
+                            <FolderLock className="mr-2 h-4 w-4" />
+                            <span>Locker</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleLinkClick('restore')}>
@@ -227,9 +227,9 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                         <span>Secure Secret</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link to="/inheritance">
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>Inheritance Plan</span>
+                        <Link to="/locker">
+                            <FolderLock className="mr-2 h-4 w-4" />
+                            <span>Locker</span>
                         </Link>
                     </DropdownMenuItem>
                     </>
@@ -248,11 +248,11 @@ function DesktopMenu({ activeTab, onTabChange }: HeaderProps) {
                             <span>Secure Secret</span>
                         </Link>
                     </DropdownMenuItem>
-                    {pathname !== '/inheritance' && (
+                    {pathname !== '/locker' && (
                     <DropdownMenuItem asChild>
-                        <Link to="/inheritance">
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>Inheritance Plan</span>
+                        <Link to="/locker">
+                            <FolderLock className="mr-2 h-4 w-4" />
+                            <span>Locker</span>
                         </Link>
                     </DropdownMenuItem>
                     )}
