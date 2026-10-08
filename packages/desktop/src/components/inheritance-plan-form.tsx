@@ -93,11 +93,11 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden bg-card dark:bg-[hsl(28,7%,21%)]">
       <button
         type="button"
         onClick={() => onToggle(id)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent/20 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
       >
         <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-bold text-sm shrink-0">
           {number}
