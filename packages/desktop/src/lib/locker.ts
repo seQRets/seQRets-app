@@ -20,6 +20,8 @@ export const desktopLockerCrypto: LockerCrypto = {
 export interface OpenLocker extends UnlockedLocker {
   /** Name of the file it was opened from / last saved to, if known. */
   fileName?: string;
+  /** Full path of that file, when known — where automatic saves go. */
+  filePath?: string;
 }
 
 /** Save-dialog filter for Locker files (.json keeps them openable in Recover). */

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, CheckCircle2, ChevronDown, ChevronUp, FileDown, Loader2, Lock, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { ArrowDown, CheckCircle2, ChevronDown, ChevronUp, Cloud, CloudOff, FileDown, FolderOpen, Loader2, Lock, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { HelpHint } from '@/components/ui/help-hint';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PasswordGenerator } from '@/components/ui/password-generator';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
@@ -15,10 +16,14 @@ import { KeyfileGenerator } from '@/components/keyfile-generator';
 import { QrCodeDisplay } from '@/components/qr-code-display';
 import { ReviewReminderPrompt } from '@/components/review-reminder-prompt';
 import { SmartCardDialog } from '@/components/smartcard-dialog';
-import { createBlankPlan, createLocker, describeLockerSet, lockerFileName } from '@seqrets/crypto';
+import { createBlankPlan, createLocker, describeLockerSet } from '@seqrets/crypto';
 import type { CreatedLocker, InheritancePlan } from '@seqrets/crypto';
-import { desktopLockerCrypto, LOCKER_FILE_FILTERS } from '@/lib/locker';
-import { saveTextFileNative, savedFileName } from '@/lib/native-save';
+import { desktopLockerCrypto } from '@/lib/locker';
+import {
+  chooseLockerLocation, cloudFolderLabel, fileNameOf, findCloudFolders, lockerPathIn,
+  writeLockerFile, LOCKER_FOLDER_NAME, NO_CLOUD_NOTICE,
+} from '@/lib/locker-files';
+import type { CloudFolder } from '@/lib/locker-files';
 import { getReminderState } from '@/lib/review-reminder';
 import type { OpenLocker } from '@/lib/locker';
 
@@ -73,7 +78,19 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [created, setCreated] = useState<CreatedLocker | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
+  /** Where the first save went, in words ("iCloud Drive › seQRets"), or null for a chosen location. */
+  const [savedWhere, setSavedWhere] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [showReminderPrompt, setShowReminderPrompt] = useState(false);
+
+  // Cloud drives on this computer; null until looked up.
+  const [cloudFolders, setCloudFolders] = useState<CloudFolder[] | null>(null);
+  const [cloudChoice, setCloudChoice] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    findCloudFolders().then((found) => { if (!cancelled) setCloudFolders(found); });
+    return () => { cancelled = true; };
+  }, []);
 
   const credentialsReady = isPasswordValid && (!useKeyfile || !!keyfile);
 
@@ -124,14 +141,35 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
     }
   };
 
-  const handleSaveFile = async () => {
+  /** Save the new Locker file at `path`. A copy never replaces a newer version. */
+  const saveTo = async (path: string, where: string | null) => {
+    if (!created) return;
+    setIsSaving(true);
+    try {
+      await writeLockerFile(path, created.text, null);
+      if (!savedPath) {
+        setSavedPath(path);
+        setSavedWhere(where);
+      }
+      toast({ title: savedPath ? 'Copy saved' : 'Locker saved', description: `Saved "${fileNameOf(path)}"${where ? ` to ${where}` : ''}.` });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Could not save the Locker', description: e?.message || String(e) });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveToCloud = () => {
+    const folder = cloudFolders?.[cloudChoice];
+    if (!created || !folder) return;
+    void saveTo(lockerPathIn(folder, created.qards.setId), `${cloudFolderLabel(folder)} › ${LOCKER_FOLDER_NAME}`);
+  };
+
+  const handleChooseLocation = async () => {
     if (!created) return;
     try {
-      const path = await saveTextFileNative(lockerFileName(created.qards.setId), LOCKER_FILE_FILTERS, created.text);
-      if (path) {
-        setSavedPath(path);
-        toast({ title: 'Locker saved', description: `Saved "${savedFileName(path)}".` });
-      }
+      const path = await chooseLockerLocation(created.qards.setId);
+      if (path) await saveTo(path, null);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Could not save the Locker', description: e?.message || String(e) });
     }
@@ -146,7 +184,8 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
       seq: created.file.seq,
       savedAt: created.file.savedAt,
       editedOutsideApp: false,
-      fileName: savedFileName(savedPath),
+      fileName: fileNameOf(savedPath),
+      filePath: savedPath,
     });
   };
 
@@ -329,17 +368,59 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
                   <h4 className="font-semibold">The Locker file</h4>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  The Qards open this file. Without it, they open nothing — save it somewhere your family can reach, such as a cloud drive you share with them.
+                  The Qards open this file. Without it, they open nothing — so it must be somewhere your family can reach.
                 </p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button onClick={handleSaveFile} variant={savedPath ? 'outline' : 'default'}>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    {savedPath ? 'Save Another Copy' : 'Save Locker File'}
-                  </Button>
-                  {savedPath && (
-                    <span className="text-sm text-muted-foreground">Saved as {savedFileName(savedPath)}</span>
-                  )}
-                </div>
+
+                {savedPath ? (
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                      <span>Saved{savedWhere ? ` to ${savedWhere}` : ''} as <strong>{fileNameOf(savedPath)}</strong></span>
+                    </p>
+                    <Button onClick={handleChooseLocation} variant="outline" disabled={isSaving}>
+                      <FileDown className="mr-2 h-4 w-4" /> Save Another Copy
+                    </Button>
+                  </div>
+                ) : cloudFolders === null ? (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Looking for cloud drives…
+                  </p>
+                ) : cloudFolders.length > 0 ? (
+                  <div className="space-y-3">
+                    {cloudFolders.length > 1 && (
+                      <RadioGroup value={String(cloudChoice)} onValueChange={(v) => setCloudChoice(Number(v))} className="gap-2">
+                        {cloudFolders.map((f, i) => (
+                          <div key={f.path} className="flex items-center gap-2">
+                            <RadioGroupItem value={String(i)} id={`cloud-${i}`} />
+                            <Label htmlFor={`cloud-${i}`} className="font-normal">{cloudFolderLabel(f)}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      It goes in a <strong>{LOCKER_FOLDER_NAME}</strong> folder in your {cloudFolders[cloudChoice]?.provider}. Your cloud drive keeps it in sync; seQRets never signs in to it.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button onClick={handleSaveToCloud} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cloud className="mr-2 h-4 w-4" />}
+                        Save to {cloudFolders[cloudChoice] ? cloudFolderLabel(cloudFolders[cloudChoice]) : 'cloud drive'}
+                      </Button>
+                      <Button onClick={handleChooseLocation} variant="outline" disabled={isSaving}>
+                        <FolderOpen className="mr-2 h-4 w-4" /> Choose Another Location…
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-muted border border-border text-sm">
+                      <CloudOff className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>{NO_CLOUD_NOTICE}</span>
+                    </div>
+                    <Button onClick={handleChooseLocation} disabled={isSaving}>
+                      <FolderOpen className="mr-2 h-4 w-4" /> Choose a Location…
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {!savedPath && (
