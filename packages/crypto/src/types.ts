@@ -38,9 +38,7 @@ export interface CreateSharesRequest {
     embedRecoveryInfo?: boolean;
 }
 
-export interface CreateSharesResult extends QrCodeData {
-    encryptedInstructions?: EncryptedInstruction;
-}
+export type CreateSharesResult = QrCodeData;
 
 export interface RestoreSecretRequest {
     shares: string[];

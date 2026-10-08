@@ -234,7 +234,7 @@ export function renderQardToCanvas(qrDataUrl: string, opts: QardCardOptions): Pr
 
 /**
  * Assemble the "Download All" ZIP: one TXT per share, one card PNG per
- * share when available, plus the encrypted-instructions JSON if present.
+ * share when available.
  * Returns the JSZip instance; the caller picks the output type (blob for
  * browser download, uint8array for native save).
  */
@@ -245,9 +245,8 @@ export async function buildQardsZip(args: {
   setId?: string | null;
   /** Card PNG data URL per index, or null to skip (e.g. text-only mode). */
   getPngDataUrl: (index: number) => string | null | Promise<string | null>;
-  encryptedInstructions?: unknown | null;
 }): Promise<JSZip> {
-  const { shares, label, setId, getPngDataUrl, encryptedInstructions } = args;
+  const { shares, label, setId, getPngDataUrl } = args;
   const zip = new JSZip();
 
   for (let i = 0; i < shares.length; i++) {
@@ -261,11 +260,6 @@ export async function buildQardsZip(args: {
     }
   }
 
-  if (encryptedInstructions) {
-    const instructionsContent = JSON.stringify(encryptedInstructions, null, 2);
-    zip.file('seqrets-instructions.json', instructionsContent);
-  }
-
   return zip;
 }
 
@@ -277,7 +271,6 @@ export function buildVaultJson(
     shares: string[];
     requiredShares: number;
     totalShares: number;
-    encryptedInstructions?: unknown | null;
   },
   keyfileUsed: boolean,
   createdAt: string = new Date().toISOString(),
@@ -290,7 +283,6 @@ export function buildVaultJson(
     requiredShares: data.requiredShares,
     totalShares: data.totalShares,
     createdAt,
-    encryptedInstructions: data.encryptedInstructions || null,
     keyfileUsed: keyfileUsed,
   };
   return JSON.stringify(vaultData, null, 2);

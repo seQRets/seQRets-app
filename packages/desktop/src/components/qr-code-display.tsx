@@ -39,7 +39,7 @@ interface QrCodeDisplayProps {
 }
 
 export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = true, allowVaultExport = true }: QrCodeDisplayProps) {
-  const { shares, totalShares, requiredShares, label, setId, isTextOnly: isTextOnlyHint, encryptedInstructions } = qrCodeData;
+  const { shares, totalShares, requiredShares, label, setId, isTextOnly: isTextOnlyHint } = qrCodeData;
   // Every export surface reads exportLabel; only the on-screen header (the
   // user's own session) keeps showing the real label regardless.
   const exportLabel = showLabelOnExports ? label : null;
@@ -265,7 +265,6 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
             setId,
             // Render each card on demand (no pre-generated cache on desktop).
             getPngDataUrl: (i) => (!isTextOnly && qrCodeUris[i] ? renderCardToCanvas(i, qrCodeUris[i]!, 4) : null),
-            encryptedInstructions,
         });
         const content = await zip.generateAsync({ type: 'uint8array' });
         const savedPath = await saveFileNative('seQRets-shares.zip', ZIP_FILTERS, content);
@@ -407,16 +406,6 @@ export function QrCodeDisplay({ qrCodeData, keyfileUsed, showLabelOnExports = tr
           <ScanLine className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
           <span className="font-medium">Verify Your QR Qards Are Scannable</span>
         </button>
-      )}
-
-      {encryptedInstructions && (
-        <Alert className="mb-4 mx-4 border-accent text-foreground dark:text-foreground [&>svg]:text-primary">
-            <TriangleAlert className="h-4 w-4" />
-            <AlertTitle>Encrypted Instructions File Included</AlertTitle>
-            <AlertDescription>
-                An encrypted instructions file (`seqrets-instructions.json`) has been generated. It will be included in the "Download All" zip.
-            </AlertDescription>
-        </Alert>
       )}
 
       <div className="bg-background rounded-lg p-2">
