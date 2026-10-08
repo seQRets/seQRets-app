@@ -69,7 +69,7 @@ export default function AboutPage() {
                                 <p><span className="font-semibold text-foreground">Shamir's Secret Sharing</span> for threshold-based backup splitting</p>
                             </div>
                             <p className="pt-2 border-t text-xs">
-                                <em>All cryptographic operations run entirely on your device. Your secrets never leave this machine.</em>
+                                <em>All encryption runs on this computer. seQRets never sends your secrets anywhere.</em>
                             </p>
                         </CardContent>
                     </Card>
@@ -103,18 +103,22 @@ export default function AboutPage() {
                         <CardDescription>A zero-knowledge approach to crypto inheritance</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm text-muted-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="p-4 rounded-lg border bg-[#cbc5ba] dark:bg-muted text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary dark:text-[#fbbf24]">1.</span> <span className="text-foreground">Secure</span></p>
-                                <p>Your secret is encrypted with a strong password (and optional keyfile) using military-grade cryptography.</p>
+                                <p>Your secret is encrypted with a strong password (and optional keyfile).</p>
                             </div>
                             <div className="p-4 rounded-lg border bg-[#cbc5ba] dark:bg-muted text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary dark:text-[#34d399]">2.</span> <span className="text-foreground">Split</span></p>
-                                <p>The encrypted data is split into multiple Qard backups using Shamir's Secret Sharing. No single Qard reveals anything.</p>
+                                <p>The encrypted data is split into multiple Qard backups using Shamir's Secret Sharing. Fewer than the required number of Qards reveal nothing about the secret.</p>
                             </div>
                             <div className="p-4 rounded-lg border bg-[#cbc5ba] dark:bg-muted text-center">
                                 <p className="text-xl font-bold mb-2"><span className="text-primary dark:text-[#38bdf8]">3.</span> <span className="text-foreground">Share</span></p>
                                 <p>Print, download, or export your Qards. Give them to trusted family members, lawyers, or store in secure locations.</p>
+                            </div>
+                            <div className="p-4 rounded-lg border bg-[#cbc5ba] dark:bg-muted text-center">
+                                <p className="text-xl font-bold mb-2"><span className="text-primary dark:text-[#a78bfa]">4.</span> <span className="text-foreground">Locker</span></p>
+                                <p>Keep every secret and your inheritance plan in one encrypted file, opened by one set of Qards and one password.</p>
                             </div>
                         </div>
                     </CardContent>
@@ -130,10 +134,10 @@ export default function AboutPage() {
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm text-muted-foreground">
                         <p>
-                            <a href="https://github.com/seQRets/seQRets-Recover" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">seQRets Recover</a> is an independent, single-file recovery tool for the seQRets share format. One HTML file, ~200 lines of TypeScript, no install, no network. Open it in any modern browser, offline, and paste your Qards in.
+                            <a href="https://github.com/seQRets/seQRets-Recover" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:text-primary">seQRets Recover</a> is an independent, single-file recovery tool for the seQRets share format. One HTML file, a small and readable codebase, no install, no network. Open it in any modern browser, offline, and paste your Qards in.
                         </p>
                         <p>
-                            Save a copy of <code className="text-xs px-1 py-0.5 rounded bg-muted">recover.html</code> alongside your Qards. Anyone holding the threshold of Qards plus the password can recover the secret with nothing but a web browser.
+                            Save a copy of <code className="text-xs px-1 py-0.5 rounded bg-muted">recover.html</code> alongside your Qards. Anyone holding enough Qards plus the password (and the keyfile, if one was used) can recover the secret with nothing but a web browser. For a Locker, they also need the Locker file.
                         </p>
                         <div className="flex flex-wrap gap-2 pt-2">
                             <a
