@@ -50,6 +50,10 @@ export default function LockerPage() {
     toast({ title: 'Locker locked', description: reason ?? 'Open it again with your Qards and password.' });
   }, [toast]);
 
+  const updateLocker = useCallback((update: (prev: OpenLocker) => OpenLocker) => {
+    setLocker((prev) => (prev ? update(prev) : prev));
+  }, []);
+
   const { secondsLeft, stayOpen } = useIdleLock(view === 'locker', () => lock('Locked after 15 minutes without activity.'));
 
   const handleOpened = async (opened: OpenLocker) => {
@@ -180,7 +184,7 @@ export default function LockerPage() {
             {view === 'locker' && locker && (
               <LockerView
                 locker={locker}
-                onChange={setLocker}
+                onChange={updateLocker}
                 dirty={dirty}
                 onDirtyChange={setDirty}
                 onLock={() => lock()}

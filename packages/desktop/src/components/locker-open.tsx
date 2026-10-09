@@ -9,6 +9,7 @@ import { LockerError, openLockerWithKey, parseLockerFile } from '@seqrets/crypto
 import type { LockerFile } from '@seqrets/crypto';
 import { desktopLockerCrypto } from '@/lib/locker';
 import type { OpenLocker } from '@/lib/locker';
+import { pickLockerFile } from '@/lib/locker-files';
 import { playFileDropSound } from '@/lib/play-sound';
 
 interface LockerOpenProps {
@@ -24,32 +25,54 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const [fileText, setFileText] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  // Known only when chosen with the file picker; a dropped file's location isn't.
+  const [filePath, setFilePath] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<LockerFile | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+
+  const acceptFile = (text: string, name: string, path: string | null) => {
+    const parsed = parseLockerFile(text);
+    setFileText(text);
+    setFileName(name);
+    setFilePath(path);
+    setFileInfo(parsed);
+    playFileDropSound();
+    scrollToReveal(endRef.current);
+  };
+
+  const fail = (e: any) => {
+    setFileText(null);
+    setFileName(null);
+    setFilePath(null);
+    setFileInfo(null);
+    setFileError(e instanceof LockerError ? e.message : e?.message || 'This file could not be read.');
+  };
 
   const handleFiles = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
     setFileError(null);
     try {
-      const text = await file.text();
-      const parsed = parseLockerFile(text);
-      setFileText(text);
-      setFileName(file.name);
-      setFileInfo(parsed);
-      playFileDropSound();
-      scrollToReveal(endRef.current);
+      acceptFile(await file.text(), file.name, null);
     } catch (e: any) {
-      setFileText(null);
-      setFileName(null);
-      setFileInfo(null);
-      setFileError(e instanceof LockerError ? e.message : 'This file could not be read.');
+      fail(e);
+    }
+  };
+
+  const handleBrowse = async () => {
+    setFileError(null);
+    try {
+      const picked = await pickLockerFile();
+      if (picked) acceptFile(picked.text, picked.name, picked.path);
+    } catch (e: any) {
+      fail(e);
     }
   };
 
   const clearFile = () => {
     setFileText(null);
     setFileName(null);
+    setFilePath(null);
     setFileInfo(null);
     setFileError(null);
   };
@@ -57,7 +80,7 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
   const handleKeyRestored = async (key: string, setId: string | undefined) => {
     if (!fileText) throw new Error('Choose the Locker file first.');
     const unlocked = await openLockerWithKey({ fileText, key, expectedSetId: setId }, desktopLockerCrypto);
-    onOpened({ ...unlocked, fileName: fileName ?? undefined });
+    onOpened({ ...unlocked, fileName: fileName ?? undefined, filePath: filePath ?? undefined });
   };
 
   return (
@@ -71,6 +94,7 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
           {!fileInfo ? (
             <DragDropZone
               onFiles={handleFiles}
+              onBrowse={handleBrowse}
               accept=".json,application/json"
               label="Drop your Locker file here"
               hint="or click to choose it (seQRets-Locker-….json)"

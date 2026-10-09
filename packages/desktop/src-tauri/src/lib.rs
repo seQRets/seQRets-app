@@ -57,6 +57,7 @@ pub fn run() {
       // Locker files: cloud-drive folders + safe (atomic, version-checked) save
       locker_files::cloud_folders,
       locker_files::locker_save_file,
+      locker_files::locker_read_file,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

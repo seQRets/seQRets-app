@@ -276,7 +276,7 @@ fn save_locker_file(path: &Path, contents: &str, expected_seq: Option<u64>) -> R
         };
         if !ok {
             return Err(format!(
-                "{ERR_CONFLICT}: The Locker file here is version {}, but the one open is version {}. It was changed somewhere else.",
+                "{ERR_CONFLICT}: The Locker file here is version {}, but the one open is version {}.",
                 old.seq,
                 expected_seq.unwrap_or(new.seq)
             ));
@@ -327,6 +327,31 @@ fn save_locker_file(path: &Path, contents: &str, expected_seq: Option<u64>) -> R
 #[tauri::command]
 pub fn locker_save_file(path: String, contents: String, expected_seq: Option<u64>) -> Result<(), String> {
     save_locker_file(Path::new(&path), &contents, expected_seq)
+}
+
+fn read_locker_file(path: &Path) -> Result<String, String> {
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    if !name.to_ascii_lowercase().ends_with(".json") {
+        return Err(format!("{ERR_NOT_A_LOCKER}: This is not a Locker file."));
+    }
+    if !existing_regular_file(path)? {
+        return Err("The Locker file could not be found.".into());
+    }
+    let meta = fs::metadata(path).map_err(|e| format!("Could not read the Locker file: {e}"))?;
+    if meta.len() as usize > MAX_LOCKER_BYTES {
+        return Err(format!("{ERR_NOT_A_LOCKER}: This file is too large to be a Locker."));
+    }
+    let text = fs::read_to_string(path).map_err(|e| format!("Could not read the Locker file: {e}"))?;
+    parse_header(&text).ok_or_else(|| format!("{ERR_NOT_A_LOCKER}: This file is not a seQRets Locker."))?;
+    Ok(text)
+}
+
+/// Read a Locker file chosen by the user (so its location is known and
+/// later saves can go back to it). Only regular `.json` files that parse as
+/// a Locker are returned.
+#[tauri::command]
+pub fn locker_read_file(path: String) -> Result<String, String> {
+    read_locker_file(Path::new(&path))
 }
 
 #[cfg(test)]
@@ -448,6 +473,21 @@ mod tests {
         std::os::unix::fs::symlink(&real, &link).unwrap();
         assert!(save_locker_file(&link, &locker("abc", 2), Some(1)).is_err());
         assert_eq!(fs::read_to_string(&real).unwrap(), locker("abc", 1));
+    }
+
+    #[test]
+    fn reads_only_locker_files() {
+        let dir = scratch();
+        let path = dir.join("L.json");
+        fs::write(&path, locker("abc", 3)).unwrap();
+        assert_eq!(read_locker_file(&path).unwrap(), locker("abc", 3));
+        let other = dir.join("settings.json");
+        fs::write(&other, r#"{"theme":"dark"}"#).unwrap();
+        assert!(read_locker_file(&other).unwrap_err().starts_with(ERR_NOT_A_LOCKER));
+        let txt = dir.join("L.txt");
+        fs::write(&txt, locker("abc", 3)).unwrap();
+        assert!(read_locker_file(&txt).unwrap_err().starts_with(ERR_NOT_A_LOCKER));
+        assert!(read_locker_file(&dir.join("missing.json")).is_err());
     }
 
     #[test]

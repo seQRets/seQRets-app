@@ -4,7 +4,7 @@
  * through — atomic, version-checked, Locker files only.
  */
 import { invoke } from '@tauri-apps/api/core';
-import { save } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
 import { lockerFileName } from '@seqrets/crypto';
 import { LOCKER_FILE_FILTERS } from './locker';
 
@@ -89,6 +89,50 @@ export async function writeLockerFile(path: string, text: string, expectedSeq: n
 
 /** Ask where to save a Locker file (native Save dialog). Null if cancelled. */
 export async function chooseLockerLocation(setId: string): Promise<string | null> {
-  const path = await save({ defaultPath: lockerFileName(setId), filters: LOCKER_FILE_FILTERS });
+  return chooseLockerSavePath(lockerFileName(setId));
+}
+
+/** Read a Locker file at a known path (safe Rust read: Locker files only). */
+export async function readLockerFile(path: string): Promise<string> {
+  try {
+    return await invoke<string>('locker_read_file', { path });
+  } catch (e) {
+    const raw = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+    throw new Error(raw.replace(/^LOCKER_NOT_A_LOCKER:\s*/, ''));
+  }
+}
+
+/**
+ * Ask for a Locker file with the native Open dialog, so its location is
+ * known (a dropped file's isn't). Null if cancelled.
+ */
+export async function pickLockerFile(): Promise<{ path: string; name: string; text: string } | null> {
+  const picked = await open({ multiple: false, directory: false, filters: LOCKER_FILE_FILTERS });
+  const path = typeof picked === 'string' ? picked : null;
+  if (!path) return null;
+  return { path, name: fileNameOf(path), text: await readLockerFile(path) };
+}
+
+/** Ask where to save a Locker file, suggesting `defaultName`. Null if cancelled. */
+export async function chooseLockerSavePath(defaultName: string): Promise<string | null> {
+  const path = await save({ defaultPath: defaultName, filters: LOCKER_FILE_FILTERS });
   return path ?? null;
+}
+
+/**
+ * Where a Locker file lives, in words: "iCloud Drive › seQRets" when it is
+ * inside a cloud drive, otherwise the name of its folder.
+ */
+export function describeLockerLocation(path: string, folders: CloudFolder[]): { text: string; inCloud: boolean } {
+  const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '');
+  const target = norm(path);
+  for (const f of folders) {
+    const root = norm(f.path);
+    if (target.startsWith(root + '/')) {
+      const inner = target.slice(root.length + 1).split('/').slice(0, -1);
+      return { text: [cloudFolderLabel(f), ...inner].join(' › '), inCloud: true };
+    }
+  }
+  const parts = target.split('/');
+  return { text: parts.length > 1 ? parts[parts.length - 2] || target : target, inCloud: false };
 }

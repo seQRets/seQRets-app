@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { DragDropZone } from '@/components/ui/drag-drop-zone';
 import { desktopLockerCrypto } from '@/lib/locker';
 import { handOffLocker } from '@/lib/locker-handoff';
+import { pickLockerFile } from '@/lib/locker-files';
 import jsQR from 'jsqr';
 import { useToast } from '@/hooks/use-toast';
 import { EncryptedVaultFile } from '@/lib/types';
@@ -575,18 +576,20 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
     }
   };
 
-  const handleLockerFile = async (files: File[]) => {
-    const file = files[0];
-    if (!file || !lockerKey) return;
+  // A file chosen with the picker brings its location (so the Locker can
+  // save back to it); a dropped file doesn't.
+  const openLockerFile = async (getFile: () => Promise<{ text: string; name: string; path?: string } | null>) => {
+    if (!lockerKey) return;
     setLockerFileError(null);
     setIsOpeningLocker(true);
     try {
-      const fileText = await file.text();
+      const file = await getFile();
+      if (!file) return;
       const unlocked = await openLockerWithKey(
-        { fileText, key: lockerKey.key, expectedSetId: lockerKey.setId },
+        { fileText: file.text, key: lockerKey.key, expectedSetId: lockerKey.setId },
         desktopLockerCrypto,
       );
-      handOffLocker({ ...unlocked, fileName: file.name });
+      handOffLocker({ ...unlocked, fileName: file.name, filePath: file.path });
       setLockerKey(null);
       navigate('/locker');
     } catch (e: any) {
@@ -764,7 +767,8 @@ export function RestoreSecretForm({ lockerMode }: RestoreSecretFormProps = {}) {
                 </p>
                 <div className="text-left">
                     <DragDropZone
-                        onFiles={handleLockerFile}
+                        onFiles={(files) => files[0] && openLockerFile(async () => ({ text: await files[0].text(), name: files[0].name }))}
+                        onBrowse={() => openLockerFile(pickLockerFile)}
                         accept=".json,application/json"
                         label="Drop the Locker file here"
                         hint="or click to choose it (seQRets-Locker-….json)"

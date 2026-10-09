@@ -23,6 +23,9 @@ interface DragDropZoneProps {
   paddingClassName?: string;
   /** aria-label for the hidden file input */
   inputAriaLabel?: string;
+  /** Replaces the browser file picker on click (e.g. a native dialog that
+   *  also returns the file's location). Dropped files still go to onFiles. */
+  onBrowse?: () => void;
   /** Extra content rendered inside the zone (e.g. an alternate-source button).
    *  Interactive children must call e.stopPropagation() in their onClick so
    *  they don't also open the file dialog. */
@@ -39,6 +42,7 @@ export function DragDropZone({
   iconClassName = 'w-10 h-10',
   paddingClassName = 'p-6',
   inputAriaLabel,
+  onBrowse,
   children,
 }: DragDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -81,8 +85,9 @@ export function DragDropZone({
   }, [onFiles, multiple]);
 
   const openFileDialog = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+    if (onBrowse) onBrowse();
+    else fileInputRef.current?.click();
+  }, [onBrowse]);
 
   return (
     <div
