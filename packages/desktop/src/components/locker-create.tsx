@@ -205,13 +205,18 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
           <p className="text-sm text-muted-foreground">
             Everything your family will need: wallets, accounts, people, and a letter. You can change it any time after the Locker is made — the Qards stay the same.
           </p>
-          <InheritancePlanForm plan={plan} onChange={setPlan} readOnly={!!created} />
+          <InheritancePlanForm
+            plan={plan}
+            onChange={setPlan}
+            readOnly={!!created}
+            onLastNext={step === 1 ? () => setStep(2) : undefined}
+            lastNextLabel="Next: Choose the Password"
+          />
           {step === 1 && (
-            <div className="flex justify-end pt-2">
-              <Button onClick={() => setStep(2)} className={nextButtonClass}>
-                Next Step <ArrowDown className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            <p className="text-xs text-muted-foreground text-right">
+              Every section is optional. Use the step bar to jump to any section.{' '}
+              <button type="button" className="underline hover:text-foreground" onClick={() => setStep(2)}>Skip to the password</button>
+            </p>
           )}
         </div>
       </div>

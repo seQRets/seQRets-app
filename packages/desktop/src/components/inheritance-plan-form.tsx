@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DragDropZone } from '@/components/ui/drag-drop-zone';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, Plus, Trash2, AlertTriangle, Info, Eye, EyeOff, Wifi, WifiOff, FileText, Download, Paperclip } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Plus, Trash2, AlertTriangle, Info, Eye, EyeOff, Wifi, WifiOff, FileText, Download, Paperclip } from 'lucide-react';
 import { useConnectionStatus } from '@/components/connection-status';
 import { useToast } from '@/hooks/use-toast';
 import { saveFileNative, base64ToUint8Array, savedFileName } from '@/lib/native-save';
@@ -37,6 +37,9 @@ interface InheritancePlanFormProps {
   plan: InheritancePlan;
   onChange: (plan: InheritancePlan) => void;
   readOnly?: boolean;
+  /** Shown as "Next" on the last section (e.g. on to the password step); no button there when absent. */
+  onLastNext?: () => void;
+  lastNextLabel?: string;
 }
 
 // ── Three-state yes/no select ───────────────────────────────────────
@@ -68,50 +71,40 @@ function YesNoSelect({ value, onChange, disabled, yesLabel, noLabel }: {
   );
 }
 
-// ── Collapsible section wrapper ─────────────────────────────────────
+// ── Sections, one at a time ─────────────────────────────────────────
+// The Locker is filled one section at a time (Back / Next, or the step
+// bar), most important first. A page of every section open at once was a
+// wall nobody finishes.
 
-function Section({
-  id,
-  number,
-  title,
-  description,
-  expanded,
-  onToggle,
-  children,
-}: {
-  id: string;
-  number: number;
-  title: string;
-  description: string;
-  expanded: boolean;
-  onToggle: (id: string) => void;
-  children: React.ReactNode;
-}) {
+const STEPS = [
+  { id: 'assets', title: 'Digital Assets', short: 'Wallets', description: 'Every wallet, exchange account and digital asset your family needs to know about' },
+  { id: 'otherSecrets', title: 'Other Secrets', short: 'Secrets', description: "PINs, safe combinations, recovery codes — anything that isn't a wallet or an account" },
+  { id: 'devices', title: 'Device & Account Access', short: 'Devices', description: 'Computers, password managers, backup drives, and other access your family will need' },
+  { id: 'documents', title: 'Documents', short: 'Documents', description: 'Files kept inside your Locker — a will, a deed, a wallet backup file' },
+  { id: 'beneficiaries', title: 'Beneficiaries', short: 'People', description: 'Who should receive your digital assets' },
+  { id: 'nextSteps', title: 'Next Steps for Your Family', short: 'Next steps', description: 'What your family should do first after opening the Locker' },
+  { id: 'emergency', title: 'Emergency Access', short: 'Emergency', description: 'What happens if you are incapacitated but still alive' },
+  { id: 'contacts', title: 'Professional Contacts', short: 'Contacts', description: 'People who can help your family carry out this plan' },
+  { id: 'message', title: 'Personal Message', short: 'Message', description: 'Optional — anything else you want your family to know' },
+  { id: 'planInfo', title: 'About This Plan', short: 'About', description: 'Who prepared it, when, and how often to review it' },
+] as const;
+
+type StepId = (typeof STEPS)[number]['id'];
+
+const ActiveStep = createContext<{ active: StepId; direction: 1 | -1 }>({ active: 'assets', direction: 1 });
+
+/** One section's fields; rendered only while it is the active step. */
+function Section({ id, children }: { id: StepId; children: React.ReactNode }) {
+  const { active, direction } = useContext(ActiveStep);
+  if (id !== active) return null;
   return (
-    <div className="border border-border rounded-lg overflow-hidden bg-card dark:bg-[hsl(28,7%,21%)]">
-      <button
-        type="button"
-        onClick={() => onToggle(id)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
-      >
-        <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-bold text-sm shrink-0">
-          {number}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          <p className="text-xs text-muted-foreground truncate">{description}</p>
-        </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-        )}
-      </button>
-      {expanded && (
-        <div className="px-4 pb-4 pt-3 space-y-4 animate-in fade-in duration-300">
-          {children}
-        </div>
+    <div
+      className={cn(
+        'space-y-4 animate-in fade-in duration-300 motion-reduce:animate-none',
+        direction === 1 ? 'slide-in-from-right-8' : 'slide-in-from-left-8',
       )}
+    >
+      {children}
     </div>
   );
 }
@@ -235,22 +228,47 @@ function formatSize(bytes: number): string {
 
 // ── Main form component ─────────────────────────────────────────────
 
-export function InheritancePlanForm({ plan, onChange, readOnly = false }: InheritancePlanFormProps) {
+export function InheritancePlanForm({ plan, onChange, readOnly = false, onLastNext, lastNextLabel }: InheritancePlanFormProps) {
   const { isOnline } = useConnectionStatus();
   const { toast } = useToast();
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(['planInfo']));
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [visited, setVisited] = useState<Set<StepId>>(() => new Set<StepId>(['assets']));
+  const topRef = useRef<HTMLDivElement>(null);
+  const step = STEPS[stepIndex];
   // Reading attached files is async; build on the latest plan, not the one
   // from the render where the files were dropped.
   const planRef = useRef(plan);
   planRef.current = plan;
 
-  const toggle = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const goTo = (index: number) => {
+    if (index < 0 || index >= STEPS.length || index === stepIndex) return;
+    setDirection(index > stepIndex ? 1 : -1);
+    setStepIndex(index);
+    setVisited((prev) => new Set(prev).add(STEPS[index].id));
+  };
+
+  // Bring the new section's top into view (not the page bottom: the section starts here).
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return; }
+    const el = topRef.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [stepIndex]);
+
+  // A check on the step bar: the section has something in it. Sections that
+  // come pre-filled (next steps, emergency) count once they've been looked at.
+  const done: Record<StepId, boolean> = {
+    assets: plan.digitalAssets.some((a) => !!(a.name || a.platform || a.recoverySeed || a.multisigDescriptor)),
+    otherSecrets: plan.otherSecrets.some((o) => !!(o.title || o.secret)),
+    devices: plan.deviceAccounts.some((d) => !!(d.label || d.username || d.password || d.location)),
+    documents: plan.documents.length > 0,
+    beneficiaries: plan.beneficiaries.some((b) => !!b.name),
+    nextSteps: visited.has('nextSteps') && !!plan.nextSteps?.trim(),
+    emergency: !!(plan.emergencyAccess.emergencyContact || plan.emergencyAccess.triggerConditions || plan.emergencyAccess.scopeLimitations) || visited.has('emergency'),
+    contacts: plan.professionalContacts.some((c) => !!(c.name || c.phone || c.email)),
+    message: !!plan.personalMessage?.trim(),
+    planInfo: !!plan.planInfo.preparedBy?.trim(),
   };
 
   // ── Helpers for updating nested state ──
@@ -447,8 +465,46 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )
       )}
 
-      {/* ── 1. Plan Information ── */}
-      <Section id="planInfo" number={1} title="Plan Information" description="Who created this plan, version tracking, and review schedule" expanded={expanded.has('planInfo')} onToggle={toggle}>
+      <div ref={topRef} className="scroll-mt-4" />
+      <nav aria-label="Locker sections" className="rounded-lg border border-border bg-card dark:bg-[hsl(28,7%,21%)] p-2">
+        <ol className="grid grid-cols-5 lg:grid-cols-10 gap-1">
+          {STEPS.map((st, i) => (
+            <li key={st.id}>
+              <button
+                type="button"
+                onClick={() => goTo(i)}
+                aria-current={i === stepIndex ? 'step' : undefined}
+                title={st.title}
+                className={cn(
+                  'w-full flex flex-col items-center gap-1 rounded-md px-1 py-1.5 text-[11px] leading-tight transition-colors',
+                  i === stepIndex ? 'bg-primary/15 text-foreground font-semibold' : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5',
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold',
+                    i === stepIndex ? 'bg-primary text-primary-foreground' : done[st.id] ? 'bg-green-600 text-white' : 'border border-border',
+                  )}
+                >
+                  {done[st.id] && i !== stepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                </span>
+                <span className="truncate max-w-full">{st.short}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <div className="border border-border rounded-lg bg-card dark:bg-[hsl(28,7%,21%)] p-4 space-y-4 overflow-hidden">
+        <div>
+          <p className="text-xs text-muted-foreground">Section {stepIndex + 1} of {STEPS.length}</p>
+          <h3 className="text-lg font-semibold">{step.title}</h3>
+          <p className="text-sm text-muted-foreground">{step.description}</p>
+        </div>
+        <ActiveStep.Provider value={{ active: step.id, direction }}>
+
+      {/* ── Plan Information ── */}
+      <Section id="planInfo">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 space-y-1.5">
             <Label>Prepared by</Label>
@@ -478,7 +534,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 2. Beneficiaries ── */}
-      <Section id="beneficiaries" number={2} title="Beneficiaries" description="Who should receive your digital assets" expanded={expanded.has('beneficiaries')} onToggle={toggle}>
+      <Section id="beneficiaries">
         <div className="flex items-start gap-2 p-3 rounded-md bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400">
           <Info className="h-4 w-4 mt-0.5 shrink-0" />
           <span>This documents your wishes for digital asset distribution. It does not replace a legal will.</span>
@@ -529,7 +585,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 3. Device & Account Access ── */}
-      <Section id="devices" number={3} title="Device &amp; Account Access" description="Computers, password managers, backup drives, and other access your heirs will need" expanded={expanded.has('devices')} onToggle={toggle}>
+      <Section id="devices">
         <div className="flex items-start gap-2 p-3 rounded-md bg-muted border border-border text-xs text-muted-foreground">
           <Info className="h-4 w-4 mt-0.5 shrink-0 text-foreground" />
           <div className="space-y-1">
@@ -585,7 +641,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 4. Digital Asset Inventory ── */}
-      <Section id="assets" number={4} title="Digital Asset Inventory" description="Every digital asset your heirs need to know about" expanded={expanded.has('assets')} onToggle={toggle}>
+      <Section id="assets">
         <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-500/30 dark:border-yellow-500/20 text-xs text-yellow-800 dark:text-yellow-300">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
           <span><strong>Multisig wallet?</strong> Choose &ldquo;Multisig&rdquo; as the wallet kind and paste the wallet&apos;s descriptor / config file (Sparrow, Electrum and Specter all export it). The descriptor can&apos;t spend on its own, but without it your heirs may be unable to rebuild the wallet at all, even with enough seed phrases.</span>
@@ -753,7 +809,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 5. Other Secrets ── */}
-      <Section id="otherSecrets" number={5} title="Other Secrets" description="PINs, safe combinations, recovery codes — anything that isn't a wallet or an account" expanded={expanded.has('otherSecrets')} onToggle={toggle}>
+      <Section id="otherSecrets">
         {plan.otherSecrets.length === 0 && (
           <p className="text-xs text-muted-foreground">Nothing here yet.</p>
         )}
@@ -791,7 +847,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 6. Documents ── */}
-      <Section id="documents" number={6} title="Documents" description="Files kept inside your Locker — a will, a deed, a wallet backup file" expanded={expanded.has('documents')} onToggle={toggle}>
+      <Section id="documents">
         {plan.documents.length === 0 && readOnly && (
           <p className="text-xs text-muted-foreground">No documents in this Locker.</p>
         )}
@@ -844,7 +900,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 7. Next Steps for Your Family ── */}
-      <Section id="nextSteps" number={7} title="Next Steps for Your Family" description="What your family should do first after opening the Locker" expanded={expanded.has('nextSteps')} onToggle={toggle}>
+      <Section id="nextSteps">
         <p className="text-xs text-muted-foreground">Pre-filled with suggested steps. Edit freely. The PDF puts this section first.</p>
         <Textarea
           value={plan.nextSteps}
@@ -856,7 +912,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 8. Professional Contacts ── */}
-      <Section id="contacts" number={8} title="Professional Contacts" description="People who can help your heirs execute this plan" expanded={expanded.has('contacts')} onToggle={toggle}>
+      <Section id="contacts">
         <div className="space-y-3">
           {plan.professionalContacts.map((contact) => (
             <div key={contact.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-start">
@@ -889,7 +945,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 9. Emergency Access ── */}
-      <Section id="emergency" number={9} title="Emergency Access" description="What happens if you are incapacitated but still alive" expanded={expanded.has('emergency')} onToggle={toggle}>
+      <Section id="emergency">
         <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-500/30 dark:border-yellow-500/20 text-xs text-yellow-800 dark:text-yellow-300">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
           <span><strong>Not just for death.</strong> If you are hospitalized, in a coma, or otherwise unable to act, someone may need access to pay bills, meet margin calls, or handle time-sensitive obligations.</span>
@@ -919,7 +975,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
       </Section>
 
       {/* ── 10. Personal Message ── */}
-      <Section id="message" number={10} title="Personal Message to Your Heirs" description="Optional — anything else you want your family to know" expanded={expanded.has('message')} onToggle={toggle}>
+      <Section id="message">
         <Textarea
           value={plan.personalMessage}
           onChange={(e) => onChange({ ...plan, personalMessage: e.target.value })}
@@ -929,6 +985,26 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
           className="text-sm"
         />
       </Section>
+
+        </ActiveStep.Provider>
+
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+          {stepIndex > 0 ? (
+            <Button type="button" variant="outline" onClick={() => goTo(stepIndex - 1)}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back: {STEPS[stepIndex - 1].title}
+            </Button>
+          ) : <span />}
+          {stepIndex < STEPS.length - 1 ? (
+            <Button type="button" onClick={() => goTo(stepIndex + 1)}>
+              Next: {STEPS[stepIndex + 1].title} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : onLastNext ? (
+            <Button type="button" onClick={onLastNext}>
+              {lastNextLabel ?? 'Continue'} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
