@@ -10,7 +10,6 @@ import assert from 'node:assert/strict';
 import {
   INHERITANCE_PLAN_VERSION,
   createBlankPlan,
-  createBlankSecretSet,
   createBlankDigitalAsset,
   createBlankMultisigKey,
   createBlankOtherSecret,
@@ -32,7 +31,9 @@ describe('blank plan', () => {
     assert.equal(plan.version, INHERITANCE_PLAN_VERSION);
     const ids = JSON.stringify(plan).match(/"id":"[^"]+"/g);
     assert.equal(new Set(ids).size, ids.length);
-    assert.equal(createBlankSecretSet().qardLocations.length, 3);
+    // The Locker records its own Qards; the plan has no per-secret Qard sets.
+    assert.equal('secretSets' in plan, false);
+    assert.match(plan.nextSteps, /Don't rush/);
   });
 });
 
@@ -73,7 +74,7 @@ describe('validatePlan', () => {
   });
 
   it('refuses a plan missing any section', () => {
-    for (const field of ['planInfo', 'emergencyAccess', 'beneficiaries', 'secretSets', 'deviceAccounts',
+    for (const field of ['planInfo', 'emergencyAccess', 'beneficiaries', 'deviceAccounts',
       'digitalAssets', 'otherSecrets', 'documents', 'professionalContacts']) {
       const plan = fullPlan();
       delete plan[field];

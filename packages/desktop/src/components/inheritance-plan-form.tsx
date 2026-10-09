@@ -3,12 +3,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DragDropZone } from '@/components/ui/drag-drop-zone';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, Plus, Trash2, AlertTriangle, Info, KeyRound, Eye, EyeOff, Wifi, WifiOff, FileText, Download, Paperclip } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, AlertTriangle, Info, Eye, EyeOff, Wifi, WifiOff, FileText, Download, Paperclip } from 'lucide-react';
 import { useConnectionStatus } from '@/components/connection-status';
 import { useToast } from '@/hooks/use-toast';
 import { saveFileNative, base64ToUint8Array, savedFileName } from '@/lib/native-save';
@@ -16,8 +14,6 @@ import type {
   InheritancePlan,
   PlanInfo,
   Beneficiary,
-  SecretSet,
-  QardLocation,
   DeviceAccount,
   DigitalAsset,
   MultisigKey,
@@ -27,7 +23,6 @@ import type {
   EmergencyAccess,
 } from '@seqrets/crypto';
 import {
-  createBlankSecretSet,
   createBlankDigitalAsset,
   createBlankMultisigKey,
   createBlankOtherSecret,
@@ -285,67 +280,6 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
     onChange({ ...plan, beneficiaries: plan.beneficiaries.filter((b) => b.id !== id) });
   };
 
-  // ── Secret Set helpers ──
-
-  const updateSecretSet = <K extends keyof Omit<SecretSet, 'id' | 'qardLocations'>>(id: string, field: K, value: SecretSet[K]) => {
-    onChange({
-      ...plan,
-      secretSets: plan.secretSets.map((s) => (s.id === id ? { ...s, [field]: value } : s)),
-    });
-  };
-
-  const addSecretSet = () => {
-    onChange({ ...plan, secretSets: [...plan.secretSets, createBlankSecretSet()] });
-  };
-
-  const removeSecretSet = (id: string) => {
-    onChange({ ...plan, secretSets: plan.secretSets.filter((s) => s.id !== id) });
-  };
-
-  const updateQardLocation = (setId: string, locId: string, field: keyof Omit<QardLocation, 'id' | 'qardNumber'>, value: string) => {
-    onChange({
-      ...plan,
-      secretSets: plan.secretSets.map((s) =>
-        s.id === setId
-          ? { ...s, qardLocations: s.qardLocations.map((loc) => (loc.id === locId ? { ...loc, [field]: value } : loc)) }
-          : s,
-      ),
-    });
-  };
-
-  const addQardLocation = (setId: string) => {
-    onChange({
-      ...plan,
-      secretSets: plan.secretSets.map((s) =>
-        s.id === setId
-          ? {
-              ...s,
-              qardLocations: [
-                ...s.qardLocations,
-                { id: crypto.randomUUID(), qardNumber: s.qardLocations.length + 1, location: '', heldBy: '', accessNotes: '' },
-              ],
-            }
-          : s,
-      ),
-    });
-  };
-
-  const removeQardLocation = (setId: string, locId: string) => {
-    onChange({
-      ...plan,
-      secretSets: plan.secretSets.map((s) =>
-        s.id === setId
-          ? {
-              ...s,
-              qardLocations: s.qardLocations
-                .filter((loc) => loc.id !== locId)
-                .map((loc, i) => ({ ...loc, qardNumber: i + 1 })),
-            }
-          : s,
-      ),
-    });
-  };
-
   // ── Device, Asset, Contact helpers ──
 
   const updateDeviceAccount = (id: string, field: keyof Omit<DeviceAccount, 'id'>, value: string) => {
@@ -594,141 +528,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 3. Secret Sets (Recovery Credentials + Qard Locations) ── */}
-      <Section id="secretSets" number={3} title="seQRet Sets" description="Credentials, Qard locations, and smart card info for each secret protected by seQRets" expanded={expanded.has('secretSets')} onToggle={toggle}>
-        <div className="space-y-6">
-          {plan.secretSets.map((secret, idx) => (
-            <div key={secret.id} className="border-2 border-border rounded-xl p-4 space-y-4 bg-card/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="h-4 w-4 text-primary" />
-                  <h4 className="text-sm font-bold">seQRet {idx + 1}</h4>
-                </div>
-                {!readOnly && plan.secretSets.length > 1 && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeSecretSet(secret.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <Label>What does this secret protect?</Label>
-                <Input value={secret.description} onChange={(e) => updateSecretSet(secret.id, 'description', e.target.value)} disabled={readOnly} placeholder="e.g., Bitcoin wallet seed phrase, Master password, Exchange recovery key" />
-              </div>
-
-              {/* Credentials */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>{secret.passwordIsHint ? 'seQRets Password Hint' : 'seQRets Password'}</Label>
-                  <SensitiveInput value={secret.password} onChange={(v) => updateSecretSet(secret.id, 'password', v)} disabled={readOnly} placeholder={secret.passwordIsHint ? 'A hint your heirs will understand — not the password itself' : 'The exact password used when encrypting this secret'} />
-                  <p className="text-xs text-muted-foreground">Every character matters. Copy-paste recommended.</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Switch id={`pw-hint-${secret.id}`} checked={secret.passwordIsHint} onCheckedChange={(on) => updateSecretSet(secret.id, 'passwordIsHint', on)} disabled={readOnly} />
-                    <Label htmlFor={`pw-hint-${secret.id}`} className="text-xs font-normal text-muted-foreground">This is a hint, not the actual password</Label>
-                  </div>
-                  {secret.passwordIsHint && (
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400">The plan will clearly mark this as a hint — an heir who types a hint as the password gets an error identical to a wrong password.</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Was a keyfile used for this secret?</Label>
-                  <YesNoSelect
-                    value={secret.keyfileUsed}
-                    onChange={(v) => updateSecretSet(secret.id, 'keyfileUsed', v)}
-                    disabled={readOnly}
-                    yesLabel="Yes — required to decrypt"
-                    noLabel="No — password and Qards only"
-                  />
-                  <p className="text-xs text-muted-foreground">Say so explicitly. If a keyfile was used but your heirs don't know, decryption fails with what looks like a wrong-password error.</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Keyfile location (primary)</Label>
-                    <Input value={secret.keyfilePrimaryLocation} onChange={(e) => updateSecretSet(secret.id, 'keyfilePrimaryLocation', e.target.value)} disabled={readOnly} placeholder="e.g., Smart card, USB drive in lockbox" className="text-sm" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Keyfile location (backup)</Label>
-                    <Input value={secret.keyfileBackupLocation} onChange={(e) => updateSecretSet(secret.id, 'keyfileBackupLocation', e.target.value)} disabled={readOnly} placeholder="Backup copy location" className="text-sm" />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Qard config + locations */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Configuration</Label>
-                  <Input value={secret.configuration} onChange={(e) => updateSecretSet(secret.id, 'configuration', e.target.value)} disabled={readOnly} placeholder="e.g., 2-of-3, 3-of-5" className="text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Qard set label</Label>
-                  <Input value={secret.label} onChange={(e) => updateSecretSet(secret.id, 'label', e.target.value)} disabled={readOnly} placeholder="The label you set in seQRets" className="text-sm" />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {secret.qardLocations.map((loc) => (
-                  <div key={loc.id} className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-start">
-                    <div className="flex items-center justify-center h-9 w-9 rounded-md bg-muted text-sm font-semibold shrink-0">
-                      {loc.qardNumber}
-                    </div>
-                    <Input value={loc.location} onChange={(e) => updateQardLocation(secret.id, loc.id, 'location', e.target.value)} disabled={readOnly} placeholder="Location" className="text-sm" />
-                    <Input value={loc.heldBy} onChange={(e) => updateQardLocation(secret.id, loc.id, 'heldBy', e.target.value)} disabled={readOnly} placeholder="Held by" className="text-sm" />
-                    <Input value={loc.accessNotes} onChange={(e) => updateQardLocation(secret.id, loc.id, 'accessNotes', e.target.value)} disabled={readOnly} placeholder="Access notes" className="text-sm" />
-                    {!readOnly && secret.qardLocations.length > 1 && (
-                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => removeQardLocation(secret.id, loc.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {!readOnly && (
-                <Button variant="outline" size="sm" onClick={() => addQardLocation(secret.id)} className="w-full">
-                  <Plus className="h-4 w-4 mr-1" /> Add Qard
-                </Button>
-              )}
-
-              <Separator />
-
-              {/* Smart card & vault file */}
-              <div className="space-y-3">
-                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Smart Card & Vault Backup</h5>
-                <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-500/30 dark:border-yellow-500/20 text-xs text-yellow-800 dark:text-yellow-300">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
-                  <span><strong>PIN lockout.</strong> After 5 wrong attempts the card locks permanently and its data can no longer be read &mdash; record the PIN above and make sure whoever needs it can actually reach it. With wipe protection on (the default) the card cannot be erased either, so a lost PIN turns it into a paperweight. With wipe protection off, anyone who holds the card can erase it &mdash; losing that Qard without warning and raising the number your heirs must still find.</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Smart card PIN</Label>
-                    <SensitiveInput value={secret.smartCardPin} onChange={(v) => updateSecretSet(secret.id, 'smartCardPin', v)} disabled={readOnly} placeholder="Card PIN" className="text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Card reader model</Label>
-                    <Input value={secret.smartCardReaderModel} onChange={(e) => updateSecretSet(secret.id, 'smartCardReaderModel', e.target.value)} disabled={readOnly} placeholder="e.g., Identiv SCR3310 v2.0" className="text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Vault file location</Label>
-                    <Input value={secret.vaultFileLocation} onChange={(e) => updateSecretSet(secret.id, 'vaultFileLocation', e.target.value)} disabled={readOnly} placeholder="e.g., USB drive, cloud folder" className="text-sm" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {!readOnly && (
-          <Button variant="outline" size="sm" onClick={addSecretSet} className="w-full">
-            <Plus className="h-4 w-4 mr-1" /> Add Another seQRet Set
-          </Button>
-        )}
-      </Section>
-
-      {/* ── 4. Device & Account Access ── */}
-      <Section id="devices" number={4} title="Device &amp; Account Access" description="Computers, password managers, backup drives, and other access your heirs will need" expanded={expanded.has('devices')} onToggle={toggle}>
+      {/* ── 3. Device & Account Access ── */}
+      <Section id="devices" number={3} title="Device &amp; Account Access" description="Computers, password managers, backup drives, and other access your heirs will need" expanded={expanded.has('devices')} onToggle={toggle}>
         <div className="flex items-start gap-2 p-3 rounded-md bg-muted border border-border text-xs text-muted-foreground">
           <Info className="h-4 w-4 mt-0.5 shrink-0 text-foreground" />
           <div className="space-y-1">
@@ -783,8 +584,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 5. Digital Asset Inventory ── */}
-      <Section id="assets" number={5} title="Digital Asset Inventory" description="Every digital asset your heirs need to know about" expanded={expanded.has('assets')} onToggle={toggle}>
+      {/* ── 4. Digital Asset Inventory ── */}
+      <Section id="assets" number={4} title="Digital Asset Inventory" description="Every digital asset your heirs need to know about" expanded={expanded.has('assets')} onToggle={toggle}>
         <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-500/30 dark:border-yellow-500/20 text-xs text-yellow-800 dark:text-yellow-300">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
           <span><strong>Multisig wallet?</strong> Choose &ldquo;Multisig&rdquo; as the wallet kind and paste the wallet&apos;s descriptor / config file (Sparrow, Electrum and Specter all export it). The descriptor can&apos;t spend on its own, but without it your heirs may be unable to rebuild the wallet at all, even with enough seed phrases.</span>
@@ -951,8 +752,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 6. Other Secrets ── */}
-      <Section id="otherSecrets" number={6} title="Other Secrets" description="PINs, safe combinations, recovery codes — anything that isn't a wallet or an account" expanded={expanded.has('otherSecrets')} onToggle={toggle}>
+      {/* ── 5. Other Secrets ── */}
+      <Section id="otherSecrets" number={5} title="Other Secrets" description="PINs, safe combinations, recovery codes — anything that isn't a wallet or an account" expanded={expanded.has('otherSecrets')} onToggle={toggle}>
         {plan.otherSecrets.length === 0 && (
           <p className="text-xs text-muted-foreground">Nothing here yet.</p>
         )}
@@ -969,7 +770,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">What is it?</Label>
-                <Input value={o.title} onChange={(e) => updateOtherSecret(o.id, 'title', e.target.value)} disabled={readOnly} placeholder="e.g., Home safe combination, Email recovery codes" className="text-sm" />
+                <Input value={o.title} onChange={(e) => updateOtherSecret(o.id, 'title', e.target.value)} disabled={readOnly} placeholder="e.g., Home safe combination, Email recovery codes, a separate seQRets secret" className="text-sm" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">The secret</Label>
@@ -977,7 +778,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Notes</Label>
-                <Input value={o.notes} onChange={(e) => updateOtherSecret(o.id, 'notes', e.target.value)} disabled={readOnly} placeholder="Where it's used, anything your heirs should know" className="text-sm" />
+                <Input value={o.notes} onChange={(e) => updateOtherSecret(o.id, 'notes', e.target.value)} disabled={readOnly} placeholder="Where it's used, where its Qards are, anything your family should know" className="text-sm" />
               </div>
             </div>
           ))}
@@ -989,8 +790,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 7. Documents ── */}
-      <Section id="documents" number={7} title="Documents" description="Files kept inside your Locker — a will, a deed, a wallet backup file" expanded={expanded.has('documents')} onToggle={toggle}>
+      {/* ── 6. Documents ── */}
+      <Section id="documents" number={6} title="Documents" description="Files kept inside your Locker — a will, a deed, a wallet backup file" expanded={expanded.has('documents')} onToggle={toggle}>
         {plan.documents.length === 0 && readOnly && (
           <p className="text-xs text-muted-foreground">No documents in this Locker.</p>
         )}
@@ -1042,20 +843,20 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 8. How to Restore ── */}
-      <Section id="restore" number={8} title="How to Restore Your Secret" description="Step-by-step instructions for your heirs" expanded={expanded.has('restore')} onToggle={toggle}>
-        <p className="text-xs text-muted-foreground">Pre-filled with default steps. Edit freely to match your setup.</p>
+      {/* ── 7. Next Steps for Your Family ── */}
+      <Section id="nextSteps" number={7} title="Next Steps for Your Family" description="What your family should do first after opening the Locker" expanded={expanded.has('nextSteps')} onToggle={toggle}>
+        <p className="text-xs text-muted-foreground">Pre-filled with suggested steps. Edit freely. The PDF puts this section first.</p>
         <Textarea
-          value={plan.howToRestore}
-          onChange={(e) => onChange({ ...plan, howToRestore: e.target.value })}
+          value={plan.nextSteps}
+          onChange={(e) => onChange({ ...plan, nextSteps: e.target.value })}
           disabled={readOnly}
-          rows={12}
-          className="text-sm font-mono"
+          rows={10}
+          className="text-sm"
         />
       </Section>
 
-      {/* ── 9. Professional Contacts ── */}
-      <Section id="contacts" number={9} title="Professional Contacts" description="People who can help your heirs execute this plan" expanded={expanded.has('contacts')} onToggle={toggle}>
+      {/* ── 8. Professional Contacts ── */}
+      <Section id="contacts" number={8} title="Professional Contacts" description="People who can help your heirs execute this plan" expanded={expanded.has('contacts')} onToggle={toggle}>
         <div className="space-y-3">
           {plan.professionalContacts.map((contact) => (
             <div key={contact.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-start">
@@ -1087,8 +888,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         )}
       </Section>
 
-      {/* ── 10. Emergency Access ── */}
-      <Section id="emergency" number={10} title="Emergency Access" description="What happens if you are incapacitated but still alive" expanded={expanded.has('emergency')} onToggle={toggle}>
+      {/* ── 9. Emergency Access ── */}
+      <Section id="emergency" number={9} title="Emergency Access" description="What happens if you are incapacitated but still alive" expanded={expanded.has('emergency')} onToggle={toggle}>
         <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-500/30 dark:border-yellow-500/20 text-xs text-yellow-800 dark:text-yellow-300">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
           <span><strong>Not just for death.</strong> If you are hospitalized, in a coma, or otherwise unable to act, someone may need access to pay bills, meet margin calls, or handle time-sensitive obligations.</span>
@@ -1117,8 +918,8 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false }: Inheri
         </div>
       </Section>
 
-      {/* ── 11. Personal Message ── */}
-      <Section id="message" number={11} title="Personal Message to Your Heirs" description="Optional — anything else you want your family to know" expanded={expanded.has('message')} onToggle={toggle}>
+      {/* ── 10. Personal Message ── */}
+      <Section id="message" number={10} title="Personal Message to Your Heirs" description="Optional — anything else you want your family to know" expanded={expanded.has('message')} onToggle={toggle}>
         <Textarea
           value={plan.personalMessage}
           onChange={(e) => onChange({ ...plan, personalMessage: e.target.value })}

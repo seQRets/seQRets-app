@@ -77,7 +77,9 @@ function checkPageBreak(neededHeight: number) {
 }
 
 function addSectionHeader(title: string) {
-  checkPageBreak(16);
+  // Room for the header AND its first few lines, so a header never sits
+  // alone at the foot of a page.
+  checkPageBreak(36);
   currentY += 6;
 
   // Draw background bar
@@ -288,51 +290,13 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
 
   let sectionNum = 1;
 
-  // ── seQRets Recover (Read This First) ──
-  addSectionHeader(`${sectionNum++}. How to Restore \u2014 Read This First`);
-
-  addTextBlock(
-    'This document contains credentials and instructions to restore the original secret(s). ' +
-    'To reassemble and decrypt the Qards listed below, you will need a recovery tool. ' +
-    'The recommended tool is seQRets Recover \u2014 a single HTML file that works offline in any modern web browser. No install, no accounts, no network.'
-  );
-  currentY += 2;
-
-  doc.setFontSize(BODY_SIZE);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...PRIMARY_COLOR);
-  checkPageBreak(8);
-  doc.text('Download seQRets Recover:', MARGIN_L + 2, currentY);
-  currentY += 5;
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...MUTED_COLOR);
-  checkPageBreak(6);
-  doc.text('https://github.com/seQRets/seQRets-Recover/releases/latest/download/recover.html', MARGIN_L + 4, currentY);
-  currentY += 6;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...PRIMARY_COLOR);
-  checkPageBreak(8);
-  doc.text('Source code & verification hashes:', MARGIN_L + 2, currentY);
-  currentY += 5;
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...MUTED_COLOR);
-  checkPageBreak(6);
-  doc.text('https://github.com/seQRets/seQRets-Recover', MARGIN_L + 4, currentY);
-  currentY += 8;
-
-  addTextBlock(
-    'Steps: (1) Download recover.html. (2) Turn off Wi-Fi and any other network connection. ' +
-    '(3) Open recover.html in a web browser by double-clicking it. (4) Paste or drag in the required number of Qards (the QR-code backups listed in this plan). ' +
-    '(5) Enter the password listed in this plan. (6) The original secret appears.'
-  );
-  currentY += 2;
-
-  addTextBlock(
-    'Verify before trusting: each recover.html release publishes a SHA-256 hash. Compare the hash of your downloaded file against the one on the release page before using it with real credentials. ' +
-    'Even if seqrets.app is no longer online when this plan is executed, Recover will still work \u2014 it has no dependencies beyond a web browser.'
-  );
-  currentY += 4;
+  // ── Next steps for your family ── first: it is what an heir needs to
+  // read before anything else in the plan.
+  if (plan.nextSteps?.trim()) {
+    addSectionHeader(`${sectionNum++}. Next Steps for Your Family \u2014 Read This First`);
+    addTextBlock(plan.nextSteps);
+    currentY += 4;
+  }
 
   // ── Beneficiaries ──
   const beneficiaryRows = (plan.beneficiaries ?? []).map(b => [b.name, b.relationship, b.contactInfo, b.assignedAssets]);
@@ -346,81 +310,6 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
     );
     if (plan.distributionInstructions?.trim()) {
       addLabelValue('Distribution Instructions', plan.distributionInstructions);
-    }
-    currentY += 4;
-  }
-
-  // ── Secret Sets (Recovery Credentials + Qard Locations) ──
-  const secretSets = plan.secretSets ?? [];
-  const hasSecretData = secretSets.some(s =>
-    s.password || s.description || s.keyfilePrimaryLocation ||
-    s.qardLocations?.some(q => q.location || q.heldBy) ||
-    s.smartCardPin || s.vaultFileLocation
-  );
-  if (hasSecretData) {
-    addSectionHeader(`${sectionNum++}. seQRet Sets`);
-
-    for (let i = 0; i < secretSets.length; i++) {
-      const s = secretSets[i];
-      checkPageBreak(20);
-
-      // Secret sub-header
-      doc.setFontSize(BODY_SIZE + 1);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...PRIMARY_COLOR);
-      const secretTitle = s.description
-        ? `seQRet ${i + 1}: ${s.description}`
-        : `seQRet ${i + 1}`;
-      doc.text(secretTitle, MARGIN_L + 2, currentY);
-      currentY += 6;
-
-      // Credentials — label honestly: a hint typed verbatim as a password
-      // fails with an error indistinguishable from a wrong password.
-      addLabelValue(s.passwordIsHint ? 'Password HINT (not the actual password)' : 'Password', s.password);
-      if (s.keyfileUsed === 'yes' || s.keyfileUsed === 'no') {
-        addLabelValue('Keyfile Used', s.keyfileUsed === 'yes'
-          ? 'YES — decryption will fail without it, even with the correct password'
-          : 'No — only the password (and Qards) are needed');
-      }
-      addLabelValue('Keyfile Primary', s.keyfilePrimaryLocation);
-      addLabelValue('Keyfile Backup', s.keyfileBackupLocation);
-
-      // Qard config + locations table
-      if (s.configuration || s.label) {
-        doc.setFontSize(BODY_SIZE);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...PRIMARY_COLOR);
-        const configLine = [
-          s.configuration && `Configuration: ${s.configuration}`,
-          s.label && `Label: ${s.label}`,
-        ].filter(Boolean).join('   |   ');
-        doc.text(configLine, MARGIN_L + 2, currentY);
-        currentY += 6;
-      }
-
-      const qardRows = (s.qardLocations ?? []).map(q => [String(q.qardNumber), q.location, q.heldBy, q.accessNotes]);
-      if (qardRows.some(r => rowHasData(r, [0]))) {
-        addTable(
-          ['#', 'Location', 'Held By', 'Access Notes'],
-          qardRows,
-          [10, 55, 45, 65],
-          [0], // the Qard number is prefilled
-        );
-      }
-
-      // Smart card & vault info
-      addLabelValue('Smart Card PIN', s.smartCardPin);
-      addLabelValue('Card Reader', s.smartCardReaderModel);
-      addLabelValue('Vault File', s.vaultFileLocation);
-
-      // Separator between secret sets
-      if (i < secretSets.length - 1) {
-        currentY += 2;
-        doc.setDrawColor(...LINE_COLOR);
-        doc.setLineWidth(0.3);
-        doc.line(MARGIN_L + 10, currentY, MARGIN_L + CONTENT_W - 10, currentY);
-        currentY += 6;
-      }
     }
     currentY += 4;
   }
@@ -544,8 +433,8 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
   // gets them to a recovered seed phrase; this section gets them from the
   // seed phrase to the actual funds — the step most inheritance documents
   // silently skip, and where most self-custody inheritance losses happen.
-  // Rendered even with an empty asset inventory: the stored "How to Restore
-  // Your Secret" text (step 9) points heirs at this appendix in every plan,
+  // Rendered even with an empty asset inventory: the default "Next Steps for
+  // Your Family" text (step 4) points heirs at this section in every plan,
   // and the guidance stands on its own.
   addSectionHeader(`${sectionNum++}. Recreating the Wallets \u2014 Read Before Moving Any Funds`);
 
@@ -598,13 +487,6 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
     'The Technical Contact under Professional Contacts was chosen to help with exactly this section. A one-hour call before touching anything is worth more than any guide. Never type a seed phrase into a website, never share it with \u201Csupport staff\u201D who contact you first, and be aware that scammers watch obituaries.'
   );
   currentY += 4;
-
-  // ── How to Restore Your Secret ──
-  if (plan.howToRestore) {
-    addSectionHeader(`${sectionNum++}. How to Restore Your Secret`);
-    addTextBlock(plan.howToRestore);
-    currentY += 4;
-  }
 
   // ── Professional Contacts ──
   const contactRows = (plan.professionalContacts ?? []).map(c => [c.role, c.name, c.phone, c.email]);
