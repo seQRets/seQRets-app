@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { FileLock2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { FileLock2, Loader2, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DragDropZone } from '@/components/ui/drag-drop-zone';
@@ -9,7 +9,9 @@ import { LockerError, openLockerWithKey, parseLockerFile } from '@seqrets/crypto
 import type { LockerFile } from '@seqrets/crypto';
 import { desktopLockerCrypto } from '@/lib/locker';
 import type { OpenLocker } from '@/lib/locker';
-import { pickLockerFile } from '@/lib/locker-files';
+import {
+  describeLockerLocation, findCloudFolders, forgetLockerLocation, getRememberedLocker, pickLockerFile, readLockerFile, fileNameOf,
+} from '@/lib/locker-files';
 import { playFileDropSound } from '@/lib/play-sound';
 
 interface LockerOpenProps {
@@ -29,15 +31,54 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<LockerFile | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  // Where the file is, in words ("iCloud Drive › seQRets"), when known.
+  const [whereText, setWhereText] = useState<string | null>(null);
+  // The remembered location couldn't be read (moved, renamed, drive not connected).
+  const [missingAt, setMissingAt] = useState<string | null>(null);
+  const [loadingRemembered, setLoadingRemembered] = useState(() => !!getRememberedLocker());
 
-  const acceptFile = (text: string, name: string, path: string | null) => {
+  const acceptFile = (text: string, name: string, path: string | null, quiet = false) => {
     const parsed = parseLockerFile(text);
     setFileText(text);
     setFileName(name);
     setFilePath(path);
     setFileInfo(parsed);
-    playFileDropSound();
-    scrollToReveal(endRef.current);
+    setMissingAt(null);
+    setWhereText(null);
+    if (path) {
+      findCloudFolders().then((folders) => setWhereText(describeLockerLocation(path, folders).text));
+    }
+    if (!quiet) {
+      playFileDropSound();
+      scrollToReveal(endRef.current);
+    }
+  };
+
+  // Go straight to the Locker file opened or saved last time, if it's still there.
+  useEffect(() => {
+    const remembered = getRememberedLocker();
+    if (!remembered) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const text = await readLockerFile(remembered.path);
+        if (!cancelled) acceptFile(text, fileNameOf(remembered.path), remembered.path, true);
+      } catch {
+        if (cancelled) return;
+        const folders = await findCloudFolders();
+        if (!cancelled) setMissingAt(describeLockerLocation(remembered.path, folders).text);
+      } finally {
+        if (!cancelled) setLoadingRemembered(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleForget = () => {
+    forgetLockerLocation();
+    setMissingAt(null);
+    clearFile();
   };
 
   const fail = (e: any) => {
@@ -75,6 +116,7 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
     setFilePath(null);
     setFileInfo(null);
     setFileError(null);
+    setWhereText(null);
   };
 
   const handleKeyRestored = async (key: string, setId: string | undefined) => {
@@ -91,7 +133,22 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
           <h3 className="text-xl font-semibold">Choose the Locker File</h3>
         </div>
         <div className="pl-11 space-y-4">
-          {!fileInfo ? (
+          {missingAt && !fileInfo && (
+            <Alert>
+              <AlertTitle>Your Locker isn&apos;t where it was last time</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <span className="block">
+                  It was in {missingAt}. It may have been moved or renamed, or that drive isn&apos;t connected. Choose the Locker file below.
+                </span>
+                <Button variant="link" className="h-auto p-0" onClick={handleForget}>Forget this location</Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          {loadingRemembered ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Finding your Locker…
+            </p>
+          ) : !fileInfo ? (
             <DragDropZone
               onFiles={handleFiles}
               onBrowse={handleBrowse}
@@ -105,9 +162,13 @@ export function LockerOpen({ onOpened }: LockerOpenProps) {
             <div className="flex items-start justify-between gap-3 rounded-md border p-4">
               <div className="space-y-1 text-sm">
                 <p className="font-medium">{fileName}</p>
+                {whereText && <p className="text-muted-foreground">In {whereText}</p>}
                 <p className="text-muted-foreground">
                   Qard set {fileInfo.setId} · saved {formatSavedAt(fileInfo.savedAt)} · version {fileInfo.seq}
                 </p>
+                {filePath && filePath === getRememberedLocker()?.path && (
+                  <Button variant="link" className="h-auto p-0 text-xs" onClick={handleForget}>Forget this location</Button>
+                )}
               </div>
               <Button variant="ghost" size="icon" onClick={clearFile} aria-label="Choose a different file">
                 <X className="h-4 w-4" />

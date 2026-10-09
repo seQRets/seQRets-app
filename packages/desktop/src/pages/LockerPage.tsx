@@ -21,6 +21,7 @@ import { LockerOpen } from '@/components/locker-open';
 import { LockerView } from '@/components/locker-view';
 import type { OpenLocker } from '@/lib/locker';
 import { takeHandedOffLocker } from '@/lib/locker-handoff';
+import { rememberLockerLocation } from '@/lib/locker-files';
 import { reconcileWithPlan, SIDECAR_DISAGREEMENT_WARN_DAYS } from '@/lib/review-reminder';
 // Lazy: Bob's chunk loads when the popover first opens, not on first paint (item 1.5).
 const BobChatInterface = React.lazy(() =>
@@ -78,6 +79,14 @@ export default function LockerPage() {
     setView('locker');
     toast({ title: 'Locker opened' });
   };
+
+  // Remember where the open Locker's file lives (location only), so the
+  // next "Open a Locker" can go straight to it.
+  const lockerPath = locker?.filePath;
+  const lockerSetId = locker?.setId;
+  useEffect(() => {
+    if (lockerPath && lockerSetId) rememberLockerLocation(lockerPath, lockerSetId);
+  }, [lockerPath, lockerSetId]);
 
   // A Locker opened from the Restore tab arrives here exactly once.
   useEffect(() => {

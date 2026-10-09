@@ -136,3 +136,42 @@ export function describeLockerLocation(path: string, folders: CloudFolder[]): { 
   const parts = target.split('/');
   return { text: parts.length > 1 ? parts[parts.length - 2] || target : target, inCloud: false };
 }
+
+// ── Remembered location ──────────────────────────────────────────────
+// Where the last Locker file was opened from or saved to, so "Open a
+// Locker" can go straight to it. Only the location is kept on this
+// computer — never the file or anything from inside it.
+
+const REMEMBERED_KEY = 'seqrets-locker-location';
+
+export interface RememberedLocker {
+  path: string;
+  setId: string;
+}
+
+export function getRememberedLocker(): RememberedLocker | null {
+  try {
+    const raw = localStorage.getItem(REMEMBERED_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    return typeof v?.path === 'string' && typeof v?.setId === 'string' ? { path: v.path, setId: v.setId } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function rememberLockerLocation(path: string, setId: string): void {
+  try {
+    localStorage.setItem(REMEMBERED_KEY, JSON.stringify({ path, setId }));
+  } catch {
+    // Remembering is a convenience; opening still works without it.
+  }
+}
+
+export function forgetLockerLocation(): void {
+  try {
+    localStorage.removeItem(REMEMBERED_KEY);
+  } catch {
+    // Nothing to forget.
+  }
+}
