@@ -373,6 +373,11 @@ export async function generatePlanPdf(plan: InheritancePlan): Promise<jsPDF> {
       }
       addLabelValue('Passphrase', asset.passphrase ?? '');
       addLabelValue('Derivation Path / Script Type', asset.derivationPath);
+      if (asset.multisigThreshold || asset.multisigTotal) {
+        addLabelValue('Keys Needed to Spend', asset.multisigTotal
+          ? `${asset.multisigThreshold || '?'} of ${asset.multisigTotal}`
+          : asset.multisigThreshold);
+      }
       addLabelValue('Multisig Descriptor', asset.multisigDescriptor ?? '');
       addLabelValue('Other Copies of the Descriptor', asset.multisigDescriptorLocation);
       const keys = (asset.multisigKeys ?? []).filter(k => k.label || k.heldBy || k.seed || k.passphrase || k.notes);

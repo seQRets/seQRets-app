@@ -52,6 +52,8 @@ describe('validatePlan', () => {
     const wallet = createBlankDigitalAsset();
     wallet.passphrase = 'fixture passphrase';
     wallet.multisigDescriptor = "wsh(sortedmulti(2,[aaaaaaaa/48'/0'/0'/2']xpub…/0/*,…))";
+    wallet.multisigThreshold = '2';
+    wallet.multisigTotal = '3';
     wallet.multisigKeys = [
       { ...createBlankMultisigKey(), label: 'Key A', heldBy: 'Me', seed: 'abandon … about', passphrase: 'key A passphrase' },
       { ...createBlankMultisigKey(), label: 'Key B', heldBy: 'Sister', seed: 'zoo … wrong', passphrase: '' },

@@ -61,6 +61,9 @@ export interface DigitalAsset {
   passphrase: string;
   /** The multisig wallet descriptor text itself. */
   multisigDescriptor: string;
+  /** Keys needed to spend ("3" of "5"); digits as typed, '' when not given. */
+  multisigThreshold: string;
+  multisigTotal: string;
   /** One entry per multisig key — any key may have its own passphrase. */
   multisigKeys: MultisigKey[];
   specialInstructions: string;
@@ -240,7 +243,7 @@ export function createBlankDigitalAsset(): DigitalAsset {
   return {
     id: crypto.randomUUID(), name: '', type: '', platform: '', loginEmail: '', approxValue: '',
     twoFactorMethod: '', recoverySeed: '', walletKind: '', usesPassphrase: '', derivationPath: '',
-    multisigDescriptorLocation: '', passphrase: '', multisigDescriptor: '',
+    multisigDescriptorLocation: '', passphrase: '', multisigDescriptor: '', multisigThreshold: '', multisigTotal: '',
     multisigKeys: [], specialInstructions: '',
   };
 }

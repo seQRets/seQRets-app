@@ -77,11 +77,11 @@ function YesNoSelect({ value, onChange, disabled, yesLabel, noLabel }: {
 // wall nobody finishes.
 
 const STEPS = [
+  { id: 'beneficiaries', title: 'Beneficiaries', short: 'People', description: 'Who should receive your digital assets' },
   { id: 'assets', title: 'Digital Assets', short: 'Wallets', description: 'Every wallet, exchange account and digital asset your family needs to know about' },
   { id: 'otherSecrets', title: 'Other Secrets', short: 'Secrets', description: "PINs, safe combinations, recovery codes — anything that isn't a wallet or an account" },
   { id: 'devices', title: 'Device & Account Access', short: 'Devices', description: 'Computers, password managers, backup drives, and other access your family will need' },
   { id: 'documents', title: 'Documents', short: 'Documents', description: 'Files kept inside your Locker — a will, a deed, a wallet backup file' },
-  { id: 'beneficiaries', title: 'Beneficiaries', short: 'People', description: 'Who should receive your digital assets' },
   { id: 'nextSteps', title: 'Next Steps for Your Family', short: 'Next steps', description: 'What your family should do first after opening the Locker' },
   { id: 'emergency', title: 'Emergency Access', short: 'Emergency', description: 'What happens if you are incapacitated but still alive' },
   { id: 'contacts', title: 'Professional Contacts', short: 'Contacts', description: 'People who can help your family carry out this plan' },
@@ -91,7 +91,7 @@ const STEPS = [
 
 type StepId = (typeof STEPS)[number]['id'];
 
-const ActiveStep = createContext<{ active: StepId; direction: 1 | -1 }>({ active: 'assets', direction: 1 });
+const ActiveStep = createContext<{ active: StepId; direction: 1 | -1 }>({ active: 'beneficiaries', direction: 1 });
 
 /** One section's fields; rendered only while it is the active step. */
 function Section({ id, children }: { id: StepId; children: React.ReactNode }) {
@@ -233,7 +233,7 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false, onLastNe
   const { toast } = useToast();
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const [visited, setVisited] = useState<Set<StepId>>(() => new Set<StepId>(['assets']));
+  const [visited, setVisited] = useState<Set<StepId>>(() => new Set<StepId>(['beneficiaries']));
   const topRef = useRef<HTMLDivElement>(null);
   const step = STEPS[stepIndex];
   // Reading attached files is async; build on the latest plan, not the one
@@ -688,7 +688,9 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false, onLastNe
                 // Never hide a field that already holds something, even if the
                 // wallet kind changed later — it still prints in the PDF.
                 const showSingle = !isMultisig || !!asset.recoverySeed || !!asset.passphrase || asset.usesPassphrase !== '';
-                const showMultisig = isMultisig || !!asset.multisigDescriptor || !!asset.multisigDescriptorLocation || asset.multisigKeys.length > 0;
+                const showMultisig = isMultisig || !!asset.multisigDescriptor || !!asset.multisigDescriptorLocation || asset.multisigKeys.length > 0
+                  || !!asset.multisigThreshold || !!asset.multisigTotal;
+                const digits = (v: string) => v.replace(/\D/g, '').slice(0, 2);
                 return (
                   <>
                     <div className="space-y-1">
@@ -741,6 +743,20 @@ export function InheritancePlanForm({ plan, onChange, readOnly = false, onLastNe
                     {showMultisig && (
                       <div className="space-y-3 rounded-md border border-border p-3">
                         <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Multisig</h5>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Keys needed to spend</Label>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Input value={asset.multisigThreshold} onChange={(e) => updateAsset(asset.id, 'multisigThreshold', digits(e.target.value))} disabled={readOnly} inputMode="numeric" placeholder="3" aria-label="Keys needed" className="w-16 text-sm text-center" />
+                            <span className="text-muted-foreground">of</span>
+                            <Input value={asset.multisigTotal} onChange={(e) => updateAsset(asset.id, 'multisigTotal', digits(e.target.value))} disabled={readOnly} inputMode="numeric" placeholder="5" aria-label="Total keys" className="w-16 text-sm text-center" />
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-3 rounded-md bg-muted border border-border text-xs text-muted-foreground">
+                          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                          <span>
+                            If every key&apos;s seed is stored here, whoever opens this Locker can spend — no safer than a single-key wallet. Many people keep the descriptor and who holds each key here, and only the seeds their family couldn&apos;t otherwise reach.
+                          </span>
+                        </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Wallet descriptor / config file</Label>
                           <Textarea value={asset.multisigDescriptor} onChange={(e) => updateAsset(asset.id, 'multisigDescriptor', e.target.value)} disabled={readOnly} placeholder="Paste the descriptor exported from Sparrow, Electrum, Specter, etc." className="text-xs font-mono min-h-[80px]" />
