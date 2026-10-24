@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Info, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { FileDown, Info, Loader2, Plus, Trash2, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,13 +17,24 @@ interface HeirSheetsPanelProps {
   peopleNames: string[];
   /** Where the Locker file is saved now, in words for the family; null if unknown. */
   suggestedLocation: string | null;
+  /** Saves the sheets and the blank password letter as a PDF. */
+  onSavePdf: () => Promise<void>;
 }
 
 // Radix Select can't represent null as an item value.
 const NO_QARD = 'none';
 
-export function HeirSheetsPanel({ heirSheets, onChange, totalShares, peopleNames, suggestedLocation }: HeirSheetsPanelProps) {
+export function HeirSheetsPanel({ heirSheets, onChange, totalShares, peopleNames, suggestedLocation, onSavePdf }: HeirSheetsPanelProps) {
   const { recipients, lockerLocation, passwordLetterLocation } = heirSheets;
+  const [savingPdf, setSavingPdf] = useState(false);
+  const handleSavePdf = async () => {
+    setSavingPdf(true);
+    try {
+      await onSavePdf();
+    } finally {
+      setSavingPdf(false);
+    }
+  };
 
   // Fill in where the Locker is the first time it's known; the owner can reword it.
   useEffect(() => {
@@ -138,6 +149,18 @@ export function HeirSheetsPanel({ heirSheets, onChange, totalShares, peopleNames
             <Plus className="h-4 w-4 mr-1" /> Add a Person
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-2 border-t pt-4">
+        <Label>Print the sheets</Label>
+        <p className="text-xs text-muted-foreground">
+          Saves a PDF with a sheet for each person and a blank password letter. Print it, give each person their own sheet, then delete the PDF. It holds no passwords, but it does say where things are.
+        </p>
+        <Button onClick={handleSavePdf} disabled={savingPdf || recipients.length === 0}>
+          {savingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+          Save Heir Sheets PDF
+        </Button>
+        {recipients.length === 0 && <p className="text-xs text-muted-foreground">Add at least one person first.</p>}
       </div>
     </div>
   );

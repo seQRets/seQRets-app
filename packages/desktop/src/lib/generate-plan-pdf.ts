@@ -196,7 +196,7 @@ function addTable(headers: string[], rows: string[][], colWidths: number[], igno
 
 let cachedLogoData: string | null = null;
 
-async function loadLogoBase64(): Promise<string | null> {
+export async function loadLogoBase64(): Promise<string | null> {
   if (cachedLogoData) return cachedLogoData;
   try {
     const response = await fetch(logoPng);

@@ -22,6 +22,7 @@ import {
 import type { CloudFolder } from '@/lib/locker-files';
 import { useLockerAutosave } from '@/hooks/use-locker-autosave';
 import { generatePlanPdf, getPlanPdfFilename } from '@/lib/generate-plan-pdf';
+import { saveHeirSheetsPdf } from '@/lib/generate-heir-sheets-pdf';
 import { PDF_FILTERS, saveFileNative, savedFileName } from '@/lib/native-save';
 
 interface LockerViewProps {
@@ -158,6 +159,15 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
       if (path) toast({ title: 'PDF exported', description: `Saved "${savedFileName(path)}".` });
     } catch (e) {
       toast({ variant: 'destructive', title: 'PDF export failed', description: String(e) });
+    }
+  };
+
+  const doSaveHeirSheets = async () => {
+    try {
+      const path = await saveHeirSheetsPdf(locker.content, locker.fileName);
+      if (path) toast({ title: 'Heir sheets saved', description: `Saved "${savedFileName(path)}". Print it, then delete the file.` });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Could not save the heir sheets', description: String(e) });
     }
   };
 
@@ -303,6 +313,7 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
           totalShares={qards.totalShares}
           peopleNames={plan.beneficiaries.map((b) => b.name)}
           suggestedLocation={familyLocation}
+          onSavePdf={doSaveHeirSheets}
         />
       )}
 
