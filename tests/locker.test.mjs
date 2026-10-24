@@ -35,6 +35,8 @@ import {
   describeLockerSet,
   createBlankPlan,
   INHERITANCE_PLAN_VERSION,
+  createBlankHeirSheets,
+  createHeirSheetRecipient,
 } from '@seqrets/crypto';
 
 // Throwaway test values — never a real secret.
@@ -298,6 +300,7 @@ describe('Locker create / unlock / save', () => {
     assert.equal(c.qards.keyfileUsed, false);
     assert.equal(c.qards.createdAt, NOW);
     assert.deepEqual(c.previousKeys, []);
+    assert.deepEqual(c.heirSheets, createBlankHeirSheets());
   });
 
   it('unlocks with any 2 Qards and the password, then saves as the next version', async () => {
@@ -353,6 +356,46 @@ describe('Locker create / unlock / save', () => {
       unlockLocker({ fileText: '{"salt":"x","data":"y"}', shares: created.qards.shares, password: PASSWORD }),
       expectLockerError('not-a-locker'),
     );
+  });
+});
+
+describe('heir sheet details', () => {
+  let created;
+  before(async () => {
+    created = await createLocker({ plan: createBlankPlan(), password: PASSWORD, totalShares: 3, requiredShares: 2 });
+  });
+
+  const reopen = async (heirSheets) => {
+    const content = { ...created.content, heirSheets };
+    const saved = await saveLocker({ key: created.key, content, setId: created.qards.setId, previousSeq: 1 });
+    return (await openLockerWithKey({ fileText: saved.text, key: created.key })).content.heirSheets;
+  };
+
+  it('are kept inside the Locker across a save', async () => {
+    const sam = { ...createHeirSheetRecipient('Sam'), qardNumber: 2 };
+    const pat = createHeirSheetRecipient('Pat');
+    const sheets = { recipients: [sam, pat], lockerLocation: 'iCloud Drive › seQRets', passwordLetterLocation: 'With our attorney' };
+    assert.deepEqual(await reopen(sheets), sheets);
+    assert.equal(pat.qardNumber, null);
+    assert.notEqual(sam.id, pat.id);
+  });
+
+  it('open as blank when missing, and drop unusable entries instead of refusing the Locker', async () => {
+    assert.deepEqual(await reopen(undefined), createBlankHeirSheets());
+    const got = await reopen({
+      recipients: [
+        { id: 'a', name: 'Sam', qardNumber: 4 },   // no Qard #4 in a set of 3
+        { id: 'b', name: 7, qardNumber: 0 },
+        { name: 'no id' },
+        null,
+      ],
+      lockerLocation: 42,
+    });
+    assert.deepEqual(got, {
+      recipients: [{ id: 'a', name: 'Sam', qardNumber: null }, { id: 'b', name: '', qardNumber: null }],
+      lockerLocation: '',
+      passwordLetterLocation: '',
+    });
   });
 });
 

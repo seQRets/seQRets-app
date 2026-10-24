@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Cloud, CloudOff, Eye, FileDown, FileText, FolderOpen, HardDrive, Loader2, Lock, Pencil, Printer, RefreshCw, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, Cloud, CloudOff, Eye, FileDown, FileText, FolderOpen, HardDrive, Loader2, Lock, Pencil, Printer, RefreshCw, ScrollText, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -9,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InheritancePlanForm } from '@/components/inheritance-plan-form';
+import { HeirSheetsPanel } from '@/components/heir-sheets-panel';
 import { QrCodeDisplay } from '@/components/qr-code-display';
 import { ReviewReminderPanel } from '@/components/review-reminder-panel';
 import { describeLockerSet, lockerFileName, saveLocker, sealLocker, serializeLockerFile } from '@seqrets/crypto';
-import type { CreateSharesResult, InheritancePlan } from '@seqrets/crypto';
+import type { CreateSharesResult, HeirSheets, InheritancePlan } from '@seqrets/crypto';
 import { desktopLockerCrypto } from '@/lib/locker';
 import type { OpenLocker } from '@/lib/locker';
 import {
-  chooseLockerSavePath, describeLockerLocation, fileNameOf, findCloudFolders, writeLockerFile, NO_CLOUD_NOTICE,
+  chooseLockerSavePath, describeLockerLocation, describeLockerLocationForFamily, fileNameOf, findCloudFolders, writeLockerFile, NO_CLOUD_NOTICE,
 } from '@/lib/locker-files';
 import type { CloudFolder } from '@/lib/locker-files';
 import { useLockerAutosave } from '@/hooks/use-locker-autosave';
@@ -42,11 +43,12 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
   const { toast } = useToast();
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [showQards, setShowQards] = useState(false);
+  const [showHeirSheets, setShowHeirSheets] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmPdf, setConfirmPdf] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
 
-  const { plan, qards } = locker.content;
+  const { plan, qards, heirSheets } = locker.content;
   const setText = useMemo(() => describeLockerSet(qards.requiredShares, qards.totalShares).survives, [qards]);
   const qardData: CreateSharesResult = useMemo(() => ({
     shares: qards.shares,
@@ -62,6 +64,7 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
     return () => { cancelled = true; };
   }, []);
   const location = locker.filePath && cloudFolders ? describeLockerLocation(locker.filePath, cloudFolders) : null;
+  const familyLocation = locker.filePath && cloudFolders ? describeLockerLocationForFamily(locker.filePath, cloudFolders) : null;
 
   const autosave = useLockerAutosave({
     locker,
@@ -78,6 +81,12 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
       ? { ...next, planInfo: { ...next.planInfo, lastUpdated: today } }
       : next;
     onChange((prev) => ({ ...prev, content: { ...prev.content, plan: plan2 } }));
+    onDirtyChange(true);
+    autosave.markEdited();
+  };
+
+  const updateHeirSheets = (next: HeirSheets) => {
+    onChange((prev) => ({ ...prev, content: { ...prev.content, heirSheets: next } }));
     onDirtyChange(true);
     autosave.markEdited();
   };
@@ -270,6 +279,9 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
         <Button variant="outline" size="sm" onClick={() => setShowQards(v => !v)}>
           <Printer className="mr-2 h-4 w-4" /> {showQards ? 'Hide Qards' : 'Reprint Qards'}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowHeirSheets(v => !v)}>
+          <ScrollText className="mr-2 h-4 w-4" /> {showHeirSheets ? 'Hide Heir Sheets' : 'Heir Sheets'}
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setConfirmPdf(true)}>
           <FileText className="mr-2 h-4 w-4" /> Export PDF
         </Button>
@@ -282,6 +294,16 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
           </p>
           <QrCodeDisplay qrCodeData={qardData} keyfileUsed={qards.keyfileUsed} showLabelOnExports={false} allowVaultExport={false} />
         </div>
+      )}
+
+      {showHeirSheets && (
+        <HeirSheetsPanel
+          heirSheets={heirSheets}
+          onChange={updateHeirSheets}
+          totalShares={qards.totalShares}
+          peopleNames={plan.beneficiaries.map((b) => b.name)}
+          suggestedLocation={familyLocation}
+        />
       )}
 
       <ReviewReminderPanel

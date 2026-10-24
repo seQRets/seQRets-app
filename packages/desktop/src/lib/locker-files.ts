@@ -137,6 +137,27 @@ export function describeLockerLocation(path: string, folders: CloudFolder[]): { 
   return { text: parts.length > 1 ? parts[parts.length - 2] || target : target, inCloud: false };
 }
 
+/**
+ * Where a Locker file lives, as a sentence for the family's heir sheets:
+ * 'In my iCloud Drive, in the "seQRets" folder.' Never a raw path.
+ */
+export function describeLockerLocationForFamily(path: string, folders: CloudFolder[]): string {
+  const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '');
+  const target = norm(path);
+  for (const f of folders) {
+    const root = norm(f.path);
+    if (target.startsWith(root + '/')) {
+      const inner = target.slice(root.length + 1).split('/').slice(0, -1);
+      return inner.length
+        ? `In my ${cloudFolderLabel(f)}, in the "${inner.join(' › ')}" folder.`
+        : `In my ${cloudFolderLabel(f)}.`;
+    }
+  }
+  const parts = target.split('/');
+  const folder = parts.length > 1 ? parts[parts.length - 2] : '';
+  return folder ? `On my computer, in the "${folder}" folder.` : 'On my computer.';
+}
+
 // ── Remembered location ──────────────────────────────────────────────
 // Where the last Locker file was opened from or saved to, so "Open a
 // Locker" can go straight to it. Only the location is kept on this

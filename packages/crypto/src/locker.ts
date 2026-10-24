@@ -331,11 +331,41 @@ export interface RetiredLockerKey {
     retiredAt: string;
 }
 
+/** One printed heir sheet: who it is for and which Qard they hold. */
+export interface HeirSheetRecipient {
+    id: string;
+    name: string;
+    /** 1-based Qard number this person holds, or null when they hold none. */
+    qardNumber: number | null;
+}
+
+/**
+ * What the heir sheets say. A sheet never names the other holders, never
+ * says where any Qard is, and never holds a password, seed or PIN — so
+ * nothing here may be any of those.
+ */
+export interface HeirSheets {
+    recipients: HeirSheetRecipient[];
+    /** Where the Locker file is, in the owner's words. */
+    lockerLocation: string;
+    /** Where the sealed password letter is kept. */
+    passwordLetterLocation: string;
+}
+
+export function createBlankHeirSheets(): HeirSheets {
+    return { recipients: [], lockerLocation: '', passwordLetterLocation: '' };
+}
+
+export function createHeirSheetRecipient(name = ''): HeirSheetRecipient {
+    return { id: crypto.randomUUID(), name, qardNumber: null };
+}
+
 export interface LockerContent {
     contentVersion: number;
     plan: InheritancePlan;
     qards: LockerQardSet;
     previousKeys: RetiredLockerKey[];
+    heirSheets: HeirSheets;
 }
 
 /** The crypto steps a Locker needs. Desktop passes its Rust-backed versions. */
@@ -397,6 +427,7 @@ export async function createLocker(
             keyfileUsed: !!args.keyfile,
         },
         previousKeys: [],
+        heirSheets: createBlankHeirSheets(),
     };
     const file = await sealLocker({ content, key, setId: qards.setId, seq: 1, savedAt: now }, crypto.encryptInstructions);
     return { key, qards, content, file, text: serializeLockerFile(file) };
@@ -430,6 +461,28 @@ function toLockerContent(raw: any): LockerContent {
         plan,
         qards: q,
         previousKeys: Array.isArray(raw.previousKeys) ? raw.previousKeys : [],
+        heirSheets: toHeirSheets(raw.heirSheets, q.totalShares),
+    };
+}
+
+/** Heir sheet details, with anything unusable dropped (a sheet is reprintable, never worth refusing a Locker over). */
+function toHeirSheets(raw: any, totalShares: number): HeirSheets {
+    if (!raw || typeof raw !== 'object') return createBlankHeirSheets();
+    const text = (v: unknown) => (typeof v === 'string' ? v : '');
+    const recipients: HeirSheetRecipient[] = Array.isArray(raw.recipients)
+        ? raw.recipients
+            .filter((r: any) => r && typeof r === 'object' && typeof r.id === 'string')
+            .map((r: any) => ({
+                id: r.id,
+                name: text(r.name),
+                qardNumber: Number.isSafeInteger(r.qardNumber) && r.qardNumber >= 1 && r.qardNumber <= totalShares
+                    ? r.qardNumber : null,
+            }))
+        : [];
+    return {
+        recipients,
+        lockerLocation: text(raw.lockerLocation),
+        passwordLetterLocation: text(raw.passwordLetterLocation),
     };
 }
 
