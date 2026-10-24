@@ -41,6 +41,8 @@ export default function LockerPage() {
   const [view, setView] = useState<View>('home');
   const [locker, setLocker] = useState<OpenLocker | null>(null);
   const [dirty, setDirty] = useState(false);
+  // Open the Locker on its Heir Sheets (the last step of Create a Locker).
+  const [showHeirSheets, setShowHeirSheets] = useState(false);
   // A new Locker whose file isn't saved yet must not be abandoned via Back.
   const [createUnsaved, setCreateUnsaved] = useState(false);
 
@@ -57,7 +59,7 @@ export default function LockerPage() {
 
   const { secondsLeft, stayOpen } = useIdleLock(view === 'locker', () => lock('Locked after 15 minutes without activity.'));
 
-  const handleOpened = async (opened: OpenLocker) => {
+  const handleOpened = async (opened: OpenLocker, opts?: { showHeirSheets?: boolean }) => {
     // The plan's lastReviewedAt is the authoritative review date; the
     // reminder sidecar is a cache rebuilt from it (and checked against it).
     // Reconcile BEFORE showing the Locker, so the review panel never reads
@@ -76,6 +78,7 @@ export default function LockerPage() {
     }
     setLocker(opened);
     setDirty(false);
+    setShowHeirSheets(!!opts?.showHeirSheets);
     setView('locker');
     toast({ title: 'Locker opened' });
   };
@@ -188,7 +191,7 @@ export default function LockerPage() {
               </div>
             )}
 
-            {view === 'create' && <LockerCreate onDone={(l) => { setCreateUnsaved(false); void handleOpened(l); }} onUnsavedChange={setCreateUnsaved} />}
+            {view === 'create' && <LockerCreate onDone={(l, opts) => { setCreateUnsaved(false); void handleOpened(l, opts); }} onUnsavedChange={setCreateUnsaved} />}
             {view === 'open' && <LockerOpen onOpened={handleOpened} />}
             {view === 'locker' && locker && (
               <LockerView
@@ -197,6 +200,7 @@ export default function LockerPage() {
                 dirty={dirty}
                 onDirtyChange={setDirty}
                 onLock={() => lock()}
+                initialShowHeirSheets={showHeirSheets}
               />
             )}
           </CardContent>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, CheckCircle2, ChevronDown, ChevronUp, Cloud, CloudOff, FileDown, FolderOpen, Loader2, Lock, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { ArrowDown, CheckCircle2, ChevronDown, ChevronUp, Cloud, CloudOff, FileDown, FolderOpen, Loader2, Lock, ScrollText, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { HelpHint } from '@/components/ui/help-hint';
@@ -43,8 +43,8 @@ function StepHeader({ n, title, done }: { n: number; title: string; done?: boole
 const nextButtonClass = 'bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-md';
 
 interface LockerCreateProps {
-  /** Called when the owner finishes, with the new Locker open. */
-  onDone: (locker: OpenLocker) => void;
+  /** Called when the owner finishes, with the new Locker open (and its Heir Sheets shown, if asked). */
+  onDone: (locker: OpenLocker, opts?: { showHeirSheets?: boolean }) => void;
   /** True while a Locker has been made but its file not yet saved. */
   onUnsavedChange?: (unsaved: boolean) => void;
 }
@@ -175,7 +175,7 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
     }
   };
 
-  const handleDone = () => {
+  const handleDone = (showHeirSheets = false) => {
     if (!created || !savedPath) return;
     onDone({
       key: created.key,
@@ -186,8 +186,12 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
       editedOutsideApp: false,
       fileName: fileNameOf(savedPath),
       filePath: savedPath,
-    });
+    }, { showHeirSheets });
   };
+
+  useEffect(() => {
+    if (savedPath) scrollToReveal(endRef.current);
+  }, [savedPath]);
 
   return (
     <div className="relative space-y-8">
@@ -436,14 +440,35 @@ export function LockerCreate({ onDone, onUnsavedChange }: LockerCreateProps) {
                 </Alert>
               )}
 
-              <div className="flex justify-end">
-                <Button size="lg" onClick={handleDone} disabled={!savedPath} className={nextButtonClass}>
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Done — Open My Locker
-                </Button>
-              </div>
             </div>
           </div>
+
+          {/* Step 5 — heir sheets (optional) */}
+          {savedPath && (
+            <div className="animate-in fade-in duration-500 space-y-8">
+              <Separator />
+              <div className="space-y-4">
+                <StepHeader n={5} title="Make the Heir Sheets" />
+                <div className="pl-11 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    An heir sheet is one printed page for each family member, kept apart from their Qard. It tells them how to open this Locker, where the file is and where the password letter is. It opens nothing on its own. The same PDF includes a blank password letter for you to fill in by hand and seal.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    You can also make them later with the Heir Sheets button in your Locker.
+                  </p>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button size="lg" variant="outline" onClick={() => handleDone(false)}>
+                      Skip — Open My Locker
+                    </Button>
+                    <Button size="lg" onClick={() => handleDone(true)} className={nextButtonClass}>
+                      <ScrollText className="mr-2 h-5 w-5" />
+                      Make Heir Sheets
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

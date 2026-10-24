@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Cloud, CloudOff, Eye, FileDown, FileText, FolderOpen, HardDrive, Loader2, Lock, Pencil, Printer, RefreshCw, ScrollText, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -33,6 +33,8 @@ interface LockerViewProps {
   dirty: boolean;
   onDirtyChange: (dirty: boolean) => void;
   onLock: () => void;
+  /** Open with the Heir Sheets shown (straight after Create a Locker). */
+  initialShowHeirSheets?: boolean;
 }
 
 function formatSavedAt(iso: string): string {
@@ -40,11 +42,15 @@ function formatSavedAt(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
 }
 
-export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: LockerViewProps) {
+export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock, initialShowHeirSheets = false }: LockerViewProps) {
   const { toast } = useToast();
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [showQards, setShowQards] = useState(false);
-  const [showHeirSheets, setShowHeirSheets] = useState(false);
+  const [showHeirSheets, setShowHeirSheets] = useState(initialShowHeirSheets);
+  const heirSheetsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (initialShowHeirSheets) heirSheetsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [initialShowHeirSheets]);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmPdf, setConfirmPdf] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
@@ -306,6 +312,7 @@ export function LockerView({ locker, onChange, dirty, onDirtyChange, onLock }: L
         </div>
       )}
 
+      <div ref={heirSheetsRef} className="scroll-mt-6" />
       {showHeirSheets && (
         <HeirSheetsPanel
           heirSheets={heirSheets}
